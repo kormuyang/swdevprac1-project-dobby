@@ -1,0 +1,4181 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Dobby Rental Car Booking API",
+    "version": "1.0.0",
+    "description": "Design contract for a backend-only pair project. Not a deployed or implemented API. All date-only rules use Asia/Bangkok; monetary values are integer satang. Unknown input/query fields are rejected. API contract is authoritative; examples are synthetic. See docs/api-contract.md for error precedence and docs/service-contracts.md for atomic behavior."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5003/api/v1",
+      "description": "Planned local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "System",
+      "description": "Readiness"
+    },
+    {
+      "name": "Auth",
+      "description": "Accounts and JWT sessions"
+    },
+    {
+      "name": "Discovery",
+      "description": "Public safe provider/vehicle discovery"
+    },
+    {
+      "name": "Company",
+      "description": "Versioned profile submissions"
+    },
+    {
+      "name": "Company vehicles",
+      "description": "Approved owner vehicle management"
+    },
+    {
+      "name": "Bookings",
+      "description": "Customer/admin booking operations"
+    },
+    {
+      "name": "Company bookings",
+      "description": "Approved owner read-only booking access"
+    },
+    {
+      "name": "Admin",
+      "description": "Company review and suspension"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "Check local API readiness",
+        "description": "Check local API readiness",
+        "tags": [
+          "System"
+        ],
+        "security": [],
+        "x-roles": [
+          "public"
+        ],
+        "x-requirements": [],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "operationId": "registerCustomer",
+        "summary": "Register a customer",
+        "description": "Server assigns user role. Telephone required. Reject role/provider/status fields. Creates account and initial session.",
+        "tags": [
+          "Auth"
+        ],
+        "security": [],
+        "x-roles": [
+          "public"
+        ],
+        "x-requirements": [
+          "FR-01",
+          "FR-02"
+        ],
+        "responses": {
+          "201": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResultResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register-company": {
+      "post": {
+        "operationId": "registerCompany",
+        "summary": "Register a representative and initial company application",
+        "description": "Atomically create company-role account, stable provider and version 1 pending application. Login email and profile.contactEmail are distinct fields. No booking capability.",
+        "tags": [
+          "Auth"
+        ],
+        "security": [],
+        "x-roles": [
+          "public"
+        ],
+        "x-requirements": [
+          "FR-10"
+        ],
+        "responses": {
+          "201": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResultResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyRegistrationInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "login",
+        "summary": "Log in using email/password",
+        "description": "Issue 24-hour JWT and persisted session. Suspended representative gets 403 PROVIDER_SUSPENDED; pending/rejected representatives may log in.",
+        "tags": [
+          "Auth"
+        ],
+        "security": [],
+        "x-roles": [
+          "public"
+        ],
+        "x-requirements": [
+          "FR-02"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResultResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "summary": "Revoke current session",
+        "description": "Verify presented JWT/session, then revoke it. Allow suspended representatives to logout; no protected company data is returned. Reuse of this token then returns 401.",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "user",
+          "company",
+          "admin"
+        ],
+        "x-requirements": [
+          "FR-02"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "getMe",
+        "summary": "Read current account",
+        "description": "No password/hash/session internals. Suspended representatives denied with 403; pending/rejected can inspect their account.",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "user",
+          "company",
+          "admin"
+        ],
+        "x-requirements": [],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/providers": {
+      "get": {
+        "operationId": "listProviders",
+        "summary": "List approved rental companies",
+        "description": "Only approved companies with a last-approved profile. Never expose pending profile/document URLs, account data or booking history. Ordered createdAt descending then id descending.",
+        "tags": [
+          "Discovery"
+        ],
+        "security": [],
+        "x-roles": [
+          "public"
+        ],
+        "x-requirements": [
+          "FR-03"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderPublicListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "One-based page; default 1.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size; default 25, maximum 100.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ]
+      }
+    },
+    "/providers/{providerId}": {
+      "get": {
+        "operationId": "getProvider",
+        "summary": "Read approved company public details",
+        "description": "Read approved company public details",
+        "tags": [
+          "Discovery"
+        ],
+        "security": [],
+        "x-roles": [
+          "public"
+        ],
+        "x-requirements": [
+          "FR-03"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderPublicResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "providerId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ]
+      }
+    },
+    "/vehicles": {
+      "get": {
+        "operationId": "listVehicles",
+        "summary": "Find active vehicles of approved companies",
+        "description": "Filter window/overlap when both dates supplied. Without dates, show active listings with non-expired windows. Never populate private bookings. Count and page use same predicate. Availability is advisory until atomic booking creation.",
+        "tags": [
+          "Discovery"
+        ],
+        "security": [],
+        "x-roles": [
+          "public"
+        ],
+        "x-requirements": [
+          "FR-03",
+          "FR-12"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "One-based page; default 1.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size; default 25, maximum 100.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "providerId",
+            "in": "query",
+            "required": false,
+            "description": "providerId",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          },
+          {
+            "name": "brand",
+            "in": "query",
+            "required": false,
+            "description": "Case-insensitive exact match.",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "required": false,
+            "description": "Literal case-insensitive substring, escaped; not client regex.",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            }
+          },
+          {
+            "name": "transmissionType",
+            "in": "query",
+            "required": false,
+            "description": "transmissionType",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "automatic",
+                "manual"
+              ]
+            }
+          },
+          {
+            "name": "fuelType",
+            "in": "query",
+            "required": false,
+            "description": "fuelType",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "petrol",
+                "diesel",
+                "hybrid",
+                "electric",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "minSeats",
+            "in": "query",
+            "required": false,
+            "description": "minSeats",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            }
+          },
+          {
+            "name": "minRatePerDaySatang",
+            "in": "query",
+            "required": false,
+            "description": "minRatePerDaySatang",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000000
+            }
+          },
+          {
+            "name": "maxRatePerDaySatang",
+            "in": "query",
+            "required": false,
+            "description": "maxRatePerDaySatang",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000000
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "description": "Supply with dueDate; filter available vehicles for the entire interval.",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "example": "2030-01-20",
+              "description": "Validated inclusive calendar date, Asia/Bangkok; no time component."
+            }
+          },
+          {
+            "name": "dueDate",
+            "in": "query",
+            "required": false,
+            "description": "Supply with startDate; 1–30 inclusive days.",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "example": "2030-01-20",
+              "description": "Validated inclusive calendar date, Asia/Bangkok; no time component."
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "description": "Default -createdAt with id tie-break.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "createdAt",
+                "-createdAt",
+                "ratePerDaySatang",
+                "-ratePerDaySatang"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "/vehicles/{vehicleId}": {
+      "get": {
+        "operationId": "getVehicle",
+        "summary": "Read a publicly listed vehicle",
+        "description": "Only active vehicle of approved company with non-expired window; otherwise 404. Availability is not a reservation.",
+        "tags": [
+          "Discovery"
+        ],
+        "security": [],
+        "x-roles": [
+          "public"
+        ],
+        "x-requirements": [],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "vehicleId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ]
+      }
+    },
+    "/company/profile": {
+      "get": {
+        "operationId": "getOwnProvider",
+        "summary": "Read own company operational profile",
+        "description": "Pending/rejected/approved representatives only; suspended denied. Latest approved data remains in effect while revision is pending/rejected.",
+        "tags": [
+          "Company"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "company"
+        ],
+        "x-requirements": [],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderPrivateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/company/applications": {
+      "get": {
+        "operationId": "listOwnApplications",
+        "summary": "Read own application history",
+        "description": "Pending/rejected/approved only, never suspended. Ordered version descending.",
+        "tags": [
+          "Company"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "company"
+        ],
+        "x-requirements": [
+          "FR-10",
+          "FR-11"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "One-based page; default 1.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size; default 25, maximum 100.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "submitApplication",
+        "summary": "Submit a new immutable profile version",
+        "description": "At most one pending application. Stable registration number copied by server. Retain current approved profile and provider eligibility during review; resubmission after rejection creates next version. Suspended denied.",
+        "tags": [
+          "Company"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "company"
+        ],
+        "x-requirements": [
+          "FR-10",
+          "FR-11"
+        ],
+        "responses": {
+          "201": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/applications/{applicationId}": {
+      "get": {
+        "operationId": "getOwnApplication",
+        "summary": "Read one own application version",
+        "description": "Read one own application version",
+        "tags": [
+          "Company"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "company"
+        ],
+        "x-requirements": [
+          "FR-10",
+          "FR-11"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ]
+      }
+    },
+    "/company/vehicles": {
+      "get": {
+        "operationId": "listOwnVehicles",
+        "summary": "List own active and inactive vehicles",
+        "description": "Approved representative only. Scope by trusted provider ID; never accept arbitrary owner scope.",
+        "tags": [
+          "Company vehicles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "company"
+        ],
+        "x-requirements": [
+          "FR-12"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "One-based page; default 1.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size; default 25, maximum 100.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "isActive",
+            "in": "query",
+            "required": false,
+            "description": "isActive",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createVehicle",
+        "summary": "Register own vehicle",
+        "description": "Approved only. Provider assigned server-side, isActive defaults true, availableUntil defaults null. Reject duplicate normalized VIN even if existing vehicle inactive.",
+        "tags": [
+          "Company vehicles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "company"
+        ],
+        "x-requirements": [
+          "FR-12"
+        ],
+        "responses": {
+          "201": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VehicleCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/vehicles/{vehicleId}": {
+      "get": {
+        "operationId": "getOwnVehicle",
+        "summary": "Read own vehicle",
+        "description": "Approved only; inactive vehicles visible to owner. Cross-company IDs return 404.",
+        "tags": [
+          "Company vehicles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "company"
+        ],
+        "x-requirements": [
+          "FR-12"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "vehicleId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateVehicle",
+        "summary": "Change pickup branch and/or daily rate",
+        "description": "Approved owner only. All other descriptive fields fixed, even before first booking. Old bookings keep original pickup branch and rate snapshots.",
+        "tags": [
+          "Company vehicles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "company"
+        ],
+        "x-requirements": [
+          "FR-12"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "vehicleId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VehicleUpdate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/vehicles/{vehicleId}/availability": {
+      "patch": {
+        "operationId": "updateAvailability",
+        "summary": "Change own vehicle rental window",
+        "description": "Approved owner only. Inclusive from/until; null end = open ended. Reject changes excluding any existing upcoming/ongoing confirmed booking. Never implicitly cancel bookings.",
+        "tags": [
+          "Company vehicles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "company"
+        ],
+        "x-requirements": [
+          "FR-12"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "vehicleId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvailabilityUpdate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/company/vehicles/{vehicleId}/activation": {
+      "patch": {
+        "operationId": "setVehicleActivation",
+        "summary": "Deactivate or reactivate own vehicle",
+        "description": "Approved owner only. Idempotent state assignment. Inactive blocks new bookings, preserves existing ones. Reactivation does not create/restore bookings.",
+        "tags": [
+          "Company vehicles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "company"
+        ],
+        "x-requirements": [
+          "FR-12"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "vehicleId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivationUpdate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings": {
+      "get": {
+        "operationId": "listBookings",
+        "summary": "List own bookings or all bookings as admin",
+        "description": "Customers scoped to self; userId/providerId filters rejected for customers. Admin may filter globally. All effective statuses available. No arbitrary projection/populate.",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "user",
+          "admin"
+        ],
+        "x-requirements": [
+          "FR-04",
+          "FR-07"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "One-based page; default 1.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size; default 25, maximum 100.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Effective booking status, computed from Asia/Bangkok today.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "upcoming",
+                "ongoing",
+                "completed",
+                "cancelled"
+              ]
+            }
+          },
+          {
+            "name": "providerId",
+            "in": "query",
+            "required": false,
+            "description": "Admin only.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "required": false,
+            "description": "Admin only.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createBooking",
+        "summary": "Book one specific vehicle",
+        "description": "Customer only; admin/company cannot book. Server derives owner/provider/rate/snapshot/total. startDate >= Thailand today, 1–30 inclusive days, entire interval inside window, approved provider and active vehicle. At most 3 confirmed bookings with dueDate >= today. Reject same-vehicle inclusive overlap atomically.",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "user"
+        ],
+        "x-requirements": [
+          "FR-03"
+        ],
+        "responses": {
+          "201": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings/{bookingId}": {
+      "get": {
+        "operationId": "getBooking",
+        "summary": "Read own booking or any as admin",
+        "description": "Customer must own record; otherwise 404. Approved-company reads use dedicated company routes.",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "user",
+          "admin"
+        ],
+        "x-requirements": [
+          "FR-04",
+          "FR-07"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateBookingDates",
+        "summary": "Change rental dates only",
+        "description": "Only confirmed booking before original startDate for both roles. Same vehicle/provider/owner. Validate new dates/window/active eligibility/cap and overlap excluding self. Keep original daily rate and branch snapshot; recalculate days/total.",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "user",
+          "admin"
+        ],
+        "x-requirements": [
+          "FR-05",
+          "FR-08"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingDatesUpdate"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "cancelBooking",
+        "summary": "Cancel booking and retain history",
+        "description": "Customer before original startDate only. Admin can also emergency-cancel ongoing bookings; completed history is not cancellable. Already-cancelled owned/authorized booking returns current record without another effect. Never hard-delete.",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "user",
+          "admin"
+        ],
+        "x-requirements": [
+          "FR-06",
+          "FR-09"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ]
+      }
+    },
+    "/company/bookings": {
+      "get": {
+        "operationId": "listCompanyBookings",
+        "summary": "List bookings for own vehicles",
+        "description": "Approved only. Scope by provider from trusted actor; include current customer name/email/telephone and booked vehicle/branch/dates/rate/total. All statuses visible.",
+        "tags": [
+          "Company bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "company"
+        ],
+        "x-requirements": [
+          "FR-13"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "One-based page; default 1.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size; default 25, maximum 100.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Effective booking status, computed from Asia/Bangkok today.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "upcoming",
+                "ongoing",
+                "completed",
+                "cancelled"
+              ]
+            }
+          },
+          {
+            "name": "vehicleId",
+            "in": "query",
+            "required": false,
+            "description": "vehicleId",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ]
+      }
+    },
+    "/company/bookings/{bookingId}": {
+      "get": {
+        "operationId": "getCompanyBooking",
+        "summary": "Read one own-vehicle booking",
+        "description": "Approved only; other-company record returns 404. No company booking mutation endpoints.",
+        "tags": [
+          "Company bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "company"
+        ],
+        "x-requirements": [
+          "FR-13"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/providers": {
+      "get": {
+        "operationId": "listAdminProviders",
+        "summary": "List companies in all operational states",
+        "description": "List companies in all operational states",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "admin"
+        ],
+        "x-requirements": [
+          "FR-11",
+          "FR-14"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderPrivateListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "One-based page; default 1.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size; default 25, maximum 100.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "rejected",
+                "approved",
+                "suspended"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "/admin/providers/{providerId}": {
+      "get": {
+        "operationId": "getAdminProvider",
+        "summary": "Read any company operational state",
+        "description": "Read any company operational state",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "admin"
+        ],
+        "x-requirements": [
+          "FR-11",
+          "FR-14"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderPrivateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "providerId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/applications": {
+      "get": {
+        "operationId": "listAdminApplications",
+        "summary": "List submitted company versions",
+        "description": "List submitted company versions",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "admin"
+        ],
+        "x-requirements": [
+          "FR-11"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "One-based page; default 1.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size; default 25, maximum 100.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "approved",
+                "rejected"
+              ]
+            }
+          },
+          {
+            "name": "providerId",
+            "in": "query",
+            "required": false,
+            "description": "providerId",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/applications/{applicationId}": {
+      "get": {
+        "operationId": "getAdminApplication",
+        "summary": "Read any company application",
+        "description": "Read any company application",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "admin"
+        ],
+        "x-requirements": [
+          "FR-11"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/applications/{applicationId}/review": {
+      "post": {
+        "operationId": "reviewApplication",
+        "summary": "Approve or reject one pending version",
+        "description": "Pending only; repeated decision returns 409 INVALID_STATE. Rejection reason required. Approval atomically switches latest-approved pointer; cannot clear suspension. A rejected revision leaves last approved profile and eligibility intact.",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "admin"
+        ],
+        "x-requirements": [
+          "FR-11"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/providers/{providerId}/suspend": {
+      "post": {
+        "operationId": "suspendProvider",
+        "summary": "Suspend and cancel all non-completed rentals",
+        "description": "Approved only. Atomically set suspended and cancel all confirmed bookings with dueDate >= Thailand today, including ongoing rentals. Keep completed/cancelled history. Serialize against booking mutations; report success only after commit. Repeated suspend returns 409 INVALID_STATE.",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "admin"
+        ],
+        "x-requirements": [
+          "FR-14"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuspensionResultResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "providerId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspendInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/providers/{providerId}/reactivate": {
+      "post": {
+        "operationId": "reactivateProvider",
+        "summary": "Reactivate suspended company",
+        "description": "Suspended only with approved profile; record resolution note. Return approved but never restore cancelled bookings. Repeated reactivate returns 409 INVALID_STATE.",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "admin"
+        ],
+        "x-requirements": [
+          "FR-14"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderPrivateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "name": "providerId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReactivateInput"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "24-hour signed JWT with persisted revocable session; live role/provider-state checks."
+      }
+    },
+    "schemas": {
+      "Id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "example": "507f1f77bcf86cd799439011"
+      },
+      "DateOnly": {
+        "type": "string",
+        "format": "date",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+        "example": "2030-01-20",
+        "description": "Validated inclusive calendar date, Asia/Bangkok; no time component."
+      },
+      "Branch": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "address": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "name",
+          "address"
+        ]
+      },
+      "ProfileInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "legalName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "registeredAddress": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "telephone": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30
+          },
+          "contactEmail": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 254,
+            "format": "email"
+          },
+          "documentUrl": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048,
+            "format": "uri",
+            "pattern": "^https://",
+            "description": "One HTTPS document URL. Store only; never fetch or host the contents."
+          }
+        },
+        "required": [
+          "legalName",
+          "registeredAddress",
+          "telephone",
+          "contactEmail",
+          "documentUrl"
+        ]
+      },
+      "RegistrationInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "telephone": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30
+          },
+          "email": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 254,
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 72,
+            "format": "password",
+            "writeOnly": true,
+            "description": "8–72 UTF-8 bytes; reject values exceeding bcrypt byte limit."
+          }
+        },
+        "required": [
+          "name",
+          "telephone",
+          "email",
+          "password"
+        ]
+      },
+      "CompanyRegistrationInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "telephone": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30
+          },
+          "email": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 254,
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 72,
+            "format": "password",
+            "writeOnly": true,
+            "description": "8–72 UTF-8 bytes; reject values exceeding bcrypt byte limit."
+          },
+          "businessRegistrationNumber": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "profile": {
+            "$ref": "#/components/schemas/ProfileInput"
+          }
+        },
+        "required": [
+          "name",
+          "telephone",
+          "email",
+          "password",
+          "businessRegistrationNumber",
+          "profile"
+        ]
+      },
+      "LoginInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 254,
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 72,
+            "format": "password",
+            "writeOnly": true,
+            "description": "8–72 UTF-8 bytes; reject values exceeding bcrypt byte limit."
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "User": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "telephone": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30
+          },
+          "email": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 254,
+            "format": "email"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "company",
+              "admin"
+            ]
+          },
+          "providerId": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "telephone",
+          "email",
+          "role",
+          "providerId",
+          "createdAt"
+        ]
+      },
+      "AuthResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "token": {
+            "type": "string",
+            "description": "JWT Bearer; do not commit or log."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "user",
+          "token",
+          "expiresAt"
+        ]
+      },
+      "ProviderPublic": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "address": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "telephone": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "address",
+          "telephone"
+        ]
+      },
+      "Application": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "providerId": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "businessRegistrationNumber": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "profile": {
+            "$ref": "#/components/schemas/ProfileInput"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ]
+          },
+          "rejectionReason": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "reviewedBy": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "nullable": true
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "providerId",
+          "version",
+          "businessRegistrationNumber",
+          "profile",
+          "status",
+          "rejectionReason",
+          "reviewedBy",
+          "submittedAt",
+          "reviewedAt"
+        ]
+      },
+      "ProviderPrivate": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "representativeId": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "businessRegistrationNumber": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "rejected",
+              "approved",
+              "suspended"
+            ]
+          },
+          "approvedApplicationId": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "nullable": true
+          },
+          "approvedProfile": {
+            "type": "object",
+            "nullable": true,
+            "description": "ProfileInput shape of last approved application, or null before first approval.",
+            "properties": {
+              "legalName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "registeredAddress": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "telephone": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 30
+              },
+              "contactEmail": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 254,
+                "format": "email"
+              },
+              "documentUrl": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048,
+                "format": "uri",
+                "pattern": "^https://",
+                "description": "One HTTPS document URL. Store only; never fetch or host the contents."
+              }
+            },
+            "additionalProperties": false
+          },
+          "latestApplicationId": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "suspensionReason": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "suspendedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reactivationNote": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "representativeId",
+          "businessRegistrationNumber",
+          "status",
+          "approvedApplicationId",
+          "approvedProfile",
+          "latestApplicationId",
+          "suspensionReason",
+          "suspendedAt",
+          "reactivationNote",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "VehicleCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "vin": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 40,
+            "description": "Trim and uppercase; globally unique including inactive vehicles. No legal VIN certification is claimed."
+          },
+          "brand": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "modelYear": {
+            "type": "integer",
+            "minimum": 1900,
+            "maximum": 2100
+          },
+          "transmissionType": {
+            "type": "string",
+            "enum": [
+              "automatic",
+              "manual"
+            ]
+          },
+          "fuelType": {
+            "type": "string",
+            "enum": [
+              "petrol",
+              "diesel",
+              "hybrid",
+              "electric",
+              "other"
+            ]
+          },
+          "seatingCapacity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "pickupBranch": {
+            "$ref": "#/components/schemas/Branch"
+          },
+          "ratePerDaySatang": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000000
+          },
+          "availableFrom": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2030-01-20",
+            "description": "Validated inclusive calendar date, Asia/Bangkok; no time component."
+          },
+          "availableUntil": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "nullable": true,
+            "description": "Inclusive final available day; null means no planned end."
+          }
+        },
+        "required": [
+          "vin",
+          "model",
+          "transmissionType",
+          "fuelType",
+          "seatingCapacity",
+          "pickupBranch",
+          "ratePerDaySatang",
+          "availableFrom"
+        ]
+      },
+      "VehicleUpdate": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "pickupBranch": {
+            "$ref": "#/components/schemas/Branch"
+          },
+          "ratePerDaySatang": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000000
+          }
+        },
+        "minProperties": 1
+      },
+      "AvailabilityUpdate": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "availableFrom": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2030-01-20",
+            "description": "Validated inclusive calendar date, Asia/Bangkok; no time component."
+          },
+          "availableUntil": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "nullable": true,
+            "description": "Inclusive final available day; null means no planned end."
+          }
+        },
+        "required": [
+          "availableFrom",
+          "availableUntil"
+        ]
+      },
+      "ActivationUpdate": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "isActive"
+        ]
+      },
+      "Vehicle": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "providerId": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "vin": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 40,
+            "description": "Trim and uppercase; globally unique including inactive vehicles. No legal VIN certification is claimed."
+          },
+          "brand": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "modelYear": {
+            "type": "integer",
+            "minimum": 1900,
+            "maximum": 2100
+          },
+          "transmissionType": {
+            "type": "string",
+            "enum": [
+              "automatic",
+              "manual"
+            ]
+          },
+          "fuelType": {
+            "type": "string",
+            "enum": [
+              "petrol",
+              "diesel",
+              "hybrid",
+              "electric",
+              "other"
+            ]
+          },
+          "seatingCapacity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "pickupBranch": {
+            "$ref": "#/components/schemas/Branch"
+          },
+          "ratePerDaySatang": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000000
+          },
+          "availableFrom": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2030-01-20",
+            "description": "Validated inclusive calendar date, Asia/Bangkok; no time component."
+          },
+          "availableUntil": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "nullable": true,
+            "description": "Inclusive final available day; null means no planned end."
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "providerId",
+          "vin",
+          "model",
+          "transmissionType",
+          "fuelType",
+          "seatingCapacity",
+          "pickupBranch",
+          "ratePerDaySatang",
+          "availableFrom",
+          "availableUntil",
+          "isActive",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "VehicleSnapshot": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "vin": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 40,
+            "description": "Trim and uppercase; globally unique including inactive vehicles. No legal VIN certification is claimed."
+          },
+          "brand": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "modelYear": {
+            "type": "integer",
+            "minimum": 1900,
+            "maximum": 2100
+          },
+          "transmissionType": {
+            "type": "string",
+            "enum": [
+              "automatic",
+              "manual"
+            ]
+          },
+          "fuelType": {
+            "type": "string",
+            "enum": [
+              "petrol",
+              "diesel",
+              "hybrid",
+              "electric",
+              "other"
+            ]
+          },
+          "seatingCapacity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "pickupBranch": {
+            "$ref": "#/components/schemas/Branch"
+          }
+        },
+        "required": [
+          "vin",
+          "model",
+          "transmissionType",
+          "fuelType",
+          "seatingCapacity",
+          "pickupBranch"
+        ]
+      },
+      "BookingCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "vehicleId": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2030-01-20",
+            "description": "Validated inclusive calendar date, Asia/Bangkok; no time component."
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2030-01-20",
+            "description": "Validated inclusive calendar date, Asia/Bangkok; no time component."
+          }
+        },
+        "required": [
+          "vehicleId",
+          "startDate",
+          "dueDate"
+        ]
+      },
+      "BookingDatesUpdate": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2030-01-20",
+            "description": "Validated inclusive calendar date, Asia/Bangkok; no time component."
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2030-01-20",
+            "description": "Validated inclusive calendar date, Asia/Bangkok; no time component."
+          }
+        },
+        "required": [
+          "startDate",
+          "dueDate"
+        ]
+      },
+      "CustomerContact": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "email": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 254,
+            "format": "email"
+          },
+          "telephone": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "telephone"
+        ]
+      },
+      "Booking": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "providerId": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "vehicleId": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/CustomerContact"
+          },
+          "vehicleSnapshot": {
+            "$ref": "#/components/schemas/VehicleSnapshot"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2030-01-20",
+            "description": "Validated inclusive calendar date, Asia/Bangkok; no time component."
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2030-01-20",
+            "description": "Validated inclusive calendar date, Asia/Bangkok; no time component."
+          },
+          "rentalDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          },
+          "ratePerDaySatang": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000000
+          },
+          "totalPriceSatang": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30000000000
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "THB"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "upcoming",
+              "ongoing",
+              "completed",
+              "cancelled"
+            ]
+          },
+          "cancelledAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "cancellationReason": {
+            "type": "string",
+            "enum": [
+              "customer_cancelled",
+              "admin_cancelled",
+              "provider_suspended",
+              null
+            ],
+            "nullable": true
+          },
+          "cancelledBy": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "providerId",
+          "vehicleId",
+          "customer",
+          "vehicleSnapshot",
+          "startDate",
+          "dueDate",
+          "rentalDays",
+          "ratePerDaySatang",
+          "totalPriceSatang",
+          "currency",
+          "status",
+          "cancelledAt",
+          "cancellationReason",
+          "cancelledBy",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ReviewInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "decision": {
+                "type": "string",
+                "enum": [
+                  "approve"
+                ]
+              }
+            },
+            "required": [
+              "decision"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "decision": {
+                "type": "string",
+                "enum": [
+                  "reject"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            },
+            "required": [
+              "decision",
+              "reason"
+            ]
+          }
+        ]
+      },
+      "SuspendInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "ReactivateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "resolutionNote": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "resolutionNote"
+        ]
+      },
+      "SuspensionResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/ProviderPrivate"
+          },
+          "cancelledBookingCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "provider",
+          "cancelledBookingCount"
+        ]
+      },
+      "Ok": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "Health": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "VALIDATION_ERROR",
+              "UNAUTHENTICATED",
+              "FORBIDDEN",
+              "PROVIDER_SUSPENDED",
+              "PROVIDER_NOT_APPROVED",
+              "NOT_FOUND",
+              "EMAIL_TAKEN",
+              "REGISTRATION_NUMBER_TAKEN",
+              "VIN_TAKEN",
+              "PENDING_APPLICATION_EXISTS",
+              "INVALID_STATE",
+              "BOOKING_LIMIT_REACHED",
+              "VEHICLE_UNAVAILABLE",
+              "BOOKING_OVERLAP",
+              "BOOKING_LOCKED",
+              "WINDOW_CONFLICT",
+              "WRITE_CONFLICT",
+              "RATE_LIMITED",
+              "INTERNAL_ERROR"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "success",
+          "code",
+          "message"
+        ]
+      },
+      "Pagination": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "pages": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "page",
+          "limit",
+          "total",
+          "pages"
+        ]
+      },
+      "AuthResultResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/AuthResult"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "UserResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "ProviderPublicResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProviderPublic"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "ProviderPrivateResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProviderPrivate"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "ApplicationResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/Application"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "VehicleResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/Vehicle"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "BookingResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/Booking"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "SuspensionResultResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/SuspensionResult"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "OkResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/Ok"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "HealthResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/Health"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "ProviderPublicListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProviderPublic"
+            }
+          }
+        },
+        "required": [
+          "success",
+          "count",
+          "pagination",
+          "data"
+        ]
+      },
+      "ProviderPrivateListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProviderPrivate"
+            }
+          }
+        },
+        "required": [
+          "success",
+          "count",
+          "pagination",
+          "data"
+        ]
+      },
+      "ApplicationListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Application"
+            }
+          }
+        },
+        "required": [
+          "success",
+          "count",
+          "pagination",
+          "data"
+        ]
+      },
+      "VehicleListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Vehicle"
+            }
+          }
+        },
+        "required": [
+          "success",
+          "count",
+          "pagination",
+          "data"
+        ]
+      },
+      "BookingListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Booking"
+            }
+          }
+        },
+        "required": [
+          "success",
+          "count",
+          "pagination",
+          "data"
+        ]
+      }
+    },
+    "responses": {
+      "400": {
+        "description": "Invalid request shape, date, bounds or unknown fields.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Missing, invalid, expired or revoked credential.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "403": {
+        "description": "Authenticated role/provider state is not permitted.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "Resource is missing or private resource is outside actor scope.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "409": {
+        "description": "Unique, state, booking cap/overlap/window or bounded write conflict.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "429": {
+        "description": "Request rate limit exceeded.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Unexpected server error; no sensitive details.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}
