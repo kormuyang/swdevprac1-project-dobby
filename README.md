@@ -9,3 +9,6 @@ Run `node scripts/check-contract.js` now to check planning consistency; no packa
 The local example/ teaching project is intentionally ignored and is not required to build this project. Original PDFs are not runtime/setup dependencies; their extracted evidence is retained under docs/sources. .env.example contains names only; copy and fill locally when implementing configuration. No secrets or live demo results are included.
 
 Each partner should work on their own branch/clone/worktree and developer database. Saint owns A and Poom owns B. Begin A00/B00 in parallel from the shared planning baseline, as described in the plan.
+
+
+hello test
