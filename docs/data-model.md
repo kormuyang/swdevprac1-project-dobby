@@ -14,6 +14,8 @@ This is the shared Mongoose design; the HTTP DTOs are in `contracts/openapi.json
 
 `name`, `telephone`, `email` (normalized unique login), `passwordHash` (select false), `role`, `providerId` (company only, null otherwise), `bookingRevision` (integer, default 0).
 
+> does this mean a user can only be 1 role at a time? does being admin or company preserve ability to booking like a user
+
 Signup email immutable; no account identity-change/delete/password recovery API. Guard revision has no business count meaning. User.providerId and Provider.representativeId must agree after atomic company signup. Password hashing uses the isModified guard.
 
 Indexes: unique `{email:1}` named `uq_user_email`; partial unique `{providerId:1}` with providerId type ObjectId named `uq_user_provider`. Ensure role/provider consistency in service validation; never unique-index nullable providerId without a filter.
@@ -21,6 +23,8 @@ Indexes: unique `{email:1}` named `uq_user_email`; partial unique `{providerId:1
 ## Provider — A
 
 `representativeId` (User), `businessRegistrationNumber` (trimmed immutable), `status` enum pending/rejected/approved/suspended, `approvedApplicationId` nullable, `latestApplicationId`, `applicationSequence` integer, `revision` integer default 0, `suspensionReason` nullable, `suspendedAt` nullable, `suspendedBy` nullable User, `reactivationNote` nullable, `reactivatedAt` nullable, `reactivatedBy` nullable User.
+
+> assuming we want simplicity, so we just keep only latest suspension, reactivation, application. did i understand correctly?
 
 Indexes: unique registration number (`uq_provider_registration`), unique representativeId (`uq_provider_representative`), `{status:1,createdAt:-1,_id:-1}`.
 
@@ -45,6 +49,10 @@ Indexes: unique sid (`uq_session_sid`), optional expiresAt TTL 0, `{userId:1,rev
 ## Vehicle — B
 
 `providerId` immutable; `vin` uppercase immutable globally unique; optional brand/modelYear; model/transmissionType/fuelType/seatingCapacity immutable; `pickupBranch` embedded `{name,address}`; `ratePerDaySatang`; `availableFrom`; `availableUntil` nullable default null; `isActive` default true; `revision` default 0.
+
+> what is `available` in this context? what if there are many users want to the same vehicle?
+
+> another idea is to have a list of booking and booked date for a particular vehicle, so we can keep track of dates with available/unavailable. 
 
 Company updates only branch and rate through descriptive PATCH. Separate activation and window operations. Window from <= until if end exists; do not force an old window start to be >= today on later edits. Booking validation imposes start >= today. End cannot exclude retained upcoming/ongoing bookings. Existing booking branch snapshot is preserved when current branch changes.
 
