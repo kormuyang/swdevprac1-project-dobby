@@ -1,13 +1,13 @@
 # Dobby Rental Car Booking
 
-Backend-only final-project planning package for two developers. No application has been implemented yet. Node 24, Express/Mongoose and Atlas are selected; setup/runtime commands will be implemented and verified in work packages A00/A04.
+A rental car booking backend by Saint (A) and Poom (B). We have the requirements and API design; the backend, setup scripts and tests still need to be built.
 
-Start with [the two-person implementation plan](docs/implementation-plan.md), then use [Saint's handoff (A)](docs/handoffs/partner-a.md) or [Poom's handoff (B)](docs/handoffs/partner-b.md). The [practice guide](docs/practices.md), [OpenAPI contract](docs/contracts/openapi.json), [data model](docs/data-model.md) and [internal service contract](docs/service-contracts.md) are self-contained. See [docs index](docs/README.md) for all context and source evidence.
+## Start here
 
-Run `node scripts/check-contract.js` now to check planning consistency; no package installation is needed. Backend npm commands remain A00/A04 deliverables.
+- [Requirements](docs/requirements.md): what the system needs to do.
+- [Implementation plan](docs/implementation-plan.md): who works on each task and what to start next.
+- [Design](docs/design.md) and [OpenAPI](docs/contracts/openapi.json): data, service functions and endpoints.
+- [Decisions](docs/decisions.md): agreed choices and remaining questions.
+- [Test checklist](docs/acceptance-checklist.md): cases to check before calling a feature done.
 
-The local example/ teaching project is intentionally ignored and is not required to build this project. Original PDFs are not runtime/setup dependencies; their extracted evidence is retained under docs/sources. .env.example contains names only; copy and fill locally when implementing configuration. No secrets or live demo results are included.
-
-Each partner should work on their own branch/clone/worktree and developer database. Saint owns A and Poom owns B. Begin A00/B00 in parallel from the shared planning baseline, as described in the plan.
-
-> i dont know if we want to explicitly disclose ai usage or not, because this amount of docs and openapi is definitely not a human's work. btw, this size of documents are too much too read bro.
+Follow [AGENTS.md](AGENTS.md) when coding. A00/A04 will add verified setup, run and test commands. `.env.example` lists the variables we will need.
