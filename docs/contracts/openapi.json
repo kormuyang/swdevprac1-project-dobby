@@ -3,7 +3,7 @@
   "info": {
     "title": "Dobby Rental Car Booking API",
     "version": "1.0.0",
-    "description": "Design contract for a backend-only pair project. Not a deployed or implemented API. All date-only rules use Asia/Bangkok; monetary values are integer satang. Unknown input/query fields are rejected. API contract is authoritative; examples are synthetic. See docs/api-contract.md for error precedence and docs/service-contracts.md for atomic behavior."
+    "description": "Design contract for a backend-only pair project. Not a deployed or implemented API. All date-only rules use Asia/Bangkok; monetary values are integer satang. Unknown input/query fields are rejected. API contract is authoritative; examples are synthetic. See docs/design.md for error precedence and atomic behavior."
   },
   "servers": [
     {
