@@ -44,11 +44,11 @@ Copy `.env.example` to `.env`. Set `MONGO_URI` to a dedicated `dobby_dev_a` or `
 
 `npm run reset:test` drops the database named by `TEST_MONGO_URI` only when it is exactly `dobby_test_a` and `ALLOW_TEST_DB_RESET=true`. This deletes all data in that test database. Never point it at development or shared data. Seed and reset reject a missing or differently named database before connecting.
 
-The committed tests check these guards without connecting to MongoDB. Two seed runs passed against a temporary local MongoDB 8.0.38 replica set: counts, roles, references, bcrypt hashes and indexes were checked. Actual reset remains unverified. Atlas remains unverified.
+The committed tests check these guards without connecting to MongoDB. Two seed runs passed against a temporary local MongoDB 8.0.38 replica set: counts, roles, references, bcrypt hashes and indexes were checked. The explicit-flag reset emptied only local dobby_test_a and preserved the separate dev fixtures. Seed also refused replacement when a fixture customer had a booking, preserving the accounts. Atlas remains unverified.
 
 ## A02 company review
 
-Company representatives can read their approved profile, list application history, read an owned version and submit an immutable profile revision. Admins can list/read providers and applications and approve or reject one pending version. See [A02 flow and verification limits](docs/diagrams/a02-company-review.md). The local suite includes provider validation and serializer checks. `npm run test:integration` also runs the provider review test against an explicitly configured `dobby_test_a` replica set; it has not been run unless reported separately.
+Company representatives can read their approved profile, list application history, read an owned version and submit an immutable profile revision. Admins can list/read providers and applications and approve or reject one pending version. See [A02 flow and verification limits](docs/diagrams/a02-company-review.md). The local suite includes provider validation and serializer checks. `npm run test:integration` also runs the provider review test against an explicitly configured `dobby_test_a` replica set; it passed under Node 24 against the temporary local replica set, including concurrent submissions, scoped privacy and approval during suspension.
 
 
 ## A01 verification
