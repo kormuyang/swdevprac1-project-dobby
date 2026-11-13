@@ -1,27 +1,51 @@
-const app = require('./app');
-const { getConfig } = require('./config/env');
-const { connectToDatabase, disconnectFromDatabase } = require('./config/db');
+require('dotenv').config({ quiet: true });
 
-async function startServer() {
-  const config = getConfig();
-  await connectToDatabase(config.mongoUri);
+const express = require('express');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const { rateLimit } = require('express-rate-limit');
+const helmet = require('helmet');
+const swaggerUi = require('swagger-ui-express');
 
-  const server = app.listen(config.port, () => {
-    console.log(`Dobby API listening on port ${config.port}`);
+const openApiDocument = require('./docs/contracts/openapi.json');
+const connectDB = require('./config/db');
+
+const app = express();
+const PORT = process.env.PORT || 5003;
+
+connectDB();
+
+app.use(cors());
+app.use(express.json());
+app.use(helmet());
+app.use(cookieParser());
+app.set('query parser', 'extended');
+app.use(rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 1000,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  handler(req, res) {
+    res.status(429).json({
+      success: false,
+      message: 'Too many requests. Try again later.',
+    });
+  },
+}));
+
+app.get('/api/v1/health', (req, res) => {
+  res.status(200).json({ success: true, data: { status: 'ok' } });
+});
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'The requested resource was not found.',
   });
+});
 
-  server.on('close', () => {
-    void disconnectFromDatabase();
-  });
-
-  return server;
-}
-
-if (require.main === module) {
-  startServer().catch(() => {
-    console.error('Dobby API failed to start. Check configuration and database availability.');
-    process.exitCode = 1;
-  });
-}
-
-module.exports = { startServer };
+app.listen(PORT, () => {
+  console.log(`Dobby API listening on port ${PORT}`);
+});

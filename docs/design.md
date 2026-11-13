@@ -2,6 +2,8 @@
 
 Use [OpenAPI](contracts/openapi.json) for endpoint names, inputs and response shapes. This file covers data, shared API rules and service functions. Update affected definitions together before changing the implementation.
 
+Only the foundation middleware, health handler, Swagger mount, and fallback responses are defined. Feature policies, persistence models, and service interfaces below are planned.
+
 ## Contents
 
 - [Application structure](#application-structure)
@@ -11,19 +13,18 @@ Use [OpenAPI](contracts/openapi.json) for endpoint names, inputs and response sh
 
 ## Application structure
 
-Use Node 24/npm/CommonJS, Express 5, Mongoose 9 and Atlas. Supporting packages: dotenv, bcryptjs, jsonwebtoken, Helmet, express-rate-limit, swagger-ui-express and Newman. A00 verifies and pins compatible versions.
+Use Node 24/npm/CommonJS, Express 5, Mongoose 9 and Atlas. Installed packages include dotenv, bcryptjs, jsonwebtoken, CORS, cookie-parser, Helmet, express-rate-limit, swagger-ui-express and Newman. Package versions are pinned in the manifest and lockfile.
 
-- `app.js` exports Express without connecting or listening.
-- `server.js` validates configuration, waits for DB readiness, then listens.
+- `server.js` loads the environment, initializes Express, and starts `connectDB()` without awaiting it. It mounts middleware/routes and defines `app.listen()`. See [README](../README.md) for runtime verification limits.
 - Use config/routes/controllers/services/models/middleware/utils, plus scripts/tests/postman. See [coding practices](../AGENTS.md#coding-practices) for responsibilities.
 
-Local API: `http://localhost:5003/api/v1`. Swagger UI at `/api-docs` serves the committed JSON. Import it into the demo collection and add assertions; preserve scripts when regenerating requests. No hosted workspace, cookie auth, permissive CORS or overlapping sanitizer packages are needed.
+The configured local port defaults to 5003. Health is at `/api/v1/health`; Swagger UI at `/api-docs` serves committed JSON. CORS uses default middleware options. `cookie-parser` parses cookies; it does not implement cookie authentication. Bearer authentication remains planned.
 
 ## HTTP policies
 
 ### Input and responses
 
-Accept JSON up to 16 KiB. Reject unknown body/query fields, wrong scalar/array/operator types and malformed IDs. IDs are 24 hex characters; dates must be real YYYY-MM-DD calendar dates. Normalize only the specified strings; do not turn objects/arrays into strings. `Satang` fields are safe integers.
+Planned input policy: accept JSON up to 16 KiB; reject unknown body/query fields, wrong scalar/array/operator types and malformed IDs. Current `express.json()` uses its default settings and no custom parser-error handler. IDs are 24 hex characters; dates must be real YYYY-MM-DD calendar dates. Normalize only the specified strings; do not turn objects/arrays into strings. `Satang` fields are safe integers.
 
 Success: `{success:true,data:...}`. Lists also return count (rows on this page) and pagination `{page,limit,total,pages}`.
 
@@ -33,7 +34,7 @@ Success: `{success:true,data:...}`. Lists also return count (rows on this page) 
 - Default sort: createdAt descending, then id descending.
 - Application history: version descending. Admin queue: submittedAt ascending, then id ascending.
 
-Errors: `{success:false,code,message}`. Keep messages safe; do not return stacks, DB diagnostics, connection strings, raw queries or tokens. Clients cannot choose arbitrary projections or populate fields.
+Errors: `{success:false,message}`. Use HTTP status plus a safe reason in the message; do not return stacks, DB diagnostics, connection strings, raw queries or tokens. Clients cannot choose arbitrary projections or populate fields.
 
 ### Validation order
 
@@ -46,19 +47,19 @@ authentication → role → provider state → input validation → scoped looku
 
 Repeat transaction-sensitive checks after acquiring guards. A unique-index error at write time still needs a domain error.
 
-| Status | Codes |
+| Status | Reason |
 | --- | --- |
-| 400 | VALIDATION_ERROR |
-| 401 | UNAUTHENTICATED |
-| 403 | FORBIDDEN, PROVIDER_SUSPENDED, PROVIDER_NOT_APPROVED |
-| 404 | NOT_FOUND (also another owner's private resource) |
-| 409 | EMAIL_TAKEN, REGISTRATION_NUMBER_TAKEN, VIN_TAKEN, PENDING_APPLICATION_EXISTS, INVALID_STATE, BOOKING_LIMIT_REACHED, VEHICLE_UNAVAILABLE, BOOKING_OVERLAP, BOOKING_LOCKED, WINDOW_CONFLICT, WRITE_CONFLICT |
-| 429 | RATE_LIMITED |
-| 500 | INTERNAL_ERROR |
+| 400 | Invalid input or request shape |
+| 401 | Missing, invalid, expired, or revoked session; generic invalid credentials |
+| 403 | Authenticated actor lacks permission or provider is not eligible |
+| 404 | Missing or hidden resource, including another owner's private resource |
+| 409 | Duplicate, invalid state, booking limit, unavailable vehicle, overlap, cutoff, window, or write conflict |
+| 429 | Request limit exceeded |
+| 500 | Unexpected server failure |
 
-Return 404 for another owner's private record, or a public detail request for an inactive vehicle, suspended provider or other hidden record. Unapproved company management returns PROVIDER_NOT_APPROVED. A customer booking an ineligible listing gets 409 VEHICLE_UNAVAILABLE without private application details.
+Return 404 for another owner's private record, or a public detail request for an inactive vehicle, suspended provider or other hidden record. Unapproved company management returns 403. A customer booking an ineligible listing gets 409 without private application details.
 
-Health/Swagger are public. Authentication is Bearer only. Wrong login credentials get one generic 401 message; valid suspended accounts get 403 PROVIDER_SUSPENDED. Logout requires a valid session but bypasses the company-state check and returns no company data. Reusing its token then returns 401.
+Health/Swagger are public. Authentication is Bearer only. Wrong login credentials get one generic 401 message; valid suspended accounts get 403. Logout requires a valid session but bypasses the company-state check and returns no company data. Reusing its token then returns 401.
 
 ### Access and discovery
 
@@ -74,7 +75,7 @@ Public discovery returns approved providers and active vehicles, with no private
 
 ### Defaults and normalization
 
-Use Helmet. Rate limits per IP: 1000 API requests per 10 minutes, plus 20 login/signup requests per 15 minutes. Use `windowMs`; limits can be adjusted through validated test/demo configuration. Never log password/document payloads.
+Current A00 mounts one IP rate limiter at 1000 requests per 10 minutes before health and Swagger, so it applies to those routes too. A separate 20-request login/signup limit per 15 minutes is planned with authentication. Helmet is mounted. Never log password/document payloads.
 
 Trim registration numbers without changing case. Trim/uppercase VINs; uniqueness includes inactive vehicles. Phone numbers are strings. Document links must be valid HTTPS URLs and visible only to owner/admin. Do not fetch, preview, classify or host them. The submitter controls external sharing permissions; we make no legal authenticity checks.
 
@@ -120,7 +121,7 @@ Indexes: unique registration number (`uq_provider_registration`), unique represe
 
 `providerId`, `version` positive sequence, `businessRegistrationNumber` immutable copy, `profile` embedded `{legalName,registeredAddress,telephone,contactEmail,documentUrl}`, `status` pending/approved/rejected, `rejectionReason` nullable, `reviewedBy` nullable, `submittedAt`, `reviewedAt` nullable.
 
-Read the approved profile through approvedApplicationId. Submitted fields are fixed; review changes status/reviewer/reason/time only. Review requires pending status and either approval or rejection with a nonempty reason; repeating it returns 409 INVALID_STATE.
+Read the approved profile through approvedApplicationId. Submitted fields are fixed; review changes status/reviewer/reason/time only. Review requires pending status and either approval or rejection with a nonempty reason; repeating it returns 409 with an invalid-state reason.
 
 The server copies registration identity. Change company contact email through a new profile version; it need not be unique. Allocate versions under the provider guard.
 
@@ -173,6 +174,8 @@ Use CommonJS named exports. I/O functions return promises and records, not Expre
 
 ### Context and shared helpers
 
+Centralized API error abstractions are deferred until the codebase is mature enough to demonstrate their value (D-39). Return `{success:false,message}` with the HTTP status conveying the category (D-41). Services may throw ordinary `Error` objects with an HTTP `status`; controllers map those to responses locally and return safe messages.
+
 A provides `middleware/auth.js` with `protect`, `authorize(...roles)` and company-state checks:
 
 ```js
@@ -184,18 +187,16 @@ req.actor = {
 };
 ```
 
-Services receive `ctx = { actor: req.actor, clock }`, where clock has `now(): Date`. Use a real shared clock by default and inject it for tests. Services must recheck scope/provider state inside transactions. Admin service calls also check actor.role, even with route middleware.
-
-A owns `utils/ApiError.js`: `new ApiError(status, code, message)`, plus `middleware/error.js`. B uses the same class.
+Services receive `ctx = { actor: req.actor, clock }`, where clock has `now(): Date`. Use a real shared clock by default and inject it for tests. Services must recheck scope/provider state inside transactions. Admin service calls also check actor.role, even with route middleware. A feature service owns its transaction boundary when that feature needs atomic writes. Every database operation in one transaction uses the same session, sequentially. Select transaction options and retry handling when implementing the feature; no shared transaction wrapper is part of A00.
 
 B provides pure helpers:
 
 - utils/dates.js: `todayBangkok(now)`, `validateDateOnly(value)`, `inclusiveDays(startDate,dueDate)`, `overlaps(aStart,aDue,bStart,bDue)`, `bookingStatus(booking,today)`.
 - utils/money.js: `calculateTotal(ratePerDaySatang,rentalDays)`.
 
-Invalid helper input throws ApiError 400 VALIDATION_ERROR. Importing helpers must not load app/DB.
+Invalid helper input throws an ordinary error with status 400 and a safe reason. Importing helpers must not load app/DB.
 
-A's provider service can import B's bookingCancellation. B can import Provider and transaction helpers, but not A's provider service, to avoid a circular import.
+A's provider service can import B's bookingCancellation. Keep feature services independent to avoid circular imports; transaction and guard code stays with the feature that owns it.
 
 ### Service functions
 
@@ -213,39 +214,24 @@ IDs are normalized strings; list filters are parsed/validated. Services still en
 | services/bookings.js / B | createBooking(input,ctx), updateBookingDates(id,input,ctx), cancelBooking(id,ctx), getBooking(id,ctx), listBookings(filters,ctx) | Booking/Page; user/admin scope only |
 | services/bookings.js / B | listCompanyBookings(filters,ctx), getCompanyBooking(id,ctx) | Booking/Page; approved own provider only |
 
-`Page<T> = {data:T[],count:number,pagination:{page,limit,total,pages}}`. Controllers add success:true without nesting Page inside data. Reads use one today value per response; transactions capture time per attempt.
+`Page<T> = {data:T[],count:number,pagination:{page,limit,total,pages}}`. Controllers add success:true without nesting Page inside data. Reads use one today value per response; each transaction attempt uses one captured time value.
 
-### Transactions
+### Transaction-sensitive writes
 
-A's services/transactions.js exports `runTransaction(work, {clock})`. It starts/ends a Mongoose session and calls `work({session,now,today})` using the shared calendar helper.
+Use transactions for the multi-record writes identified below. Guard operations are implemented in the owning feature services and coordinated between A and B; A03a is the guard agreement and integration point, not a generic transaction framework. Acquire guards in this order: provider → sorted users → sorted vehicles. Each transaction concerns one provider; never acquire another provider after user locks. The User guard protects the booking cap across providers. Missing guard targets return scoped 404 responses, not placeholder records.
 
-- Use the same session for all DB operations, without parallel calls.
-- Retry transient failures at most three attempts within a 2500 ms request budget. Configure/test driver timeouts and record actual timing; the budget cannot forcibly cancel a DB call.
-- Known uncommitted conflicts that exhaust retries return 409 WRITE_CONFLICT. Unknown commit outcomes need driver commit-result handling, not a claim that retrying is safe.
-- The callback may repeat, so keep HTTP output and irreversible external effects outside it.
-
-Also export:
-
-```js
-lockProvider(providerId, session) // $inc Provider.revision, return current record
-lockUsers(userIds, session)      // sorted unique IDs; $inc bookingRevision
-lockVehicles(vehicleIds, session) // sorted unique IDs; $inc revision
-```
-
-Lock in this order: provider → sorted users → sorted vehicles. Each transaction concerns one provider; never acquire another provider after user locks. The shared User guard protects the cap across providers. Missing guard targets return scoped NOT_FOUND, not placeholder records.
-
-Note: counting inside a transaction alone can still allow competing inserts. All write paths need the shared guards and same-session rechecks.
+Counting inside a transaction alone can still allow competing inserts. All affected write paths need the specified guards, same-session checks and writes, and rechecks after acquiring guards.
 
 ### Booking writes — B
 
 1. Identify fixed provider/user/vehicle references. Preliminary reads only identify targets; do not trust them for final validation.
-2. Start the transaction, take guards in order, re-read records and check matching references, scope and provider/vehicle eligibility.
+2. Start the service-owned transaction, take guards in order, re-read records and check matching references, scope and provider/vehicle eligibility.
 3. Check state/cutoff before proposed dates, then cap and overlap. Date PATCH needs both dates, new start >= today and the full rental inside the window. Count owner bookings excluding self on edit: fewer than three before creation, at most three after edit.
 4. Creation snapshots current vehicle/branch/rate. Edits keep snapshots/rate and recalculate days/total. Cancellation retains the record and stamps actor/reason/time once. Commit before returning the response.
 
 Customer cancellation and customer/admin date edits require today < old startDate. Admin may emergency-cancel ongoing rentals. A booking starting today is already ongoing; test that it cannot be customer-cancelled or date-edited.
 
-DELETE means cancellation. Repeating an authorized cancellation returns 200 with no new effects. Completed cancellation returns 409 BOOKING_LOCKED. Cancelled records cannot be edited or restored; do not maintain negative cancellation counters.
+DELETE means cancellation. Repeating an authorized cancellation returns 200 with no new effects. Cancelling a completed booking returns 409 with a completed-state reason. Cancelled records cannot be edited or restored; do not maintain negative cancellation counters.
 
 ### Suspension — A and B
 
@@ -256,13 +242,13 @@ cancelNonCompletedForProvider({ providerId, actorId, today, now, session })
 // -> { cancelledBookingCount: number }
 ```
 
-The caller must already hold the provider guard in that transaction. B queries confirmed provider bookings with dueDate >= today, locks sorted users then sorted vehicles, and re-reads/updates the scoped set. Set state cancelled, reason provider_suspended, cancelledBy actorId and cancelledAt now. Return the actual modified count.
+The caller must already hold the provider guard and passes its session to this helper. B queries confirmed provider bookings with dueDate >= today, applies sorted user and vehicle guards in that same session, and re-reads/updates the scoped set. Set state cancelled, reason provider_suspended, cancelledBy actorId and cancelledAt now. Return the actual modified count.
 
 This helper does not start a transaction, change provider state, respond to HTTP or trigger external effects.
 
-A's suspendProvider checks admin, opens the transaction, locks the approved provider, sets suspended/reason/time and calls B with the same session. Return only after commit. If cancellation fails, roll back both changes. Leave completed/cancelled history unchanged.
+A's suspendProvider checks admin, owns the transaction, applies the approved-provider guard, sets suspended/reason/time and calls B with the same session. Return only after commit. If cancellation fails, roll back both changes. Leave completed/cancelled history unchanged.
 
-Reactivation needs admin, suspended state, an approved profile and resolutionNote; restore eligibility only. Repeated lifecycle actions return INVALID_STATE. Booking/listing writes take the same provider guard, so they commit before suspension and are cancelled, or retry against suspended state. Test these races; do not cancel in a separate transaction.
+Reactivation needs admin, suspended state, an approved profile and resolutionNote; restore eligibility only. Repeated lifecycle actions return 409 with an invalid-state reason. Booking/listing writes take the same provider guard, so they commit before suspension and are cancelled, or retry against suspended state. Test these races; do not cancel in a separate transaction.
 
 ### Application and vehicle writes
 

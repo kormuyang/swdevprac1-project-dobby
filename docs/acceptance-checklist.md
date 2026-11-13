@@ -1,6 +1,6 @@
 # Test checklist
 
-These tests are planned, not run. Use node:test for pure rules, isolated Atlas integration for DB behavior, and Runner/Newman for the demo. Check what was saved as well as the response.
+These tests are planned, not run; no test scripts or feature tests currently exist. Use node:test for pure rules, isolated Atlas integration for DB behavior, and Runner/Newman for the demo. Check what was saved as well as the response.
 
 ## Test data
 
@@ -62,7 +62,7 @@ Fix Thailand today to 2030-01-10 in unit tests. Integration/demo dates can be re
 | T35 | Race suspension against creation/date edits. Successful suspension leaves no confirmed non-completed booking for that provider. | A+B | FR-14 |
 | T36 | While suspended, old sessions and fresh login cannot grant protected reads/writes. Logout works; public discovery leaks no private data. | A+B | FR-14, NFR-02 |
 | T37 | Reactivation needs admin and a resolution note. Restore eligibility, not bookings; reject repeated invalid transitions. | A+B | FR-14 |
-| T38 | Return consistent safe errors for missing/malformed IDs, operator objects, unknown fields, bad pagination, oversized bodies and auth throttling. | A+B | NFR-01, NFR-02 |
+| T38 | Return `{success:false,message}` with appropriate HTTP status for missing/malformed IDs, operator objects, unknown fields, bad pagination, oversized bodies and auth throttling. | A+B | NFR-01, NFR-02 |
 | T39 | Public provider/vehicle responses never populate private bookings, applications, customer contact or document links. | B | NFR-02 |
 
 ## Demo and delivery
