@@ -35,13 +35,21 @@ function validateObjectId(value, name) {
 
 function validatePage(query, { statuses, allowProviderId = false } = {}) {
   const allowed = ['page', 'limit'];
-  if (statuses) allowed.push('status');
-  if (allowProviderId) allowed.push('providerId');
+  if (statuses) {
+    allowed.push('status');
+  }
+  if (allowProviderId) {
+    allowed.push('providerId');
+  }
   const unknown = Object.keys(query).find((key) => !allowed.includes(key));
-  if (unknown) throw badRequest(`Unknown query parameter: ${unknown}.`);
+  if (unknown) {
+    throw badRequest(`Unknown query parameter: ${unknown}.`);
+  }
   function integer(name, fallback, max = Number.MAX_SAFE_INTEGER) {
-    if (query[name] === undefined) return fallback;
-    if (!/^[1-9]\d*$/.test(query[name]) || Number(query[name]) > max) {
+    if (query[name] === undefined) {
+      return fallback;
+    }
+    if (typeof query[name] !== 'string' || !/^[1-9]\d*$/.test(query[name]) || Number(query[name]) > max) {
       throw badRequest(`${name} must be a positive integer no greater than ${max}.`);
     }
     return Number(query[name]);
@@ -50,10 +58,14 @@ function validatePage(query, { statuses, allowProviderId = false } = {}) {
   const limit = integer('limit', 25, 100);
   const result = { page, limit };
   if (query.status !== undefined) {
-    if (!statuses?.includes(query.status)) throw badRequest('status is invalid.');
+    if (!statuses?.includes(query.status)) {
+      throw badRequest('status is invalid.');
+    }
     result.status = query.status;
   }
-  if (query.providerId !== undefined) result.providerId = validateObjectId(query.providerId, 'providerId');
+  if (query.providerId !== undefined) {
+    result.providerId = validateObjectId(query.providerId, 'providerId');
+  }
   return result;
 }
 
