@@ -133,7 +133,7 @@ async function submitApplication(req, res) {
 async function listAdminProviders(req, res) {
   try {
     const page = req.page;
-    const filter = page.status ? { status: page.status } : {};
+    const filter = page.status ? { status: { $eq: String(page.status) } } : {};
     const [providers, total] = await Promise.all([
       Provider.find(filter).sort({ createdAt: -1, _id: -1 }).skip((page.page - 1) * page.limit).limit(page.limit),
       Provider.countDocuments(filter),
@@ -165,10 +165,10 @@ async function listAdminApplications(req, res) {
     const page = req.page;
     const filter = {};
     if (page.status) {
-      filter.status = page.status;
+      filter.status = { $eq: String(page.status) };
     }
     if (page.providerId) {
-      filter.providerId = page.providerId;
+      filter.providerId = new mongoose.Types.ObjectId(page.providerId);
     }
     const [applications, total] = await Promise.all([
       ProviderApplication.find(filter).sort({ submittedAt: 1, _id: 1 }).skip((page.page - 1) * page.limit).limit(page.limit),
