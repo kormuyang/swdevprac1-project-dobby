@@ -12,7 +12,7 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "test": "node --test tests/auth.test.js tests/providers.test.js",
-    "test:integration": "node --test tests/auth.integration.test.js tests/providers.integration.test.js"
+    "test:integration": "node --test tests/auth.integration.test.js tests/providers.integration.test.js tests/lifecycle.integration.test.js"
   },
   "dependencies": {
     "bcryptjs": "3.0.3",

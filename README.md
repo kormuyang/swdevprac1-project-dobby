@@ -48,3 +48,10 @@ Company representatives can read their approved profile, list application histor
 Run `npm test` under Node 24 for the local auth checks. Seven tests pass, covering input validation, safe output, bcrypt save behavior and JWT/session middleware with database methods mocked. A separate native-HTTP smoke check passed safe parser errors, authentication-first denial and the shared 20-request auth limiter without a database connection.
 
 Run `npm run test:integration` with `TEST_MONGO_URI` supplied locally. The test accepts only `dobby_test_a`, creates auth indexes, uses synthetic fixtures and removes only its own records. It checks company signup persistence, duplicate-registration rollback and independent session logout. It passed against a temporary local MongoDB 8.0.38 replica set under Node 24. This is not Atlas verification or full T01–T06, T11, T36 or T38 coverage. T06 application reads and vehicle/booking restrictions also depend on A02 and B.
+
+
+## A03 lifecycle
+
+Admin suspend/reactivate routes are mounted under `/api/v1/admin/providers`. The controller owns the transaction. `services/bookingCancellation.js` implements the agreed cancellation interface against the actual booking/vehicle collections; B must use the same guards in its writers. See [A03 diagrams and integration boundary](docs/diagrams/a03-provider-lifecycle.md).
+
+The A03 Node 24 integration test passed against temporary local MongoDB 8.0.38. It checks cancellation scoping, rollback after cancellation writes, suspended session denial/logout, reactivation without restoration, and a competing guarded transaction. B HTTP integration, Atlas and partner review remain pending.
