@@ -11,7 +11,7 @@ const AuthSession = require('../models/AuthSession');
 const bookingCancellation = require('../services/bookingCancellation');
 
 // These native fixtures exercise the agreed B collection/guard contract, not B's unimplemented HTTP APIs.
-test('suspension cancels atomically, blocks old sessions, and reactivation restores no bookings', async (t) => {
+test('suspension cancels atomically, blocks old sessions, and reactivation restores no bookings', { timeout: 30000 }, async (t) => {
   const uri = process.env.TEST_MONGO_URI;
   assert.ok(uri, 'TEST_MONGO_URI must name dedicated dobby_test_a.');
   assert.equal(new URL(uri).pathname, '/dobby_test_a');
@@ -62,10 +62,11 @@ test('suspension cancels atomically, blocks old sessions, and reactivation resto
   const admin = await account('admin');
   const company = await account('company', providerId);
   const customer = await account('user');
+  const registrationNumber = randomUUID();
   await Provider.create({ _id: providerId, representativeId: company.user._id,
-    businessRegistrationNumber: randomUUID(), status: 'approved', approvedApplicationId: applicationId,
+    businessRegistrationNumber: registrationNumber, status: 'approved', approvedApplicationId: applicationId,
     latestApplicationId: applicationId, applicationSequence: 1 });
-  await ProviderApplication.create({ _id: applicationId, providerId, version: 1, businessRegistrationNumber: randomUUID(),
+  await ProviderApplication.create({ _id: applicationId, providerId, version: 1, businessRegistrationNumber: registrationNumber,
     status: 'approved', profile: { legalName: 'Lifecycle Synthetic', registeredAddress: 'Test address',
       telephone: '123456789', contactEmail: 'contact@example.test', documentUrl: 'https://example.test/document' } });
   const vehicles = mongoose.connection.collection('vehicles');
@@ -110,6 +111,8 @@ test('suspension cancels atomically, blocks old sessions, and reactivation resto
   assert.equal((await bookings.findOne({ _id: otherId })).state, 'confirmed');
   assert.equal((await action('suspend', { reason: 'Again' })).status, 409);
   assert.equal((await fetch(`${base}/api/v1/auth/me`, { headers: { authorization: `Bearer ${company.token}` } })).status, 403);
+  assert.equal((await fetch(`${base}/api/v1/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email: company.user.email, password: 'test-lifecycle-pass' }) })).status, 403);
   assert.equal((await fetch(`${base}/api/v1/auth/logout`, { method: 'POST', headers: { authorization: `Bearer ${company.token}` } })).status, 200);
   assert.equal((await action('reactivate', { resolutionNote: 'Resolved' })).status, 200);
   assert.equal((await action('reactivate', { resolutionNote: 'Again' })).status, 409);
@@ -149,15 +152,45 @@ test('suspension cancels atomically, blocks old sessions, and reactivation resto
     await bookings.insertOne({ _id: raceId, userId: customer.user._id, vehicleId, providerId,
       state: 'confirmed', startDate: today, dueDate: '2099-12-31' }, { session });
   });
+  let contentionObserved;
+  const contention = new Promise((resolve) => { contentionObserved = resolve; });
+  const originalGuard = Provider.findByIdAndUpdate;
+  const guardObserver = t.mock.method(Provider, 'findByIdAndUpdate', function (...args) {
+    const query = originalGuard.apply(this, args);
+    if (args[2].session === session) {
+      return query;
+    }
+    return query.exec().catch((error) => {
+      if (error.hasErrorLabel?.('TransientTransactionError')) {
+        contentionObserved();
+      }
+      throw error;
+    });
+  });
+  let suspension;
+  let timeout;
   try {
     await locked;
-    const suspension = action('suspend', { reason: 'Race test' });
+    suspension = action('suspend', { reason: 'Race test' });
+    // Hold the competing transaction until MongoDB reports an actual guard conflict.
+    await Promise.race([
+      contention,
+      new Promise((resolve, reject) => {
+        timeout = setTimeout(() => reject(new Error('No provider guard contention was observed.')), 5000);
+      }),
+    ]);
     release();
     await creation;
     assert.equal((await suspension).status, 200);
     assert.equal(await bookings.countDocuments({ providerId, state: 'confirmed', dueDate: { $gte: today } }), 0);
   } finally {
+    clearTimeout(timeout);
     release();
+    await creation;
+    if (suspension) {
+      await suspension;
+    }
+    guardObserver.mock.restore();
     await session.endSession();
   }
 });
