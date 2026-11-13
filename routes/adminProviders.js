@@ -46,10 +46,10 @@ function reviewInput(req, res, next) {
 
 router.use(protect(), authorize('admin'), parseJson);
 router.get('/providers', pageOptions, rejectBody, controller.listAdminProviders);
-router.get('/providers/:providerId', rejectQuery(), pathId, rejectBody, controller.getAdminProvider);
+router.get('/providers/:providerId', rejectQuery, pathId, rejectBody, controller.getAdminProvider);
 router.get('/applications', pageOptions, rejectBody, controller.listAdminApplications);
-router.get('/applications/:applicationId', rejectQuery(), pathId, rejectBody, controller.getAdminApplication);
-router.post('/applications/:applicationId/review', rejectQuery(), pathId, reviewInput, controller.reviewApplication);
+router.get('/applications/:applicationId', rejectQuery, pathId, rejectBody, controller.getAdminApplication);
+router.post('/applications/:applicationId/review', rejectQuery, pathId, reviewInput, controller.reviewApplication);
 
 router.use((error, req, res, next) => {
   if (error?.status >= 400 && error.status < 500) {

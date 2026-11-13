@@ -25,11 +25,11 @@ const authRateLimit = rateLimit({
   },
 });
 
-router.post('/register', authRateLimit, parseJson, rejectQuery(), authController.registerCustomer);
-router.post('/register-company', authRateLimit, parseJson, rejectQuery(), authController.registerCompany);
-router.post('/login', authRateLimit, parseJson, rejectQuery(), authController.login);
-router.post('/logout', protect({ allowSuspended: true }), parseJson, rejectQuery(), rejectBody, authController.logout);
-router.get('/me', protect(), parseJson, rejectQuery(), rejectBody, authController.getMe);
+router.post('/register', authRateLimit, parseJson, rejectQuery, authController.registerCustomer);
+router.post('/register-company', authRateLimit, parseJson, rejectQuery, authController.registerCompany);
+router.post('/login', authRateLimit, parseJson, rejectQuery, authController.login);
+router.post('/logout', protect({ allowSuspended: true }), parseJson, rejectQuery, rejectBody, authController.logout);
+router.get('/me', protect(), parseJson, rejectQuery, rejectBody, authController.getMe);
 
 router.use((error, req, res, next) => {
   if (error?.status >= 400 && error.status < 500) {
