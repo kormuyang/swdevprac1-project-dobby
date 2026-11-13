@@ -14,7 +14,7 @@ Follow [AGENTS.md](AGENTS.md) when coding. Use Node 24. Copy `.env.example` to `
 
 `server.js` defines the middleware and listener, and invokes `connectDB()` without awaiting it. `config/db.js` enables Mongoose `strictQuery`, connects using `MONGO_URI`, and logs the connected host.
 
-A Node 24 smoke check passed for startup, cookie parsing, health, CORS/Helmet headers, Swagger, and the JSON 404 response. Environment loading and database access were mocked. A live database connection has not been verified.
+A Node 24 smoke check passed for startup, cookie parsing, health, CORS/Helmet headers, Swagger, and the JSON 404 response. Environment loading and database access were mocked. Startup and health also passed under Node 24 against a temporary local MongoDB 8.0.38 replica set. Connection rejection was checked to exit with status 1 and a generic message. Atlas remains unverified.
 
 Install dependencies and run the available development/start commands:
 
