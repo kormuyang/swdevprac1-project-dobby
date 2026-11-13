@@ -26,9 +26,11 @@ These use cases cover A01 authentication, A02 company applications, and A03 prov
 
 - Authentication: `POST /auth/register`, `POST /auth/register-company`, `POST /auth/login`, `GET /auth/me`, `POST /auth/logout`.
 - Company applications: `GET /company/profile`, `GET /company/applications`, `POST /company/applications`, and `GET /company/applications/{applicationId}`.
-- Admin review: `GET /admin/providers`, `GET /admin/applications`, and `POST /admin/applications/{applicationId}/review`.
+- Admin review: `GET /admin/providers`, `GET /admin/providers/{providerId}`, `GET /admin/applications`, `GET /admin/applications/{applicationId}`, and `POST /admin/applications/{applicationId}/review`.
 - Provider lifecycle: `POST /admin/providers/{providerId}/suspend` and `POST /admin/providers/{providerId}/reactivate`.
 
 ## Diagram notation
 
 The sequence diagrams are Mermaid engineering diagrams. They do not claim to use the instructor's UML Profile for API. D-07 remains open until the required notation is confirmed.
+
+See the [implemented A API map](diagrams/a-api.md) for access and endpoint groups.

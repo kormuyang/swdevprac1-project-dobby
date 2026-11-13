@@ -1,6 +1,6 @@
 # Dobby Rental Car Booking
 
-A rental car booking backend by Saint (A) and Poom (B). A00 provides the foundation; A01 implements auth, A02 company review, A03 suspension/reactivation and A04 seed/reset. Vehicle/booking APIs and the Newman demo remain planned.
+A rental car booking backend by Saint (A) and Poom (B). A00 provides the foundation; A01 implements auth, A02 company review, A03 suspension/reactivation and A04 seed/reset. A05 provides use cases, diagrams and an A-only Newman demo. Vehicle/booking APIs remain planned.
 
 ## Start here
 
@@ -52,7 +52,7 @@ Company representatives can read their approved profile, list application histor
 
 ## Auth and provider demo
 
-The A-only Postman collection runs customer-company account protection through company signup, application approval and revision history, suspension, logout, and reactivation. Start the API against a local replica set after running `npm run seed`; then provide the seeded admin credentials at runtime:
+The A-only Postman collection runs customer signup/account/logout, company signup, application approval and revision history, suspension, logout, and reactivation. Start the API against a local replica set after running `npm run seed`; then provide the seeded admin credentials at runtime:
 
 ```text
 SEED_ADMIN_EMAIL='local-admin@example.test' SEED_ADMIN_PASSWORD='your-local-seed-password' npm run test:demo
@@ -80,3 +80,8 @@ The A03 Node 24 integration test passed against temporary local MongoDB 8.0.38. 
 ## A04 verification
 
 Under Node 24.22.3, all 15 local tests and all three auth/review/lifecycle integration suites passed against temporary local MongoDB 8.0.38. The setup checks passed before-connection name/flag validation, two seed runs, persisted role/reference/hash/index checks, refusal to reseed fixtures with dependent booking data, and a real explicit-flag reset that preserved the separate development database. Atlas remains unverified.
+
+
+## A05 verification
+
+The ordered Postman folders were run through Newman against the full local A stack under Node 24. See [verification receipt](docs/verification-a.md) for counts and limits. Customer auth and the company onboarding/review/lifecycle journey are implemented; full A+B T40, the prescribed T41 dataset, instructor-specific API UML notation and partner review remain pending.

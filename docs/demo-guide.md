@@ -14,7 +14,7 @@ The assignment allows seven minutes plus up to three minutes for questions. Use 
 | 4:00–6:20 | B vehicle and booking journey | Add the B-owned vehicle, discovery, booking, cancellation, and suspension-cancellation cases after B APIs and their integration are ready. Do not present planned endpoints as completed. |
 | 6:20–7:00 | Evidence and limits | Separate Newman assertions, persisted database results, unrun tests, and remaining T40/T41 work. |
 
-The current A collection stops after reactivation. B vehicle and booking steps are placeholders in the presentation outline, not requests in the collection. A full T40 run needs the integrated A+B API, suitable seeded fixtures, and database-backed assertions. T41 latency measurement is separate and needs recorded conditions and results.
+The A collection uses ordered auth/onboarding, review/versions and lifecycle folders and stops after reactivation. Each run leaves a uniquely named synthetic company and its history in the dedicated database; the guarded test reset is available for cleanup. B vehicle and booking steps are placeholders in the presentation outline, not requests in the collection. A full T40 run needs the integrated A+B API, suitable seeded fixtures, and database-backed assertions. T41 latency measurement is separate and needs recorded conditions and results.
 
 ## Run the A collection
 
@@ -28,7 +28,9 @@ The runner restricts its target to localhost, 127.0.0.1, or `::1`. Do not point 
 
 ## Course and verification notes
 
-- The collection covers auth, initial company application, review, revision history, suspension, logout, and reactivation. It does not cover B endpoints or claim full T40 completion.
+- The collection covers customer signup/account/logout, company auth, initial company application, review, revision history, suspension, logout, and reactivation. It does not cover B endpoints or claim full T40 completion.
 - Run integration tests against the explicit `dobby_test_a` database to verify saved state and transaction behavior; Newman responses alone are not persistence evidence.
 - The diagrams are Mermaid engineering diagrams. D-07 remains open, so they are not presented as the instructor's required UML Profile for API.
 - D-10 remains open. Confirm the required AI disclosure and any extra-credit or teaching-video expectations before final submission.
+
+The latest local Newman run passed 21 requests and 33 assertions. See the [verification receipt](verification-a.md).

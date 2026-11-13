@@ -27,6 +27,8 @@ function runDemo() {
     ['baseUrl', localBaseUrl(), 'default'],
     ['adminEmail', process.env.SEED_ADMIN_EMAIL, 'secret'],
     ['adminPassword', process.env.SEED_ADMIN_PASSWORD, 'secret'],
+    ['customerEmail', `demo-customer-${suffix}@example.test`, 'default'],
+    ['customerPassword', randomBytes(24).toString('base64url'), 'secret'],
     ['companyEmail', `demo-${suffix}@example.test`, 'default'],
     ['companyPassword', randomBytes(24).toString('base64url'), 'secret'],
     ['registrationNumber', `DEMO-${suffix}`, 'default'],
@@ -59,7 +61,10 @@ function runDemo() {
       process.exitCode = 1;
       return;
     }
-    console.log('A auth/provider Newman demo passed.');
+    const count = summary.run.stats.requests.total;
+    const assertions = summary.run.stats.assertions.total;
+    const maxResponseTime = Math.max(...summary.run.executions.map((execution) => execution.response.responseTime));
+    console.log(`A auth/provider Newman demo passed: ${count} requests, ${assertions} assertions, max ${maxResponseTime} ms.`);
   });
 }
 

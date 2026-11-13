@@ -89,3 +89,5 @@ When requesting work, name one task and ask for its tests/docs/diagrams, results
 ## A03 integration status
 
 Saint implemented the agreed `services/bookingCancellation.js` interface against real collections to unblock suspension while B's API/models are absent. Local replica-set tests exercise cancellation, rollback and the shared guard protocol. B must integrate its booking writers with this provider/user/vehicle guard order and review the helper. G2/G3 and T35 across actual B HTTP endpoints remain pending.
+
+See the [contribution and PR record](contributions.md) and [A verification receipt](verification-a.md) for the implemented A stack, actual checks and remaining B/course dependencies.
