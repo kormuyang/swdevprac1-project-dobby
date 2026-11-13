@@ -18,8 +18,8 @@ Use descriptive names, explicit braces and readable multi-line conditions. Split
 Keep responsibilities clear:
 
 - Routes: method/path, authentication, roles and validation.
-- Controllers: HTTP input/output.
-- Services: business rules and any transaction boundaries they need.
+- Controllers: HTTP input/output and small, single-use feature logic.
+- Services: reusable or complex business logic that benefits from extraction.
 - Models: fields, validation and indexes.
 - Serializers: fields returned to the client.
 
@@ -27,7 +27,7 @@ Build allowlisted objects from validated input; never send raw request bodies/qu
 
 Use async Mongoose 9 save hooks without a callback. Check `isModified('passwordHash')` before hashing; password query updates must not bypass the hook. Pin tested dependencies in the lockfile, use npm ci after it exists, and keep nodemon for development.
 
-When a feature needs a transaction, keep its boundary in that feature's service. Every operation in one transaction uses the same session, with no parallel DB calls. Production must use real dependencies, not no-op stubs. Keep imports safe so tests do not connect to a database.
+When a feature needs a transaction, keep its boundary in the controller or service that owns the operation. Every operation in one transaction uses the same session, with no parallel DB calls. Production must use real dependencies, not no-op stubs. Keep imports safe so tests do not connect to a database.
 
 Use node:test for pure rules and native HTTP fetch for Atlas integration tests. Build indexes first and check persisted results as well as responses. Keep A/B/test databases separate. Seed/reset must check an explicit allowed database name; destructive reset also needs an explicit flag. Use synthetic data and runtime collection variables without committing tokens.
 
@@ -37,4 +37,4 @@ Use short headings, direct sentences and bullets for rules or assumptions. Expla
 
 ## Current state
 
-A00 contains the Node/Express foundation, health/docs routes, and defined startup path. See [README](README.md) for available commands and runtime verification limits. Feature APIs, tests, seed/reset, and the Newman demo remain unimplemented. Add test scripts with their tests. Return errors as `{success:false,message}` and map service errors locally in controllers. See [D-39 and D-41](docs/decisions.md#accepted-decisions) and [error handling](docs/design.md#service-interfaces-and-transactions).
+A00 contains the Node/Express foundation, health/docs routes, and defined startup path. See [README](README.md) for available commands and runtime verification limits. A01 implements auth endpoints and models. Other feature APIs, seed/reset and the Newman demo remain planned. Add test scripts with their tests. Return errors as `{success:false,message}` and map service errors locally in controllers. See [D-39 and D-41](docs/decisions.md#accepted-decisions) and [error handling](docs/design.md#service-interfaces-and-transactions).

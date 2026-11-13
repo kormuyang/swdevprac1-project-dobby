@@ -16,6 +16,8 @@ A00 provides the partial app setup. Poom can start B00 date/money rules and test
 
 A01/A02/B02/B03 implement any needed transaction boundaries and guards in their owning feature services. A03a coordinates the guard order and integration across A and B.
 
+On November 13, the user authorized starting A01 on a branch stacked on A00 before G0 passes. G0 remains an integration prerequisite to verify before merging; this does not mark A00/B00 as passed.
+
 After G0, continue A01/A02 and B01. B can build reads and validation while waiting for A03a. The booking and suspension work joins in the order below.
 
 ## Saint's tasks
@@ -23,7 +25,7 @@ After G0, continue A01/A02 and B01. B can build reads and validation while waiti
 | ID | Work | Needs | Check |
 | --- | --- | --- | --- |
 | A00 | package.json/lock, .nvmrc, server.js, config/db.js, health/docs and dev/start scripts | Agreed design | Complete Node 24 setup, define/import required middleware, and qualify startup; live database connection remains unverified |
-| A01 | User/Provider/ProviderApplication/AuthSession models; auth routes/controllers/service/middleware, validation and serialization; signup/login/logout/me and req.actor | G0: A00+B00 | T01–T06, T11; auth parts of T36/T38 |
+| A01 | User/Provider/ProviderApplication/AuthSession models; auth routes/controllers/middleware, validation and serialization; signup/login/logout/me and req.actor | G0: A00+B00 | T01–T06, T11; auth parts of T36/T38 |
 | A02 | Company application/profile and admin review; indexes, versions, history and review queue/detail | A01, B00 dates | T07–T10; concurrent submissions; approval does not clear suspension |
 | A03 | Provider guards and suspend/reactivate in A's feature services; call B's cancelNonCompletedForProvider | A01, B00, B01; B03 cancellation for integration | T33–T37 with B; rollback, old-session denial and no restoration |
 | A04 | scripts/seed.js/reset-test-db.js, .env.example and setup README; mount all routers in server.js | A00–A03 and B models/routes | Clean setup, safe seed/reset and verified commands; T38 with B |

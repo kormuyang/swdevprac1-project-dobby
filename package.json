@@ -10,7 +10,9 @@
   },
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test tests/auth.test.js",
+    "test:integration": "node --test tests/auth.integration.test.js"
   },
   "dependencies": {
     "bcryptjs": "3.0.3",
