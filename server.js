@@ -13,7 +13,10 @@ const connectDB = require('./config/db');
 const app = express();
 const PORT = process.env.PORT || 5003;
 
-connectDB();
+connectDB().catch(() => {
+  console.error('MongoDB connection failed.');
+  process.exit(1);
+});
 
 app.use(cors());
 app.use(express.json());
