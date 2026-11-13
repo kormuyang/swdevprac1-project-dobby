@@ -1,5 +1,6 @@
 const express = require('express');
 const { protect, authorize } = require('../middleware/auth');
+const { rejectQuery } = require('../middleware/rejectQuery');
 const controller = require('../controllers/providers');
 const { validateObjectId, validatePage, validateReview } = require('../validators/providers');
 
@@ -19,26 +20,36 @@ function pageOptions(req, res, next) {
       ? { statuses: ['pending', 'approved', 'rejected'], allowProviderId: true }
       : { statuses: ['pending', 'rejected', 'approved', 'suspended'] });
     return next();
-  } catch (error) { return res.status(error.status || 400).json({ success: false, message: error.message }); }
+  } catch (error) {
+    return res.status(error.status || 400).json({ success: false, message: error.message });
+  }
 }
 
 function pathId(req, res, next) {
   const name = req.params.providerId ? 'providerId' : 'applicationId';
-  try { validateObjectId(req.params[name], name); return next(); }
-  catch (error) { return res.status(400).json({ success: false, message: error.message }); }
+  try {
+    validateObjectId(req.params[name], name);
+    return next();
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
 }
 
 function reviewInput(req, res, next) {
-  try { req.review = validateReview(req.body); return next(); }
-  catch (error) { return res.status(error.status || 400).json({ success: false, message: error.message }); }
+  try {
+    req.review = validateReview(req.body);
+    return next();
+  } catch (error) {
+    return res.status(error.status || 400).json({ success: false, message: error.message });
+  }
 }
 
 router.use(protect(), authorize('admin'), parseJson);
 router.get('/providers', pageOptions, rejectBody, controller.listAdminProviders);
-router.get('/providers/:providerId', pathId, rejectBody, controller.getAdminProvider);
+router.get('/providers/:providerId', rejectQuery(), pathId, rejectBody, controller.getAdminProvider);
 router.get('/applications', pageOptions, rejectBody, controller.listAdminApplications);
-router.get('/applications/:applicationId', pathId, rejectBody, controller.getAdminApplication);
-router.post('/applications/:applicationId/review', pathId, reviewInput, controller.reviewApplication);
+router.get('/applications/:applicationId', rejectQuery(), pathId, rejectBody, controller.getAdminApplication);
+router.post('/applications/:applicationId/review', rejectQuery(), pathId, reviewInput, controller.reviewApplication);
 
 router.use((error, req, res, next) => {
   if (error?.status >= 400 && error.status < 500) {

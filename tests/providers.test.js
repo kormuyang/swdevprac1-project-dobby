@@ -32,6 +32,8 @@ test('pagination and optional status filters follow the contract allowlist', () 
   assert.deepEqual(validatePage({ page: '2', limit: '50' }, { statuses: ['pending'] }), { page: 2, limit: 50 });
   assert.deepEqual(validatePage({ status: 'pending' }, { statuses: ['pending'] }), { page: 1, limit: 25, status: 'pending' });
   assert.throws(() => validatePage({ limit: '101' }), { status: 400 });
+  assert.throws(() => validatePage({ page: ['1', '2'] }), { status: 400 });
+  assert.throws(() => validatePage({ limit: { value: '2' } }), { status: 400 });
   assert.throws(() => validatePage({ owner: 'all' }), { status: 400 });
   assert.throws(() => validatePage({ status: 'suspended' }, { statuses: ['pending'] }), { status: 400 });
   assert.equal(validateObjectId('507f1f77bcf86cd799439011', 'id'), '507f1f77bcf86cd799439011');

@@ -1,5 +1,6 @@
 const express = require('express');
 const { protect, authorize } = require('../middleware/auth');
+const { rejectQuery } = require('../middleware/rejectQuery');
 const controller = require('../controllers/providers');
 const { validateObjectId, validatePage } = require('../validators/providers');
 
@@ -14,20 +15,28 @@ function rejectBody(req, res, next) {
 }
 
 function pageOptions(req, res, next) {
-  try { req.page = validatePage(req.query); return next(); }
-  catch (error) { return res.status(error.status || 400).json({ success: false, message: error.message }); }
+  try {
+    req.page = validatePage(req.query);
+    return next();
+  } catch (error) {
+    return res.status(error.status || 400).json({ success: false, message: error.message });
+  }
 }
 
 function pathId(req, res, next) {
-  try { validateObjectId(req.params.applicationId, 'applicationId'); return next(); }
-  catch (error) { return res.status(400).json({ success: false, message: error.message }); }
+  try {
+    validateObjectId(req.params.applicationId, 'applicationId');
+    return next();
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
 }
 
 router.use(protect(), authorize('company'), parseJson);
-router.get('/profile', rejectBody, controller.getOwnProvider);
+router.get('/profile', rejectQuery(), rejectBody, controller.getOwnProvider);
 router.get('/applications', pageOptions, rejectBody, controller.listOwnApplications);
-router.post('/applications', controller.submitApplication);
-router.get('/applications/:applicationId', pathId, rejectBody, controller.getOwnApplication);
+router.post('/applications', rejectQuery(), controller.submitApplication);
+router.get('/applications/:applicationId', rejectQuery(), pathId, rejectBody, controller.getOwnApplication);
 
 router.use((error, req, res, next) => {
   if (error?.status >= 400 && error.status < 500) {
