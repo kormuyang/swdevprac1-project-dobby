@@ -169,7 +169,7 @@ async function logout(req, res) {
     const updated = await AuthSession.findOneAndUpdate(
       { sid: req.actor.sessionId, userId: req.actor.userId, revokedAt: null, expiresAt: { $gt: now } },
       { $set: { revokedAt: now } },
-      { new: true },
+      { returnDocument: 'after' },
     );
     if (!updated) {
       const error = new Error('Authentication is required.');
