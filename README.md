@@ -1,6 +1,6 @@
 # Dobby Rental Car Booking
 
-A rental car booking backend by Saint (A) and Poom (B). A00 provides the foundation; A01 implements auth, A02 company review, A03 suspension/reactivation and A04 seed/reset. Vehicle/booking APIs and the Newman demo remain planned.
+A rental car booking backend by Saint (A) and Poom (B). A00 provides the foundation; A01 implements auth, A02 company review, A03 suspension/reactivation and A04 seed/reset. A05 provides use cases, diagrams and an A-only Newman demo. Vehicle/booking APIs remain planned.
 
 ## Start here
 
@@ -50,12 +50,24 @@ The committed tests check these guards without connecting to MongoDB. Two seed r
 
 Company representatives can read their approved profile, list application history, read an owned version and submit an immutable profile revision. Admins can list/read providers and applications and approve or reject one pending version. See [A02 flow and verification limits](docs/diagrams/a02-company-review.md). The local suite includes provider validation and serializer checks. `npm run test:integration` also runs the provider review test against an explicitly configured `dobby_test_a` replica set; it passed under Node 24 against the temporary local replica set, including concurrent submissions, scoped privacy and approval during suspension.
 
+## Auth and provider demo
+
+The A-only Postman collection runs customer signup/account/logout, company signup, application approval and revision history, suspension, logout, and reactivation. Start the API against a local replica set after running `npm run seed`; then provide the seeded admin credentials at runtime:
+
+```text
+SEED_ADMIN_EMAIL='local-admin@example.test' SEED_ADMIN_PASSWORD='your-local-seed-password' npm run test:demo
+```
+
+The runner generates company credentials and all signup data for that run, passes them to Newman in memory, and only targets a loopback host. It prints a pass/fail summary without token or response values. To use another local port, set `DEMO_BASE_URL`, for example `http://127.0.0.1:5003/api/v1`.
+
+See [A use cases](docs/use-cases-a.md), [A03 lifecycle sequence](docs/diagrams/a03-provider-lifecycle.md), [demo guide](docs/demo-guide.md), and [contribution record](docs/contributions.md). The collection is [a-auth-provider.postman_collection.json](postman/a-auth-provider.postman_collection.json). The end-to-end B vehicle and booking journey and a full T40 demonstration remain pending B implementation and integration. This A-only run is not a T40 pass.
+
 
 ## A01 verification
 
 Run `npm test` under Node 24 for the local auth checks. Seven tests pass, covering input validation, safe output, bcrypt save behavior and JWT/session middleware with database methods mocked. A separate native-HTTP smoke check passed safe parser errors, authentication-first denial and the shared 20-request auth limiter without a database connection.
 
-Run `npm run test:integration` with `TEST_MONGO_URI` supplied locally. The test accepts only `dobby_test_a`, creates auth indexes, uses synthetic fixtures and removes only its own records. It checks company signup persistence, duplicate-registration rollback and independent session logout. It passed against a temporary local MongoDB 8.0.38 replica set under Node 24. This is not Atlas verification or full T01–T06, T11, T36 or T38 coverage. T06 application reads and vehicle/booking restrictions also depend on A02 and B.
+Run `npm run test:integration` with `TEST_MONGO_URI` supplied locally. The test accepts only `dobby_test_a`, creates auth indexes, uses synthetic fixtures and removes only its own records. It checks company signup persistence, duplicate-registration rollback and independent session logout. It passed against a temporary local MongoDB 8.0.38 replica set under Node 24. This is not Atlas verification or full T01–T06, T11, T36 or T38 coverage. T06 application reads are implemented in A02; vehicle/booking restrictions still need B integration.
 
 
 ## A03 lifecycle
@@ -68,3 +80,8 @@ The A03 Node 24 integration test passed against temporary local MongoDB 8.0.38. 
 ## A04 verification
 
 Under Node 24.22.3, all 15 local tests and all three auth/review/lifecycle integration suites passed against temporary local MongoDB 8.0.38. The setup checks passed before-connection name/flag validation, two seed runs, persisted role/reference/hash/index checks, refusal to reseed fixtures with dependent booking data, and a real explicit-flag reset that preserved the separate development database. Atlas remains unverified.
+
+
+## A05 verification
+
+The ordered Postman folders were run through Newman against the full local A stack under Node 24. See [verification receipt](docs/verification-a.md) for counts and limits. Customer auth and the company onboarding/review/lifecycle journey are implemented; full A+B T40, the prescribed T41 dataset, instructor-specific API UML notation and partner review remain pending.

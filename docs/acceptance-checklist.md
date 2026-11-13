@@ -1,6 +1,6 @@
 # Test checklist
 
-The checklist spans implemented and planned features. A01 has local auth tests and a separate database integration test; see README for commands, actual results and verification limits. The full checklist has not passed. Use node:test for pure rules, isolated Atlas integration for DB behavior, and Runner/Newman for the demo. Check what was saved as well as the response.
+The checklist spans implemented and planned features. A01–A04 have local and database integration tests; see README for commands and the [A verification receipt](verification-a.md) for actual results and limits. The full checklist has not passed. Use node:test for pure rules, isolated Atlas integration for DB behavior, and Runner/Newman for the demo. Check what was saved as well as the response.
 
 ## Test data
 
