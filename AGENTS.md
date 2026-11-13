@@ -37,4 +37,4 @@ Use short headings, direct sentences and bullets for rules or assumptions. Expla
 
 ## Current state
 
-Only docs/API definitions exist. A00/A04 must create and verify the backend package/scripts. Do not run absent npm scripts; update this note and README when they work.
+A00 provides the Node/Express app foundation, shared error handling, base transaction wrapper, health/docs routes, and unit-test scripts. Feature APIs, integration tests, safe seed/reset, and the Newman demo remain unimplemented; do not run their absent scripts. Update this note and README as those commands become available.

@@ -1,0 +1,31 @@
+{
+  "name": "dobby-rental-car-booking",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Rental car booking API",
+  "main": "app.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "test": "npm run test:unit",
+    "test:unit": "node --test tests/unit/*.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "3.0.3",
+    "dotenv": "18.0.10",
+    "express": "5.3.0",
+    "express-rate-limit": "8.7.4",
+    "helmet": "8.3.0",
+    "jsonwebtoken": "9.0.3",
+    "mongoose": "9.12.1",
+    "swagger-ui-express": "5.0.1"
+  },
+  "devDependencies": {
+    "newman": "6.2.3",
+    "nodemon": "3.1.11"
+  }
+}

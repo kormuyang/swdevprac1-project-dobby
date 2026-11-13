@@ -1,6 +1,6 @@
 # Dobby Rental Car Booking
 
-A rental car booking backend by Saint (A) and Poom (B). We have the requirements and API design; the backend, setup scripts and tests still need to be built.
+A rental car booking backend by Saint (A) and Poom (B). The A00 backend foundation is in place; feature APIs, database setup scripts, and integration/demo checks are still to be built.
 
 ## Start here
 
@@ -10,4 +10,13 @@ A rental car booking backend by Saint (A) and Poom (B). We have the requirements
 - [Decisions](docs/decisions.md): agreed choices and remaining questions.
 - [Test checklist](docs/acceptance-checklist.md): cases to check before calling a feature done.
 
-Follow [AGENTS.md](AGENTS.md) when coding. A00/A04 will add verified setup, run and test commands. `.env.example` lists the variables we will need.
+Follow [AGENTS.md](AGENTS.md) when coding. Use Node 24 and copy `.env.example` to `.env`, then set `MONGO_URI` before starting the server. The current foundation supports:
+
+```text
+npm ci
+npm run dev
+npm start
+npm run test:unit
+```
+
+Database-backed integration, seed/reset, and Newman demo commands will be added with A04. `.env.example` lists the configuration variables.
