@@ -50,6 +50,18 @@ The committed tests check these guards without connecting to MongoDB. Two seed r
 
 Company representatives can read their approved profile, list application history, read an owned version and submit an immutable profile revision. Admins can list/read providers and applications and approve or reject one pending version. See [A02 flow and verification limits](docs/diagrams/a02-company-review.md). The local suite includes provider validation and serializer checks. `npm run test:integration` also runs the provider review test against an explicitly configured `dobby_test_a` replica set; it passed under Node 24 against the temporary local replica set, including concurrent submissions, scoped privacy and approval during suspension.
 
+## Auth and provider demo
+
+The A-only Postman collection runs customer-company account protection through company signup, application approval and revision history, suspension, logout, and reactivation. Start the API against a local replica set after running `npm run seed`; then provide the seeded admin credentials at runtime:
+
+```text
+SEED_ADMIN_EMAIL='local-admin@example.test' SEED_ADMIN_PASSWORD='your-local-seed-password' npm run test:demo
+```
+
+The runner generates company credentials and all signup data for that run, passes them to Newman in memory, and only targets a loopback host. It prints a pass/fail summary without token or response values. To use another local port, set `DEMO_BASE_URL`, for example `http://127.0.0.1:5003/api/v1`.
+
+See [A use cases](docs/use-cases-a.md), [A03 lifecycle sequence](docs/diagrams/a03-provider-lifecycle.md), [demo guide](docs/demo-guide.md), and [contribution record](docs/contributions.md). The collection is [a-auth-provider.postman_collection.json](postman/a-auth-provider.postman_collection.json). The end-to-end B vehicle and booking journey and a full T40 demonstration remain pending B implementation and integration. This A-only run is not a T40 pass.
+
 
 ## A01 verification
 
