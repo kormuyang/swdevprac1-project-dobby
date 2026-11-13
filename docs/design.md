@@ -255,3 +255,7 @@ Reactivation needs admin, suspended state, an approved profile and resolutionNot
 A locks Provider for version allocation, submission, review, suspension and reactivation. Submission increments applicationSequence and sets latestApplicationId. The partial unique index enforces one pending version. Review uses a pending-status compare-and-set, writes reviewer/reason/time and switches the approved pointer atomically without clearing suspension. Profile revisions cannot change login/registration identity.
 
 B locks provider then vehicle for branch/rate/window/activation changes, rechecks approved ownership and applies the allowlist. Window edits retain confirmed upcoming/ongoing bookings; activation does not cancel them. Creation needs the provider guard and unique VIN index, with no vehicle guard before insertion. Booking and listing changes therefore use a consistent branch/rate/window state.
+
+### A03 implementation boundary
+
+The lifecycle controller owns suspend/reactivate transactions. The agreed cancellation helper operates on real booking/vehicle collections and User guards using the caller session. Its interface remains available for B integration; it does not supply B's booking or vehicle APIs. See [A03 integration checks](diagrams/a03-provider-lifecycle.md).

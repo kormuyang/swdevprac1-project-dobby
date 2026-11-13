@@ -14,7 +14,7 @@ A integrates shared app/package/config/OpenAPI edits. B proposes changes to thos
 
 A00 provides the partial app setup. Poom can start B00 date/money rules and tests in parallel. Follow the [error-handling contract](design.md#context-and-shared-helpers) under D-39 and D-41.
 
-A01/A02/B02/B03 implement any needed transaction boundaries and guards in their owning feature services. A03a coordinates the guard order and integration across A and B.
+A01/A02/B02/B03 implement needed transaction boundaries in the owning controllers or services (D-42). A03a coordinates the guard order and integration across A and B.
 
 On November 13, the user authorized starting A01 on a branch stacked on A00 before G0 passes. G0 remains an integration prerequisite to verify before merging; this does not mark A00/B00 as passed.
 
@@ -85,3 +85,7 @@ npm run test:demo
 Integration/reset use TEST_MONGO_URI and database dobby_test_<owner>; reset also needs an explicit flag. Seed only an explicitly named dev/test database. test:demo runs Newman once the collection exists. A04 documents the working setup in README.
 
 When requesting work, name one task and ask for its tests/docs/diagrams, results and remaining dependencies. Stop for review of that task before starting another.
+
+## A03 integration status
+
+Saint implemented the agreed `services/bookingCancellation.js` interface against real collections to unblock suspension while B's API/models are absent. Local replica-set tests exercise cancellation, rollback and the shared guard protocol. B must integrate its booking writers with this provider/user/vehicle guard order and review the helper. G2/G3 and T35 across actual B HTTP endpoints remain pending.
