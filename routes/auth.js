@@ -2,16 +2,10 @@ const express = require('express');
 const { rateLimit } = require('express-rate-limit');
 const authController = require('../controllers/auth');
 const { protect } = require('../middleware/auth');
-const { rejectQuery } = require('../middleware/rejectQuery');
+const { rejectBody, rejectQuery } = require('../middleware/validateRequest');
 
 const router = express.Router();
 
-function rejectBody(req, res, next) {
-  if (req.body !== undefined || Number(req.get('content-length') || 0) > 0 || req.get('transfer-encoding')) {
-    return res.status(400).json({ success: false, message: 'This request does not accept a body.' });
-  }
-  return next();
-}
 
 const parseJson = express.json({ limit: '16kb' });
 
