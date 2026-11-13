@@ -75,3 +75,8 @@ Run `npm run test:integration` with `TEST_MONGO_URI` supplied locally. The test 
 Admin suspend/reactivate routes are mounted under `/api/v1/admin/providers`. The controller owns the transaction. `services/bookingCancellation.js` implements the agreed cancellation interface against the actual booking/vehicle collections; B must use the same guards in its writers. See [A03 diagrams and integration boundary](docs/diagrams/a03-provider-lifecycle.md).
 
 The A03 Node 24 integration test passed against temporary local MongoDB 8.0.38. It checks cancellation scoping, rollback after cancellation writes, suspended session denial/logout, reactivation without restoration, and a competing guarded transaction. B HTTP integration, Atlas and partner review remain pending.
+
+
+## A04 verification
+
+Under Node 24.22.3, all 15 local tests and all three auth/review/lifecycle integration suites passed against temporary local MongoDB 8.0.38. The setup checks passed before-connection name/flag validation, two seed runs, persisted role/reference/hash/index checks, refusal to reseed fixtures with dependent booking data, and a real explicit-flag reset that preserved the separate development database. Atlas remains unverified.
