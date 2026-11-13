@@ -1,6 +1,6 @@
 # Dobby Rental Car Booking
 
-A rental car booking backend by Saint (A) and Poom (B). A00 provides the Express foundation. A01 adds customer/company signup, login, current-session logout and account reads. A02 adds company profile/application history and admin review. Vehicle and booking APIs, seed/reset and the Newman demo remain planned.
+A rental car booking backend by Saint (A) and Poom (B). A00 provides the foundation; A01 implements auth, A02 company review, A03 suspension/reactivation and A04 seed/reset. Vehicle/booking APIs and the Newman demo remain planned.
 
 ## Start here
 
@@ -36,7 +36,15 @@ The base path is `/api/v1/auth`:
 
 Use the [OpenAPI contract](docs/contracts/openapi.json) for request fields. Signup requires a transaction-capable MongoDB replica set such as Atlas; account creation and its initial session commit together. Bootstrap the four auth models' indexes before checking uniqueness; normal server startup does not sync or drop indexes. No real credentials or tokens belong in committed examples.
 
-See [A01 diagrams and course alignment](docs/diagrams/a01-auth.md). A01 started before G0 with the user's authorization; G0 and partner integration remain pending. Database behavior requires real integration verification. Seed/reset and Newman demo scripts belong to later tasks.
+See [A01 diagrams and course alignment](docs/diagrams/a01-auth.md). A01 started before G0 with the user's authorization; G0 and partner integration remain pending. Database behavior requires real integration verification.
+
+## Local database setup
+
+Copy `.env.example` to `.env`. Set `MONGO_URI` to a dedicated `dobby_dev_a` or `dobby_test_a` database before seeding. Set `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` and `SEED_FIXTURE_PASSWORD` locally; both passwords must contain 8–72 UTF-8 bytes. Seed credentials are never committed or printed. `npm run seed` creates a local admin, two customer accounts and approved, pending, rejected and suspended company fixtures. It creates indexes first and replaces only the fixture accounts with the reserved `@dobby.example.test` emails, including their sessions and applications. Company fixtures use synthetic HTTPS document links. Vehicle and booking fixtures wait for B's models.
+
+`npm run reset:test` drops the database named by `TEST_MONGO_URI` only when it is exactly `dobby_test_a` and `ALLOW_TEST_DB_RESET=true`. This deletes all data in that test database. Never point it at development or shared data. Seed and reset reject a missing or differently named database before connecting.
+
+The committed tests check these guards without connecting to MongoDB. Seeding and reset against a replica set remain unverified until the commands are run with a local dedicated database and credentials.
 
 ## A02 company review
 
