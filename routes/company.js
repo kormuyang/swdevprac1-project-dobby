@@ -33,10 +33,10 @@ function pathId(req, res, next) {
 }
 
 router.use(protect(), authorize('company'), parseJson);
-router.get('/profile', rejectQuery(), rejectBody, controller.getOwnProvider);
+router.get('/profile', rejectQuery, rejectBody, controller.getOwnProvider);
 router.get('/applications', pageOptions, rejectBody, controller.listOwnApplications);
-router.post('/applications', rejectQuery(), controller.submitApplication);
-router.get('/applications/:applicationId', rejectQuery(), pathId, rejectBody, controller.getOwnApplication);
+router.post('/applications', rejectQuery, controller.submitApplication);
+router.get('/applications/:applicationId', rejectQuery, pathId, rejectBody, controller.getOwnApplication);
 
 router.use((error, req, res, next) => {
   if (error?.status >= 400 && error.status < 500) {
