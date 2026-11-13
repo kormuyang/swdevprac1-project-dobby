@@ -11,8 +11,10 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "test": "node --test tests/auth.test.js tests/providers.test.js",
-    "test:integration": "node --test tests/auth.integration.test.js tests/providers.integration.test.js tests/lifecycle.integration.test.js"
+    "test": "node --test tests/auth.test.js tests/providers.test.js tests/setup.test.js",
+    "test:integration": "node --test tests/auth.integration.test.js tests/providers.integration.test.js tests/lifecycle.integration.test.js",
+    "seed": "node scripts/seed.js",
+    "reset:test": "node scripts/reset-test-db.js"
   },
   "dependencies": {
     "bcryptjs": "3.0.3",
