@@ -1,10 +1,11 @@
-require('dotenv').config();
+require('dotenv').config({ quiet: true, path: process.env.DOTENV_CONFIG_PATH || '.env' });
 
 const mongoose = require('mongoose');
 const AuthSession = require('../models/AuthSession');
 const Provider = require('../models/Provider');
 const ProviderApplication = require('../models/ProviderApplication');
 const User = require('../models/User');
+const { validateLogin } = require('../validators/auth');
 
 const fixtures = [
   { key: 'user-1', role: 'user', name: 'Dobby Customer One', email: 'customer-1@dobby.example.test' },
@@ -45,6 +46,11 @@ function validateConfiguration() {
       || Buffer.byteLength(process.env.SEED_FIXTURE_PASSWORD) < 8 || Buffer.byteLength(process.env.SEED_FIXTURE_PASSWORD) > 72) {
     throw new Error('Seed passwords must contain 8 to 72 UTF-8 bytes.');
   }
+  try {
+    validateLogin({ email: adminEmail, password: process.env.SEED_ADMIN_PASSWORD });
+  } catch {
+    throw new Error('SEED_ADMIN_EMAIL must be a valid login email.');
+  }
   return uri;
 }
 
@@ -55,12 +61,28 @@ async function removeExistingFixtures(session) {
   if (existingAdmin && (existingAdmin.role !== 'admin' || existingAdmin.name !== 'Dobby Seed Admin')) {
     throw new Error('SEED_ADMIN_EMAIL already belongs to a non-seed account.');
   }
-  const users = await User.find({ email: { $in: emails } }).select('_id providerId').session(session);
+  const users = await User.find({ email: { $in: emails } }).select('_id providerId name email role').session(session);
+  for (const user of users) {
+    const fixture = fixtures.find((entry) => (entry.email || companyEmail(entry.key)) === user.email);
+    if (user.name !== fixture.name || user.role !== fixture.role) {
+      throw new Error('Reserved fixture email belongs to a non-seed account.');
+    }
+  }
   if (existingAdmin) {
     users.push(existingAdmin);
   }
   const providerIds = users.map((user) => user.providerId).filter(Boolean);
   const userIds = users.map((user) => user._id);
+
+  const vehicle = await mongoose.connection.collection('vehicles').findOne(
+    { providerId: { $in: providerIds } }, { session },
+  );
+  const booking = await mongoose.connection.collection('bookings').findOne(
+    { $or: [{ userId: { $in: userIds } }, { providerId: { $in: providerIds } }] }, { session },
+  );
+  if (vehicle || booking) {
+    throw new Error('Seed fixtures have vehicle or booking data. Reset the dedicated test database first.');
+  }
 
   await AuthSession.deleteMany({ userId: { $in: userIds } }, { session });
   await ProviderApplication.deleteMany({ providerId: { $in: providerIds } }, { session });
@@ -108,7 +130,7 @@ async function createFixture(fixture, session) {
     version: 1,
     businessRegistrationNumber: fixture.registration,
     profile: applicationProfile(fixture),
-    status: ['approved', 'suspended'].includes(fixture.status) ? 'approved' : fixture.status === 'rejected' ? 'rejected' : 'pending',
+    status: fixture.status === 'suspended' ? 'approved' : fixture.status,
     rejectionReason: fixture.status === 'rejected' ? 'Synthetic rejection fixture.' : null,
     submittedAt: new Date(),
     reviewedAt: ['approved', 'rejected', 'suspended'].includes(fixture.status) ? new Date() : null,

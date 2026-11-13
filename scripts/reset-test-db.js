@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ quiet: true, path: process.env.DOTENV_CONFIG_PATH || '.env' });
 
 const mongoose = require('mongoose');
 

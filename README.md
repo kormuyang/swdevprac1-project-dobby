@@ -40,11 +40,11 @@ See [A01 diagrams and course alignment](docs/diagrams/a01-auth.md). A01 started 
 
 ## Local database setup
 
-Copy `.env.example` to `.env`. Set `MONGO_URI` to a dedicated `dobby_dev_a` or `dobby_test_a` database before seeding. Set `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` and `SEED_FIXTURE_PASSWORD` locally; both passwords must contain 8–72 UTF-8 bytes. Seed credentials are never committed or printed. `npm run seed` creates a local admin, two customer accounts and approved, pending, rejected and suspended company fixtures. It creates indexes first and replaces only the fixture accounts with the reserved `@dobby.example.test` emails, including their sessions and applications. Company fixtures use synthetic HTTPS document links. Vehicle and booking fixtures wait for B's models.
+Copy `.env.example` to `.env`. Set `MONGO_URI` to a dedicated `dobby_dev_a` or `dobby_test_a` database before seeding. Set `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` and `SEED_FIXTURE_PASSWORD` locally; both passwords must contain 8–72 UTF-8 bytes. Seed credentials are never committed or printed. `npm run seed` creates a local admin, two customer accounts and approved, pending, rejected and suspended company fixtures. It creates indexes first and replaces only the fixture accounts with the reserved `@dobby.example.test` emails, including their sessions and applications. It refuses a reserved email owned by a different account and refuses replacement when fixture accounts/providers have vehicle or booking data. Company fixtures use synthetic HTTPS document links. Vehicle and booking fixtures wait for B's models.
 
 `npm run reset:test` drops the database named by `TEST_MONGO_URI` only when it is exactly `dobby_test_a` and `ALLOW_TEST_DB_RESET=true`. This deletes all data in that test database. Never point it at development or shared data. Seed and reset reject a missing or differently named database before connecting.
 
-The committed tests check these guards without connecting to MongoDB. Seeding and reset against a replica set remain unverified until the commands are run with a local dedicated database and credentials.
+The committed tests check these guards without connecting to MongoDB. Two seed runs passed against a temporary local MongoDB 8.0.38 replica set: counts, roles, references, bcrypt hashes and indexes were checked. Actual reset remains unverified. Atlas remains unverified.
 
 ## A02 company review
 

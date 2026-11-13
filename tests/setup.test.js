@@ -59,3 +59,15 @@ test('reset requires the dedicated test database and explicit reset flag before 
   assert.equal(noFlag.status, 1);
   assert.match(noFlag.stderr, /ALLOW_TEST_DB_RESET=true/);
 });
+
+
+test('seed rejects an unusable admin email before connecting', () => {
+  const result = runScript(seedScript, {
+    MONGO_URI: 'mongodb://127.0.0.1:27017/dobby_dev_a',
+    SEED_ADMIN_EMAIL: 'invalid-email',
+    SEED_ADMIN_PASSWORD: 'synthetic-password',
+    SEED_FIXTURE_PASSWORD: 'synthetic-password',
+  });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /SEED_ADMIN_EMAIL must be a valid login email/);
+});
