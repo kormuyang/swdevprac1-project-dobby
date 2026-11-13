@@ -1,6 +1,6 @@
 # Dobby Rental Car Booking
 
-A rental car booking backend by Saint (A) and Poom (B). A00 includes a partial Express foundation, health/docs routes, and development/start scripts. Feature APIs, feature-owned tests, database setup scripts, and integration/demo checks remain planned.
+A rental car booking backend by Saint (A) and Poom (B). A00 provides the Express foundation. A01 adds customer/company signup, login, current-session logout and account reads. Company review, vehicles, bookings, seed/reset and the Newman demo remain planned.
 
 ## Start here
 
@@ -10,7 +10,7 @@ A rental car booking backend by Saint (A) and Poom (B). A00 includes a partial E
 - [Decisions](docs/decisions.md): agreed choices and remaining questions.
 - [Test checklist](docs/acceptance-checklist.md): cases to check before calling a feature done.
 
-Follow [AGENTS.md](AGENTS.md) when coding. Use Node 24. Copy `.env.example` to `.env` and set `MONGO_URI` before starting the server.
+Follow [AGENTS.md](AGENTS.md) when coding. Use Node 24. Copy `.env.example` to `.env` and set `MONGO_URI` and `JWT_SECRET` before starting the server. Authentication uses 24-hour HS256 Bearer tokens with persisted, revocable sessions.
 
 `server.js` defines the middleware and listener, and invokes `connectDB()` without awaiting it. `config/db.js` enables Mongoose `strictQuery`, connects using `MONGO_URI`, and logs the connected host.
 
@@ -24,4 +24,23 @@ npm run dev
 npm start
 ```
 
-No test, integration, seed/reset, or Newman demo scripts exist yet. Add them with their corresponding tasks. The dependency manifest includes JWT, bcrypt, and Newman packages, but their application features are not implemented.
+## Authentication
+
+The base path is `/api/v1/auth`:
+
+- `POST /register`: customer signup.
+- `POST /register-company`: company account, provider, first application and session in one transaction.
+- `POST /login`: create a session.
+- `GET /me`: read the authenticated account.
+- `POST /logout`: revoke the current session, including for suspended companies.
+
+Use the [OpenAPI contract](docs/contracts/openapi.json) for request fields. Signup requires a transaction-capable MongoDB replica set such as Atlas; account creation and its initial session commit together. Bootstrap the four auth models' indexes before checking uniqueness; normal server startup does not sync or drop indexes. No real credentials or tokens belong in committed examples.
+
+See [A01 diagrams and course alignment](docs/diagrams/a01-auth.md). A01 started before G0 with the user's authorization; G0 and partner integration remain pending. Database behavior requires real integration verification. Seed/reset and Newman demo scripts belong to later tasks.
+
+
+## A01 verification
+
+Run `npm test` under Node 24 for the local auth checks. Seven tests pass, covering input validation, safe output, bcrypt save behavior and JWT/session middleware with database methods mocked. A separate native-HTTP smoke check passed safe parser errors, authentication-first denial and the shared 20-request auth limiter without a database connection.
+
+Run `npm run test:integration` with `TEST_MONGO_URI` supplied locally. The test accepts only `dobby_test_a`, creates auth indexes, uses synthetic fixtures and removes only its own records. It checks company signup persistence, duplicate-registration rollback and independent session logout. It passed against a temporary local MongoDB 8.0.38 replica set under Node 24. This is not Atlas verification or full T01–T06, T11, T36 or T38 coverage. T06 application reads and vehicle/booking restrictions also depend on A02 and B.

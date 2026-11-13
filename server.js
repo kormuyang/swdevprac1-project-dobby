@@ -9,6 +9,7 @@ const swaggerUi = require('swagger-ui-express');
 
 const openApiDocument = require('./docs/contracts/openapi.json');
 const connectDB = require('./config/db');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 5003;
@@ -19,7 +20,6 @@ connectDB().catch(() => {
 });
 
 app.use(cors());
-app.use(express.json());
 app.use(helmet());
 app.use(cookieParser());
 app.set('query parser', 'extended');
@@ -39,6 +39,8 @@ app.use(rateLimit({
 app.get('/api/v1/health', (req, res) => {
   res.status(200).json({ success: true, data: { status: 'ok' } });
 });
+
+app.use('/api/v1/auth', authRoutes);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
 

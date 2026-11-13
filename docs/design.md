@@ -2,7 +2,7 @@
 
 Use [OpenAPI](contracts/openapi.json) for endpoint names, inputs and response shapes. This file covers data, shared API rules and service functions. Update affected definitions together before changing the implementation.
 
-Only the foundation middleware, health handler, Swagger mount, and fallback responses are defined. Feature policies, persistence models, and service interfaces below are planned.
+The foundation and A01 auth endpoints/models are implemented. Provider review, vehicle and booking APIs below are planned. See README for verification limits.
 
 ## Contents
 
@@ -18,13 +18,13 @@ Use Node 24/npm/CommonJS, Express 5, Mongoose 9 and Atlas. Installed packages in
 - `server.js` loads the environment, initializes Express, and starts `connectDB()` without awaiting it. It mounts middleware/routes and defines `app.listen()`. See [README](../README.md) for runtime verification limits.
 - Use config/routes/controllers/services/models/middleware/utils, plus scripts/tests/postman. See [coding practices](../AGENTS.md#coding-practices) for responsibilities.
 
-The configured local port defaults to 5003. Health is at `/api/v1/health`; Swagger UI at `/api-docs` serves committed JSON. CORS uses default middleware options. `cookie-parser` parses cookies; it does not implement cookie authentication. Bearer authentication remains planned.
+The configured local port defaults to 5003. Health is at `/api/v1/health`; Swagger UI at `/api-docs` serves committed JSON. CORS uses default middleware options. `cookie-parser` parses cookies; it does not implement cookie authentication. Auth routes use Bearer authentication with revocable sessions.
 
 ## HTTP policies
 
 ### Input and responses
 
-Planned input policy: accept JSON up to 16 KiB; reject unknown body/query fields, wrong scalar/array/operator types and malformed IDs. Current `express.json()` uses its default settings and no custom parser-error handler. IDs are 24 hex characters; dates must be real YYYY-MM-DD calendar dates. Normalize only the specified strings; do not turn objects/arrays into strings. `Satang` fields are safe integers.
+Auth input policy: accept JSON up to 16 KiB; reject unknown body/query fields, wrong scalar/array/operator types and malformed IDs. The auth router owns its JSON parser and safe parser-error responses. Apply the same policy when adding other feature routers. IDs are 24 hex characters; dates must be real YYYY-MM-DD calendar dates. Normalize only the specified strings; do not turn objects/arrays into strings. `Satang` fields are safe integers.
 
 Success: `{success:true,data:...}`. Lists also return count (rows on this page) and pagination `{page,limit,total,pages}`.
 
@@ -75,7 +75,7 @@ Public discovery returns approved providers and active vehicles, with no private
 
 ### Defaults and normalization
 
-Current A00 mounts one IP rate limiter at 1000 requests per 10 minutes before health and Swagger, so it applies to those routes too. A separate 20-request login/signup limit per 15 minutes is planned with authentication. Helmet is mounted. Never log password/document payloads.
+Current A00 mounts one IP rate limiter at 1000 requests per 10 minutes before health and Swagger, so it applies to those routes too. A separate 20-request login/signup limit per 15 minutes applies to public authentication writes. Helmet is mounted. Never log password/document payloads.
 
 Trim registration numbers without changing case. Trim/uppercase VINs; uniqueness includes inactive vehicles. Phone numbers are strings. Document links must be valid HTTPS URLs and visible only to owner/admin. Do not fetch, preview, classify or host them. The submitter controls external sharing permissions; we make no legal authenticity checks.
 
@@ -99,7 +99,7 @@ All collections use timestamps and ObjectId references. A owns User/Provider/Pro
 
 Login email is immutable. There is no identity-change, account-delete or password-recovery API. Keep User.providerId and Provider.representativeId consistent after atomic company signup. `bookingRevision` is a guard, not a booking count. Hash with bcryptjs, 10 rounds; see the [save-hook rules](../AGENTS.md#coding-practices).
 
-Indexes: unique `{email:1}` named `uq_user_email`; partial unique `{providerId:1}` with providerId type ObjectId named `uq_user_provider`. Ensure role/provider consistency in service validation; never unique-index nullable providerId without a filter.
+Indexes: unique `{email:1}` named `uq_user_email`; partial unique `{providerId:1}` with providerId type ObjectId named `uq_user_provider`. Ensure role/provider consistency in signup validation; never unique-index nullable providerId without a filter.
 
 ### Provider — A
 
@@ -170,7 +170,7 @@ Serialize _id as id; hide __v, revisions, passwordHash, sid and raw claims. Sele
 
 ## Service interfaces and transactions
 
-Use CommonJS named exports. I/O functions return promises and records, not Express responses. Controllers serialize OpenAPI DTOs. No private controller imports across modules.
+Use CommonJS named exports. Keep small, single-use feature logic in controllers (D-42); extract a service when reuse or complexity warrants it. Controllers serialize OpenAPI DTOs. Extracted I/O functions return promises and records, not Express responses. No private controller imports across modules.
 
 ### Context and shared helpers
 
@@ -187,7 +187,7 @@ req.actor = {
 };
 ```
 
-Services receive `ctx = { actor: req.actor, clock }`, where clock has `now(): Date`. Use a real shared clock by default and inject it for tests. Services must recheck scope/provider state inside transactions. Admin service calls also check actor.role, even with route middleware. A feature service owns its transaction boundary when that feature needs atomic writes. Every database operation in one transaction uses the same session, sequentially. Select transaction options and retry handling when implementing the feature; no shared transaction wrapper is part of A00.
+Services receive `ctx = { actor: req.actor, clock }`, where clock has `now(): Date`. Use a real shared clock by default and inject it for tests. Services must recheck scope/provider state inside transactions. Admin service calls also check actor.role, even with route middleware. The controller or service implementing an operation owns its transaction boundary when it needs atomic writes. Every database operation in one transaction uses the same session, sequentially. Select transaction options and retry handling when implementing the feature; no shared transaction wrapper is part of A00.
 
 B provides pure helpers:
 
@@ -204,8 +204,8 @@ IDs are normalized strings; list filters are parsed/validated. Services still en
 
 | Module / owner | Export | Result |
 | --- | --- | --- |
-| services/auth.js / A | registerCustomer(input, ctx), registerCompany(input, ctx), login(input, ctx) | `{user, token, expiresAt}`; ctx.actor absent for public auth |
-| services/auth.js / A | logout(ctx), getMe(ctx) | `{message}` / safe User DTO |
+| controllers/auth.js / A | registerCustomer(req, res), registerCompany(req, res), login(req, res) | AuthResult HTTP response |
+| controllers/auth.js / A | logout(req, res), getMe(req, res) | Ok / safe User HTTP response |
 | services/providers.js / A | getOwnProvider(ctx), listOwnApplications(filters,ctx), getOwnApplication(id,ctx), submitApplication(profile,ctx) | Provider / Page<Application> / Application / Application |
 | services/providers.js / A | listAdminProviders(filters,ctx), getAdminProvider(id,ctx), listAdminApplications(filters,ctx), getAdminApplication(id,ctx), reviewApplication(id,input,ctx) | Page / Provider / Page / Application / Application |
 | services/providers.js / A | suspendProvider(id,{reason},ctx), reactivateProvider(id,{resolutionNote},ctx) | `{provider,cancelledBookingCount}` / Provider |
