@@ -34,7 +34,7 @@ function protect(options = {}) {
         return unauthorized(res);
       }
       const authSession = await AuthSession.findOne({
-        sid: { $eq: claims.sid },
+        sid: { $eq: String(claims.sid) },
         userId: user._id,
         revokedAt: null,
         expiresAt: { $gt: new Date() },
