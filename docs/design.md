@@ -2,7 +2,7 @@
 
 Use [OpenAPI](contracts/openapi.json) for endpoint names, inputs and response shapes. This file covers data, shared API rules and service functions. Update affected definitions together before changing the implementation.
 
-The foundation and A01 auth endpoints/models are implemented. Provider review, vehicle and booking APIs below are planned. See README for verification limits.
+The foundation, A01 auth endpoints/models and A02 company application/profile review endpoints are implemented. Vehicle and booking APIs below remain planned. See README for verification limits.
 
 ## Contents
 

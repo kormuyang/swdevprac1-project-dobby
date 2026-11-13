@@ -1,6 +1,6 @@
 # Dobby Rental Car Booking
 
-A rental car booking backend by Saint (A) and Poom (B). A00 provides the Express foundation. A01 adds customer/company signup, login, current-session logout and account reads. Company review, vehicles, bookings, seed/reset and the Newman demo remain planned.
+A rental car booking backend by Saint (A) and Poom (B). A00 provides the Express foundation. A01 adds customer/company signup, login, current-session logout and account reads. A02 adds company profile/application history and admin review. Vehicle and booking APIs, seed/reset and the Newman demo remain planned.
 
 ## Start here
 
@@ -37,6 +37,10 @@ The base path is `/api/v1/auth`:
 Use the [OpenAPI contract](docs/contracts/openapi.json) for request fields. Signup requires a transaction-capable MongoDB replica set such as Atlas; account creation and its initial session commit together. Bootstrap the four auth models' indexes before checking uniqueness; normal server startup does not sync or drop indexes. No real credentials or tokens belong in committed examples.
 
 See [A01 diagrams and course alignment](docs/diagrams/a01-auth.md). A01 started before G0 with the user's authorization; G0 and partner integration remain pending. Database behavior requires real integration verification. Seed/reset and Newman demo scripts belong to later tasks.
+
+## A02 company review
+
+Company representatives can read their approved profile, list application history, read an owned version and submit an immutable profile revision. Admins can list/read providers and applications and approve or reject one pending version. See [A02 flow and verification limits](docs/diagrams/a02-company-review.md). The local suite includes provider validation and serializer checks. `npm run test:integration` also runs the provider review test against an explicitly configured `dobby_test_a` replica set; it has not been run unless reported separately.
 
 
 ## A01 verification
