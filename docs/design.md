@@ -168,6 +168,25 @@ Create collections/indexes in explicit bootstrap/seed before mutation tests. Do 
 
 Serialize _id as id; hide __v, revisions, passwordHash, sid and raw claims. Select populated fields explicitly. Public provider fields are id/name/address/telephone; application history is owner/admin only. Password hashes stay hidden even after login uses select('+passwordHash').
 
+### B01 module interfaces
+
+- `validators/vehicles.js`: `validateVehicleCreate(body)`, `validateVehicleUpdate(body)`, `validateAvailabilityUpdate(body)`, `validateActivationUpdate(body)` return allowlisted input matching OpenAPI. Creation permits an omitted end date; availability updates require both fields, with null for no end.
+- `validators/bookings.js`: `validateBookingCreate(body)`, `validateBookingDatesUpdate(body)` validate request shape and calendar ranges. B03 checks the original booking cutoff before applying `validateRentalDates` to proposed dates, preserving the validation order above.
+- `validators/fields.js` holds the existing scalar/object checks shared with auth; moving those checks does not change auth behavior. List/query validation belongs to B02/B03 with its routes.
+- `serializers/vehicles.js`: `serializeVehicle(vehicle)`, `serializeVehicleSnapshot(vehicle)`. `serializers/bookings.js`: `serializeBooking(booking, customer, today)` requires explicitly selected current customer contact and one captured Thailand date. These return DTOs, not HTTP envelopes, and never populate database references themselves.
+- Vehicle and Booking enforce field constraints and fixed snapshots on document saves. Booking checks that dates, days and total agree; historical records remain valid. Later services own eligibility, permissions, state transitions and concurrency guards. Query writes must use allowlisted fields and enable update validation; multi-field booking edits use document saves so the consistency checks run.
+- `npm run test:integration` runs both owners' suites. Auth uses `TEST_MONGO_URI` with `dobby_test_a`; rental models use `TEST_MONGO_URI_B` with `dobby_test_b`. Each suite rejects a different database name before connecting and deletes only its synthetic fixture IDs.
+
+```mermaid
+erDiagram
+    Provider ||--o{ Vehicle : owns
+    User ||--o{ Booking : makes
+    Provider ||--o{ Booking : receives
+    Vehicle ||--o{ Booking : reserves
+```
+
+Booking embeds the booked vehicle details and branch; its rate is stored separately. Those values remain fixed when the listing changes.
+
 ## Service interfaces and transactions
 
 Use CommonJS named exports. Keep small, single-use feature logic in controllers (D-42); extract a service when reuse or complexity warrants it. Controllers serialize OpenAPI DTOs. Extracted I/O functions return promises and records, not Express responses. No private controller imports across modules.
