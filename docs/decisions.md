@@ -30,6 +30,7 @@ Most choices were agreed on November 11, 2026. “User” means a confirmed prod
 | D-39 | User, November 13 | Defer a centralized API error abstraction until the codebase is mature enough to demonstrate its value. Services use ordinary errors with HTTP `status`, and controllers map HTTP errors locally. |
 | D-40 | User, November 13 | A00 has no shared transaction wrapper. Feature services implement and own their transaction boundaries when needed, passing the same session through all operations in one transaction. |
 | D-41 | User, November 13 | API errors use `{success:false,message}` with HTTP status conveying the category. Do not include an error `code` field or require custom error identifiers. |
+| D-42 | User, November 13 | Keep small, single-use feature logic in controllers. Extract services when reuse or complexity warrants it; A01 auth controllers own their signup transactions. Supersedes the service-only boundary placement in D-40. |
 
 Booking records supply occupied dates; do not duplicate the list on Vehicle.
 

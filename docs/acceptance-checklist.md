@@ -1,6 +1,6 @@
 # Test checklist
 
-B00 pure checks have run; see [recorded results](#recorded-results). Endpoint and database cases remain planned. Use node:test for pure rules, isolated Atlas integration for DB behavior, and Runner/Newman for the demo. Check what was saved as well as the response.
+The checklist spans implemented and planned features; it has not passed in full. See [README](../README.md#tests) for test commands. Use node:test for pure rules, isolated Atlas integration for DB behavior, and Runner/Newman for the demo. Check persisted results as well as responses.
 
 ## Test data
 
@@ -84,7 +84,3 @@ Note: this checks the stated dataset and conditions, not production load. Run th
 ## Recording results
 
 For each PR, list test IDs, command, test environment/database, pass/fail counts and anything unverified. Link tests, collection and short logs without credentials or tokens. Both partners review shared cases before merge.
-
-## Recorded results
-
-- B00, November 14, 2026: `npm test` passed 10 tests on Node 24.19.0. Covers T19 pure rules, overlap/status boundaries and money limits, including UTC/Bangkok/New York timezone checks. HTTP, Atlas, persistence and concurrency remain unverified.
