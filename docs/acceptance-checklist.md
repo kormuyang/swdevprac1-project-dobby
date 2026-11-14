@@ -84,3 +84,13 @@ Note: this checks the stated dataset and conditions, not production load. Run th
 ## Recording results
 
 For each PR, list test IDs, command, test environment/database, pass/fail counts and anything unverified. Link tests, collection and short logs without credentials or tokens. Both partners review shared cases before merge.
+
+## Implemented check locations
+
+- Vehicle ownership, discovery, windows and safe output: [vehicle HTTP integration](../tests/vehicles.api.integration.test.js).
+- Booking scope, prices, cutoffs and cap/overlap races: [booking HTTP integration](../tests/bookings.api.integration.test.js).
+- Company views, suspension races, rollback and no restoration: [combined lifecycle integration](../tests/booking-lifecycle.api.integration.test.js).
+- T40 journey and saved results: [Newman integration](../tests/demo.integration.test.js).
+- T41 runner: [response-time measurement](../scripts/measure-response-times.js). Atlas execution remains pending; local runs do not close T41.
+
+Commands/results and unverified cases are recorded in each PR. D-07/D-10 and partner acceptance remain open for T42.

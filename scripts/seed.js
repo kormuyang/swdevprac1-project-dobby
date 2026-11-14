@@ -5,12 +5,16 @@ const AuthSession = require('../models/AuthSession');
 const Provider = require('../models/Provider');
 const ProviderApplication = require('../models/ProviderApplication');
 const User = require('../models/User');
+const Vehicle = require('../models/Vehicle');
+const Booking = require('../models/Booking');
+const { vehicleVins, bookingId, createRentalFixtures } = require('./rentalFixtures');
 const { validateLogin } = require('../validators/auth');
 
 const fixtures = [
   { key: 'user-1', role: 'user', name: 'Dobby Customer One', email: 'customer-1@dobby.example.test' },
   { key: 'user-2', role: 'user', name: 'Dobby Customer Two', email: 'customer-2@dobby.example.test' },
   { key: 'provider-approved', role: 'company', status: 'approved', registration: 'DOBBY-SEED-APPROVED-001', name: 'Dobby Approved Rental' },
+  { key: 'provider-approved-two', role: 'company', status: 'approved', registration: 'DOBBY-SEED-APPROVED-002', name: 'Dobby Second Approved Rental' },
   { key: 'provider-pending', role: 'company', status: 'pending', registration: 'DOBBY-SEED-PENDING-001', name: 'Dobby Pending Rental' },
   { key: 'provider-rejected', role: 'company', status: 'rejected', registration: 'DOBBY-SEED-REJECTED-001', name: 'Dobby Rejected Rental' },
   { key: 'provider-suspended', role: 'company', status: 'suspended', registration: 'DOBBY-SEED-SUSPENDED-001', name: 'Dobby Suspended Rental' },
@@ -32,8 +36,8 @@ function getDatabaseName(uri) {
 function validateConfiguration() {
   const uri = process.env.MONGO_URI;
   const databaseName = uri && getDatabaseName(uri);
-  if (!['dobby_dev_a', 'dobby_test_a'].includes(databaseName)) {
-    throw new Error('MONGO_URI must explicitly name dobby_dev_a or dobby_test_a.');
+  if (!['dobby_dev_a', 'dobby_test_a', 'dobby_dev_b', 'dobby_test_b'].includes(databaseName)) {
+    throw new Error('MONGO_URI must explicitly name dobby_dev_a, dobby_dev_b, dobby_test_a or dobby_test_b.');
   }
   const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
   if (fixtures.some((fixture) => (fixture.email || companyEmail(fixture.key)) === adminEmail)) {
@@ -75,15 +79,17 @@ async function removeExistingFixtures(session) {
   const userIds = users.map((user) => user._id);
 
   const vehicle = await mongoose.connection.collection('vehicles').findOne(
-    { providerId: { $in: providerIds } }, { session },
+    { providerId: { $in: providerIds }, vin: { $nin: vehicleVins } }, { session },
   );
   const booking = await mongoose.connection.collection('bookings').findOne(
-    { $or: [{ userId: { $in: userIds } }, { providerId: { $in: providerIds } }] }, { session },
+    { _id: { $ne: bookingId }, $or: [{ userId: { $in: userIds } }, { providerId: { $in: providerIds } }] }, { session },
   );
   if (vehicle || booking) {
     throw new Error('Seed fixtures have vehicle or booking data. Reset the dedicated test database first.');
   }
 
+  await Booking.deleteOne({ _id: bookingId, userId: { $in: userIds }, providerId: { $in: providerIds } }, { session });
+  await Vehicle.deleteMany({ providerId: { $in: providerIds }, vin: { $in: vehicleVins } }, { session });
   await AuthSession.deleteMany({ userId: { $in: userIds } }, { session });
   await ProviderApplication.deleteMany({ providerId: { $in: providerIds } }, { session });
   await Provider.deleteMany({ _id: { $in: providerIds } }, { session });
@@ -155,7 +161,7 @@ async function seed() {
   const uri = validateConfiguration();
   await mongoose.connect(uri);
   try {
-    await Promise.all([User, Provider, ProviderApplication, AuthSession].map((Model) => Model.createIndexes()));
+    await Promise.all([User, Provider, ProviderApplication, AuthSession, Vehicle, Booking].map((Model) => Model.createIndexes()));
     const session = await mongoose.startSession();
     try {
       await session.withTransaction(async () => {
@@ -171,6 +177,7 @@ async function seed() {
         for (const fixture of fixtures) {
           await createFixture(fixture, session);
         }
+        await createRentalFixtures(session);
       });
     } finally {
       await session.endSession();
@@ -182,7 +189,7 @@ async function seed() {
 
 if (require.main === module) {
   seed().then(() => {
-    console.log(`Seeded A fixtures in ${getDatabaseName(process.env.MONGO_URI)}.`);
+    console.log(`Seeded Dobby fixtures in ${getDatabaseName(process.env.MONGO_URI)}.`);
   }).catch((error) => {
     const safeConfigurationError = /^(MONGO_URI|Set SEED_|Seed passwords|SEED_ADMIN_EMAIL)/.test(error.message);
     console.error(safeConfigurationError ? error.message : 'Seed failed. Check the local database and fixture configuration.');

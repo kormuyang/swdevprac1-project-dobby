@@ -3,7 +3,7 @@
   "info": {
     "title": "Dobby Rental Car Booking API",
     "version": "1.0.0",
-    "description": "API contract for the backend-only pair project. The health and A01 authentication endpoints plus A02 company application/profile and admin review endpoints are implemented. Other feature endpoints remain planned. Planned date-only rules use Asia/Bangkok; monetary values are integer satang. Examples are synthetic. See docs/design.md for validation order and atomic behavior."
+    "description": "API contract for the backend-only Dobby rental project. The development stack implements authentication, company review/lifecycle, public discovery, vehicle management and bookings. Dates use Asia/Bangkok calendar days and money uses integer satang. See README and PRs for setup, review status and verification limits. Examples are synthetic."
   },
   "servers": [
     {
@@ -2677,11 +2677,11 @@
           },
           "password": {
             "type": "string",
-            "minLength": 8,
+            "minLength": 1,
             "maxLength": 72,
             "format": "password",
             "writeOnly": true,
-            "description": "8–72 UTF-8 bytes; reject values exceeding bcrypt byte limit."
+            "description": "8–72 UTF-8 bytes, enforced by the server. JSON Schema minLength counts characters; the schema permits non-empty strings without excluding valid multi-byte passwords."
           }
         },
         "required": [
@@ -2713,11 +2713,11 @@
           },
           "password": {
             "type": "string",
-            "minLength": 8,
+            "minLength": 1,
             "maxLength": 72,
             "format": "password",
             "writeOnly": true,
-            "description": "8–72 UTF-8 bytes; reject values exceeding bcrypt byte limit."
+            "description": "8–72 UTF-8 bytes, enforced by the server. JSON Schema minLength counts characters; the schema permits non-empty strings without excluding valid multi-byte passwords."
           },
           "businessRegistrationNumber": {
             "type": "string",
@@ -2749,11 +2749,11 @@
           },
           "password": {
             "type": "string",
-            "minLength": 8,
+            "minLength": 1,
             "maxLength": 72,
             "format": "password",
             "writeOnly": true,
-            "description": "8–72 UTF-8 bytes; reject values exceeding bcrypt byte limit."
+            "description": "8–72 UTF-8 bytes, enforced by the server. JSON Schema minLength counts characters; the schema permits non-empty strings without excluding valid multi-byte passwords."
           }
         },
         "required": [

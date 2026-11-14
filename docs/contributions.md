@@ -1,6 +1,6 @@
 # Contribution record
 
-This records agent-assisted A implementation and published review targets. It does not establish human review or the final human contribution split.
+This records agent-assisted A/B implementation and published review targets. It does not establish human review or the final human contribution split.
 
 | Task | Owner | Implemented deliverable | Review target |
 | --- | --- | --- | --- |
@@ -10,6 +10,11 @@ This records agent-assisted A implementation and published review targets. It do
 | A03 | Saint (A), with Codex assistance | Suspension/reactivation and agreed cancellation helper | [PR #6](https://github.com/kormuyang/swdevprac1-project-dobby/pull/6) |
 | A04 | Saint (A), with Codex assistance | Guarded seed/reset and setup instructions | [PR #7](https://github.com/kormuyang/swdevprac1-project-dobby/pull/7) |
 | A05 | Saint (A), with Codex assistance | A use cases, diagrams, Postman folders, Newman runner and delivery guide | [PR #8](https://github.com/kormuyang/swdevprac1-project-dobby/pull/8) |
-| B00–B05 | Poom (B) | Assignment retained; no B task branch was available to integrate or review | Pending |
+| B00 | Poom (B), with Codex assistance | Date/money helpers and pure tests | [PR #9](https://github.com/kormuyang/swdevprac1-project-dobby/pull/9); retrospective Saint review pending |
+| B01 | Poom (B), with Codex assistance | Vehicle/Booking models, validators and serializers | [PR #10](https://github.com/kormuyang/swdevprac1-project-dobby/pull/10) |
+| B02 | Poom (B), with Codex assistance | Vehicle management and public discovery | [PR #11](https://github.com/kormuyang/swdevprac1-project-dobby/pull/11) |
+| B03 | Poom (B), with Codex assistance | Guarded booking operations and cap/overlap HTTP races | [PR #12](https://github.com/kormuyang/swdevprac1-project-dobby/pull/12) |
+| B04 | Poom (B), with Codex assistance | Company booking views, suspension HTTP races and rollback | [PR #13](https://github.com/kormuyang/swdevprac1-project-dobby/pull/13) |
+| B05 | Poom (B), with Codex assistance | Combined demo, setup, performance runner and delivery integration | Current B05 review branch |
 
-All partner reviews are pending. Saint implemented the agreed B cancellation helper dependency to unblock A03; B's booking writer integration and helper review remain pending. Both partners must confirm actual human contributions before final submission. See the [verification receipt](verification-a.md) for results and limits.
+Saint implemented the agreed cancellation helper dependency to unblock A03. Codex reviewed A03-A05 dependencies and verified the combined B behavior locally. Saint's approval of B PRs remains required; no human review is claimed here. Both partners must confirm actual human contributions before final submission. See the [verification receipt](verification-a.md) for results and limits.

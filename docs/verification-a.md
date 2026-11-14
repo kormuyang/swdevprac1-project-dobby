@@ -1,5 +1,7 @@
 # A verification receipt
 
+Historical A-stack verification. Current integrated results are recorded in the task PR descriptions.
+
 Verified on November 13, 2026 using Node 24.22.3 and temporary local MongoDB Community 8.0.38, single-node replica set, on macOS arm64. No Atlas credentials or real environment files were used.
 
 ## Results

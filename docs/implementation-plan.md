@@ -99,3 +99,5 @@ B02 implements vehicle/discovery endpoints on B01 and the reviewed A03 dependenc
 B03 implements customer/admin booking reads, create/date-edit/cancel and the shared-guard integration. It reuses A03 cancellation unchanged. Company views and combined suspension races follow in B04; each PR awaits Saint review.
 
 B04 adds approved-company booking views and combined A03/B HTTP race/rollback checks. A03 dependency behavior passes local real-database verification; Atlas and partner approval remain pending.
+
+B05 integrates the reviewed A04/A05 dependencies, combined Newman journey, rental fixtures, explicit B reset, response-time runner and consolidated delivery material. Atlas T41 execution, D-07/D-10 and Saint approvals remain pending. Test results stay in the B05 PR rather than repeated documentation.

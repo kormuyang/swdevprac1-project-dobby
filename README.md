@@ -1,6 +1,6 @@
 # Dobby Rental Car Booking
 
-A rental car booking backend by Saint (A) and Poom (B). A00 provides the Express foundation, A01 adds authentication, A02 adds company applications/admin review, B00 adds date/money helpers, and B01 adds Vehicle/Booking models, validators and serializers. A03 suspension/reactivation is integrated as a development dependency. B02 provides public discovery and company vehicle APIs. B03 provides customer/admin booking operations. B04 adds approved-company booking views and suspension integration. Seed/reset and the combined demo follow in B05 integration.
+A rental car booking backend by Saint (A) and Poom (B). This branch integrates authentication, company review/suspension, vehicle discovery/management, bookings, setup and the combined demo. See the implementation plan and PRs for review and merge status.
 
 ## Start here
 
@@ -55,3 +55,15 @@ npm run test:integration
 ```
 
 Auth/company-review tests use `TEST_MONGO_URI` and accept only `dobby_test_a`. Rental model tests use `TEST_MONGO_URI_B` and accept only `dobby_test_b`. All need a replica set, create indexes first and clean up only their synthetic fixtures. Keep them separate from development data. Test results and unverified cases belong in the PR description; the checklist tracks acceptance coverage.
+
+## Seed and reset
+
+`npm run seed` requires MONGO_URI to name dobby_dev_a, dobby_dev_b, dobby_test_a or dobby_test_b, plus locally supplied SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD and SEED_FIXTURE_PASSWORD. It creates synthetic accounts (two approved companies, pending/rejected/suspended companies and two customers), two vehicles and one historical booking. Repeated seed replaces identified fixtures only; other dependent vehicle/booking data makes it refuse replacement.
+
+`npm run reset:test` targets only dobby_test_a through TEST_MONGO_URI. `npm run reset:test -- --owner=b` targets only dobby_test_b through TEST_MONGO_URI_B. Both delete the selected test database and require ALLOW_TEST_DB_RESET=true. No reset runs during ordinary startup.
+
+## Demo and response times
+
+After seeding and starting the local API, supply the seeded admin credentials locally and run `npm run test:demo`. It generates the other credentials in memory and runs the [combined collection](postman/dobby.postman_collection.json) against loopback hosts only. See the [demo guide](docs/demo-guide.md), [use cases](docs/use-cases.md) and [API map](docs/diagrams/api.md).
+
+`npm run test:performance` starts its own local API against TEST_PERF_MONGO_URI, which must name an empty dobby_test_performance database. Supply PERF_DB_REGION for Atlas. It creates two providers, ten vehicles and thirty historical bookings, records ten sequential measurements per selected endpoint, then removes its own fixtures. The sanitized report is written to reports/response-times.json (ignored by Git); pass another output path after `--` if needed. Local results do not establish Atlas T41 acceptance. D-07/D-10 and partner approvals remain open.

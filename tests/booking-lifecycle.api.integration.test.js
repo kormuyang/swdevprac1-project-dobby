@@ -131,6 +131,14 @@ test('company views and real booking/suspension races preserve privacy and atomi
   assert.equal((await f.request('/company/bookings', { actor: f.company })).status, 403);
   assert.equal((await f.request('/company/vehicles', { actor: f.company })).status, 403);
   assert.equal((await f.request(`/vehicles/${car.id}`)).status, 404);
+  const deniedBooking = await f.request('/bookings', { method: 'POST', actor: f.customer, body: {
+    vehicleId: car.id, startDate: addDays(f.today, 12), dueDate: addDays(f.today, 12),
+  } });
+  assert.equal(deniedBooking.status, 409);
+  assert.equal((await f.request(`/bookings/${ownBooking.id}`, { method: 'PATCH', actor: f.admin,
+    body: { startDate: addDays(f.today, 12), dueDate: addDays(f.today, 12) } })).status, 409);
+  assert.equal((await f.request(`/company/vehicles/${car.id}/activation`, { method: 'PATCH', actor: f.company,
+    body: { isActive: false } })).status, 403);
   assert.equal((await lifecycle('reactivate', { resolutionNote: 'Synthetic resolution' })).status, 200);
   assert.equal((await Booking.findById(ownBooking.id)).state, 'cancelled');
 

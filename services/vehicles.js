@@ -210,7 +210,7 @@ async function writeVehicle(id, input, ctx, operation) {
     if (error.code === 11000 && error.keyPattern?.vin) {
       fail(409, 'A vehicle with this VIN already exists.');
     }
-    if (error.hasErrorLabel?.('TransientTransactionError')) {
+    if (!error.hasErrorLabel?.('UnknownTransactionCommitResult') && error.hasErrorLabel?.('TransientTransactionError')) {
       fail(409, 'The vehicle changed during this request. Try again.');
     }
     throw error;
