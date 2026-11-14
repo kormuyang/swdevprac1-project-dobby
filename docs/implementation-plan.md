@@ -88,8 +88,10 @@ npm run test:demo
 
 Auth integration uses TEST_MONGO_URI with dobby_test_a; B integration uses TEST_MONGO_URI_B with dobby_test_b. Reset uses TEST_MONGO_URI with an explicitly allowed database and also needs an explicit flag. Seed only an explicitly named dev/test database. test:demo runs Newman once the collection exists. A04 documents the working setup in README.
 
-When requesting work, name one task and ask for its tests/docs/diagrams, results and remaining dependencies. Stop for review of that task before starting another.
+The user authorized implementing B02–B05 sequentially on stacked branches while Saint reviews earlier B PRs. Finish each task with tests, relevant diagrams and a PR before starting the next. Do not merge B work before Saint approves.
 
 ## A03 integration status
 
 Saint implemented the agreed `services/bookingCancellation.js` interface against real collections to unblock suspension while B's API/models are absent. Local replica-set tests exercise cancellation, rollback and the shared guard protocol. B must integrate its booking writers with this provider/user/vehicle guard order and review the helper. G2/G3 and T35 across actual B HTTP endpoints remain pending.
+
+B02 implements vehicle/discovery endpoints on B01 and the reviewed A03 dependency. A03 uses the agreed real guard/cancellation operations; B02 repeats the provider guard for vehicle writes. The B02 PR records results and remaining acceptance limits.

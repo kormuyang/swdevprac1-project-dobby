@@ -246,6 +246,8 @@ IDs are normalized strings; list filters are parsed/validated. Services still en
 
 ### Transaction-sensitive writes
 
+B02/B03 use the A03 guard fields directly: increment Provider.revision, then sorted User.bookingRevision values, then sorted Vehicle.revision values. Feature services own their sessions and use snapshot/majority transactions with a 2500 ms driver retry budget. Every attempt captures one Thailand date. Known uncommitted transient conflicts return 409; uncertain commit results remain safe 500 responses. Reads use allowlisted filters before pagination; discovery joins only approved profiles and excludes occupied vehicles before counting.
+
 Use transactions for the multi-record writes identified below. Guard operations are implemented in the owning feature services and coordinated between A and B; A03a is the guard agreement and integration point, not a generic transaction framework. Acquire guards in this order: provider → sorted users → sorted vehicles. Each transaction concerns one provider; never acquire another provider after user locks. The User guard protects the booking cap across providers. Missing guard targets return scoped 404 responses, not placeholder records.
 
 Counting inside a transaction alone can still allow competing inserts. All affected write paths need the specified guards, same-session checks and writes, and rechecks after acquiring guards.
@@ -287,3 +289,19 @@ B locks provider then vehicle for branch/rate/window/activation changes, recheck
 ### A03 implementation boundary
 
 The lifecycle controller owns suspend/reactivate transactions. The agreed cancellation helper operates on real booking/vehicle collections and User guards using the caller session. Its interface remains available for B integration; it does not supply B's booking or vehicle APIs. See [A03 integration checks](diagrams/a03-provider-lifecycle.md).
+
+### B02 vehicle flow
+
+```mermaid
+sequenceDiagram
+    actor Company
+    participant Route as Vehicle route
+    participant Service as Vehicle service
+    participant DB as MongoDB
+    Company->>Route: Validated vehicle change
+    Route->>Service: Actor, id and allowlisted input
+    Service->>DB: Begin transaction; guard provider then vehicle
+    Service->>DB: Recheck approval, ownership and retained bookings
+    Service->>DB: Save and commit
+    Service-->>Company: Safe vehicle response
+```
