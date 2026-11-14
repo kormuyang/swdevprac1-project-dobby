@@ -189,12 +189,21 @@ req.actor = {
 
 Services receive `ctx = { actor: req.actor, clock }`, where clock has `now(): Date`. Use a real shared clock by default and inject it for tests. Services must recheck scope/provider state inside transactions. Admin service calls also check actor.role, even with route middleware. A feature service owns its transaction boundary when that feature needs atomic writes. Every database operation in one transaction uses the same session, sequentially. Select transaction options and retry handling when implementing the feature; no shared transaction wrapper is part of A00.
 
-B provides pure helpers:
+#### B00 helper contracts
 
-- utils/dates.js: `todayBangkok(now)`, `validateDateOnly(value)`, `inclusiveDays(startDate,dueDate)`, `overlaps(aStart,aDue,bStart,bDue)`, `bookingStatus(booking,today)`.
-- utils/money.js: `calculateTotal(ratePerDaySatang,rentalDays)`.
+B's helpers use CommonJS named exports. They do not load the app or database. Invalid input throws an ordinary `Error` with `status: 400` and a safe message.
 
-Invalid helper input throws an ordinary error with status 400 and a safe reason. Importing helpers must not load app/DB.
+| Module | Function | Returns |
+| --- | --- | --- |
+| `utils/dates.js` | `todayBangkok(now)` | Thailand `YYYY-MM-DD` for a supplied valid `Date` |
+| | `validateDateOnly(value)` | Unchanged real date string, years 0001–9999; no whitespace or type coercion |
+| | `inclusiveDays(startDate,dueDate)` | Inclusive day count; rejects reversed dates |
+| | `validateRentalDates(startDate,dueDate,today)` | Day count after checking start >= today and duration 1–30 days |
+| | `overlaps(aStart,aDue,bStart,bDue)` | Whether valid ordered ranges share any day, including endpoints |
+| | `bookingStatus(booking,today)` | Derived cancelled/upcoming/ongoing/completed status from confirmed/cancelled state and valid dates |
+| `utils/money.js` | `calculateTotal(ratePerDaySatang,rentalDays)` | Integer satang total; integer rate 1–1,000,000,000 and days 1–30 |
+
+Keep calendar calculations separate from new-rental validation: historical bookings still need a status, and offering periods may exceed 30 days. Later feature validators apply these helpers in the HTTP validation order; serializers return date strings, integer satang and derived status.
 
 A's provider service can import B's bookingCancellation. Keep feature services independent to avoid circular imports; transaction and guard code stays with the feature that owns it.
 

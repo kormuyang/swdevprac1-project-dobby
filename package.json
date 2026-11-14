@@ -9,6 +9,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "test": "node --test tests/dates.test.js tests/money.test.js",
     "dev": "nodemon server.js",
     "start": "node server.js"
   },
