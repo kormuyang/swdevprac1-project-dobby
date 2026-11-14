@@ -115,6 +115,34 @@ test('provider review and profile versioning persist atomically', async (t) => {
   const companyHeaders = { authorization: `Bearer ${token(companyId, companySid)}`, 'content-type': 'application/json' };
   const adminHeaders = { authorization: `Bearer ${token(adminId, adminSid)}`, 'content-type': 'application/json' };
 
+  for (const ending of ['', '/']) {
+    const filteredList = await fetch(`${base}/admin/applications${ending}?providerId=${providerId}`, {
+      headers: adminHeaders,
+    });
+    assert.equal(filteredList.status, 200);
+    const filtered = await filteredList.json();
+    assert.equal(filtered.pagination.total, 1);
+    assert.deepEqual(filtered.data.map((application) => application.id), [String(appId)]);
+
+    const invalidApplicationStatus = await fetch(`${base}/admin/applications${ending}?status=suspended`, {
+      headers: adminHeaders,
+    });
+    assert.equal(invalidApplicationStatus.status, 400);
+
+    const providerList = await fetch(`${base}/admin/providers${ending}?status=pending`, {
+      headers: adminHeaders,
+    });
+    assert.equal(providerList.status, 200);
+    const providers = await providerList.json();
+    assert.ok(providers.data.some((provider) => provider.id === String(providerId)));
+    assert.ok(providers.data.every((provider) => provider.status === 'pending'));
+
+    const invalidProviderFilter = await fetch(`${base}/admin/providers${ending}?providerId=${providerId}`, {
+      headers: adminHeaders,
+    });
+    assert.equal(invalidProviderFilter.status, 400);
+  }
+
   const forbidden = await fetch(`${base}/admin/applications/${appId}/review`, { method: 'POST', headers: companyHeaders, body: JSON.stringify({ decision: 'approve' }) });
   assert.equal(forbidden.status, 403);
   const unknownProfileQuery = await fetch(`${base}/company/profile?unexpected=1`, { headers: companyHeaders });
