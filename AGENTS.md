@@ -37,4 +37,4 @@ Use short headings, direct sentences and bullets for rules or assumptions. Expla
 
 ## Current state
 
-A00 contains the Node/Express foundation, health/docs routes, and defined startup path. See [README](README.md) for available commands and runtime verification limits. A01 implements auth endpoints and models. Other feature APIs, seed/reset and the Newman demo remain planned. Add test scripts with their tests. Return errors as `{success:false,message}` and map service errors locally in controllers. See [D-39 and D-41](docs/decisions.md#accepted-decisions) and [error handling](docs/design.md#service-interfaces-and-transactions).
+A00 provides the foundation, A01 implements authentication, A02 implements company applications/admin review, and B00 provides date/money helpers. See [README](README.md) for setup and test commands. Other feature APIs, seed/reset and the Newman demo remain planned. Return errors as `{success:false,message}` and map service errors locally in controllers. See [D-39 and D-41](docs/decisions.md#accepted-decisions) and [error handling](docs/design.md#service-interfaces-and-transactions).
