@@ -1,6 +1,6 @@
 # Dobby Rental Car Booking
 
-A rental car booking backend by Saint (A) and Poom (B). A00 provides the Express foundation, A01 adds authentication, and B00 adds date/money helpers. Company review, vehicles, bookings, seed/reset and the Newman demo remain planned.
+A rental car booking backend by Saint (A) and Poom (B). A00 provides the Express foundation, A01 adds authentication, A02 adds company applications/admin review, and B00 adds date/money helpers. Vehicle/booking APIs, seed/reset and the Newman demo remain planned.
 
 ## Start here
 
@@ -36,9 +36,13 @@ The base path is `/api/v1/auth`:
 
 Authentication uses 24-hour HS256 Bearer tokens with persisted, revocable sessions. Use [OpenAPI](docs/contracts/openapi.json) for request fields and [A01 diagrams](docs/diagrams/a01-auth.md) for flows and course alignment. Never commit credentials or tokens.
 
+## Company applications and review
+
+Company representatives can read their profile and application history and submit revisions. Admins review applications and access the review queue. A revision does not replace the approved profile until approval; approval never clears suspension. See [OpenAPI](docs/contracts/openapi.json) for endpoints and fields and [A02 diagrams](docs/diagrams/a02-company-review.md) for the flow.
+
 ## Tests
 
-Run all local auth and date/money tests without a database:
+Run all local tests without a database:
 
 ```text
 npm test

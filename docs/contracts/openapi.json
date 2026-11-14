@@ -3,7 +3,7 @@
   "info": {
     "title": "Dobby Rental Car Booking API",
     "version": "1.0.0",
-    "description": "Target API contract for a backend-only pair project. The health handler, Swagger mount, and JSON 404/429 responses are defined in server.js. See README.md for setup and runtime verification limits. Other feature endpoints, validation, and JSON error handling are planned. Planned date-only rules use Asia/Bangkok; monetary values are integer satang. Examples are synthetic. See docs/design.md for validation order and atomic behavior."
+    "description": "API contract for the backend-only pair project. The health and A01 authentication endpoints plus A02 company application/profile and admin review endpoints are implemented. Other feature endpoints remain planned. Planned date-only rules use Asia/Bangkok; monetary values are integer satang. Examples are synthetic. See docs/design.md for validation order and atomic behavior."
   },
   "servers": [
     {
