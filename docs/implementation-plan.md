@@ -40,6 +40,8 @@ After G0, continue A01/A02 and B01. B can build reads and validation while waiti
 | B04 | Company/admin booking views and integration/race tests | B03 + A03 integration | T25, T31–T39, especially suspension races and rollback |
 | B05 | Vehicle/booking use cases, sequence/API diagrams and Postman folders; review A's changes | Related features | B's part of T40–T42; review approval/suspension integration |
 
+B00 is implemented with Codex assistance; see [test results](acceptance-checklist.md#recorded-results). A's review, including the package script, and G0 verification remain pending.
+
 ## Joining booking and suspension
 
 Split A03/B03 so neither waits for the other's unfinished service:

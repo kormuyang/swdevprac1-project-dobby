@@ -37,4 +37,4 @@ Use short headings, direct sentences and bullets for rules or assumptions. Expla
 
 ## Current state
 
-A00 contains the Node/Express foundation, health/docs routes, and defined startup path. See [README](README.md) for available commands and runtime verification limits. Feature APIs, tests, seed/reset, and the Newman demo remain unimplemented. Add test scripts with their tests. Return errors as `{success:false,message}` and map service errors locally in controllers. See [D-39 and D-41](docs/decisions.md#accepted-decisions) and [error handling](docs/design.md#service-interfaces-and-transactions).
+A00 contains the Node/Express foundation, health/docs routes, and defined startup path. B00 adds pure date/money helpers and `npm test`. See [README](README.md) for available commands and runtime verification limits. Feature APIs, integration tests, seed/reset, and the Newman demo remain unimplemented. Add test scripts with their tests. Return errors as `{success:false,message}` and map service errors locally in controllers. See [D-39 and D-41](docs/decisions.md#accepted-decisions) and [error handling](docs/design.md#service-interfaces-and-transactions).

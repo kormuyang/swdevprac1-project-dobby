@@ -1,6 +1,6 @@
 # Dobby Rental Car Booking
 
-A rental car booking backend by Saint (A) and Poom (B). A00 includes a partial Express foundation, health/docs routes, and development/start scripts. Feature APIs, feature-owned tests, database setup scripts, and integration/demo checks remain planned.
+A rental car booking backend by Saint (A) and Poom (B). A00 includes a partial Express foundation, health/docs routes, and development/start scripts. B00 adds date/money helpers and pure tests. Feature APIs, database setup scripts, and integration/demo checks remain planned.
 
 ## Start here
 
@@ -24,4 +24,12 @@ npm run dev
 npm start
 ```
 
-No test, integration, seed/reset, or Newman demo scripts exist yet. Add them with their corresponding tasks. The dependency manifest includes JWT, bcrypt, and Newman packages, but their application features are not implemented.
+Run the B00 date/money tests without starting the server or configuring a database:
+
+```text
+npm test
+```
+
+B00: all 10 date/money tests passed under Node 24.19.0, including timezone boundaries. These tests require no database; API and database integration remain pending. See [recorded results](docs/acceptance-checklist.md#recorded-results).
+
+Integration, seed/reset and Newman demo scripts remain planned. The dependency manifest includes JWT, bcrypt and Newman packages, but their application features are not implemented.
