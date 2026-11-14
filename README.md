@@ -1,6 +1,6 @@
 # Dobby Rental Car Booking
 
-A rental car booking backend by Saint (A) and Poom (B). A00 provides the Express foundation, A01 adds authentication, B00 adds date/money helpers, and B01 adds Vehicle/Booking models, validators and serializers. Company review, vehicle/booking APIs, seed/reset and the Newman demo remain planned.
+A rental car booking backend by Saint (A) and Poom (B). A00 provides the Express foundation, A01 adds authentication, A02 adds company applications/admin review, B00 adds date/money helpers, and B01 adds Vehicle/Booking models, validators and serializers. Vehicle/booking APIs, seed/reset and the Newman demo remain planned.
 
 ## Start here
 
@@ -36,6 +36,10 @@ The base path is `/api/v1/auth`:
 
 Authentication uses 24-hour HS256 Bearer tokens with persisted, revocable sessions. Use [OpenAPI](docs/contracts/openapi.json) for request fields and [A01 diagrams](docs/diagrams/a01-auth.md) for flows and course alignment. Never commit credentials or tokens.
 
+## Company applications and review
+
+Company representatives can read their profile and application history and submit revisions. Admins review applications and access the review queue. A revision does not replace the approved profile until approval; approval never clears suspension. See [OpenAPI](docs/contracts/openapi.json) for endpoints and fields and [A02 diagrams](docs/diagrams/a02-company-review.md) for the flow.
+
 ## Tests
 
 Run all local tests without a database:
@@ -50,4 +54,4 @@ Run all database integration tests with both test connections supplied locally:
 npm run test:integration
 ```
 
-Auth tests use `TEST_MONGO_URI` and accept only `dobby_test_a`. Rental model tests use `TEST_MONGO_URI_B` and accept only `dobby_test_b`. Both need a replica set, create indexes first and clean up only their synthetic fixtures. Keep them separate from development data. Test results and unverified cases belong in the PR description; the checklist tracks acceptance coverage.
+Auth/company-review tests use `TEST_MONGO_URI` and accept only `dobby_test_a`. Rental model tests use `TEST_MONGO_URI_B` and accept only `dobby_test_b`. All need a replica set, create indexes first and clean up only their synthetic fixtures. Keep them separate from development data. Test results and unverified cases belong in the PR description; the checklist tracks acceptance coverage.

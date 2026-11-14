@@ -44,7 +44,7 @@ After G0, continue A01/A02 and B01. B can build reads and validation while waiti
 
 B00 is merged in [PR #9](https://github.com/kormuyang/swdevprac1-project-dobby/pull/9). A01 integrates it into the shared local test command; G0 verification remains pending.
 
-B01 is implemented locally on `codex/b01-vehicle-booking-models`, based on A01 while PR #4 remains open. See [module interfaces and data relationships](design.md#b01-module-interfaces). Shared validation extraction, test scripts and example configuration are proposed for A's review. Endpoints and transaction/race checks remain B02–B04 work.
+B01 is implemented on `codex/b01-vehicle-booking-models`, integrated with main after A01/A02. Saint must review and approve its PR before merge. See [module interfaces and data relationships](design.md#b01-module-interfaces). Shared validation extraction, test scripts and example configuration are proposed for A's review. Endpoints and transaction/race checks remain B02–B04 work.
 
 ## Joining booking and suspension
 

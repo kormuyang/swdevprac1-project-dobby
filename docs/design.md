@@ -2,7 +2,7 @@
 
 Use [OpenAPI](contracts/openapi.json) for endpoint names, inputs and response shapes. This file covers data, shared API rules and service functions. Update affected definitions together before changing the implementation.
 
-The foundation and A01 auth endpoints/models are implemented. Provider review, vehicle and booking APIs below are planned. See README for verification limits.
+The foundation, A01 auth endpoints/models and A02 company application/profile review endpoints are implemented. Vehicle and booking APIs below remain planned. See README for verification limits.
 
 ## Contents
 
@@ -175,7 +175,7 @@ Serialize _id as id; hide __v, revisions, passwordHash, sid and raw claims. Sele
 - `validators/fields.js` holds the existing scalar/object checks shared with auth; moving those checks does not change auth behavior. List/query validation belongs to B02/B03 with its routes.
 - `serializers/vehicles.js`: `serializeVehicle(vehicle)`, `serializeVehicleSnapshot(vehicle)`. `serializers/bookings.js`: `serializeBooking(booking, customer, today)` requires explicitly selected current customer contact and one captured Thailand date. These return DTOs, not HTTP envelopes, and never populate database references themselves.
 - Vehicle and Booking enforce field constraints and fixed snapshots on document saves. Booking checks that dates, days and total agree; historical records remain valid. Later services own eligibility, permissions, state transitions and concurrency guards. Query writes must use allowlisted fields and enable update validation; multi-field booking edits use document saves so the consistency checks run.
-- `npm run test:integration` runs both owners' suites. Auth uses `TEST_MONGO_URI` with `dobby_test_a`; rental models use `TEST_MONGO_URI_B` with `dobby_test_b`. Each suite rejects a different database name before connecting and deletes only its synthetic fixture IDs.
+- `npm run test:integration` runs both owners' suites. Auth/company-review tests use `TEST_MONGO_URI` with `dobby_test_a`; rental models use `TEST_MONGO_URI_B` with `dobby_test_b`. Each suite rejects a different database name before connecting and deletes only its synthetic fixture IDs.
 
 ```mermaid
 erDiagram
