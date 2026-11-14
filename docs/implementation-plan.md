@@ -97,3 +97,5 @@ Saint implemented the agreed `services/bookingCancellation.js` interface against
 B02 implements vehicle/discovery endpoints on B01 and the reviewed A03 dependency. A03 uses the agreed real guard/cancellation operations; B02 repeats the provider guard for vehicle writes. The B02 PR records results and remaining acceptance limits.
 
 B03 implements customer/admin booking reads, create/date-edit/cancel and the shared-guard integration. It reuses A03 cancellation unchanged. Company views and combined suspension races follow in B04; each PR awaits Saint review.
+
+B04 adds approved-company booking views and combined A03/B HTTP race/rollback checks. A03 dependency behavior passes local real-database verification; Atlas and partner approval remain pending.

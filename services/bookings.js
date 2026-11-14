@@ -7,6 +7,7 @@ const User = require('../models/User');
 const { todayBangkok, validateRentalDates } = require('../utils/dates');
 const { calculateTotal } = require('../utils/money');
 const { serializeVehicleSnapshot } = require('../serializers/vehicles');
+const { requireApprovedCompany } = require('./companyAccess');
 
 function fail(status, message) {
   const error = new Error(message);
@@ -44,6 +45,16 @@ function statusFilter(status, today) {
   return {};
 }
 
+async function listForFilter(filter, filters, today) {
+  const total = await Booking.countDocuments(filter);
+  const data = await Booking.find(filter).sort({ createdAt: -1, _id: -1 })
+    .skip((filters.page - 1) * filters.limit).limit(filters.limit)
+    .populate('userId', 'name email telephone');
+  return { data, count: data.length, today, pagination: {
+    page: filters.page, limit: filters.limit, total, pages: Math.ceil(total / filters.limit),
+  } };
+}
+
 async function listBookings(filters, ctx) {
   const today = todayBangkok(ctx.clock ? ctx.clock.now() : new Date());
   const filter = { ...bookingScope(ctx.actor), ...statusFilter(filters.status, today) };
@@ -55,13 +66,7 @@ async function listBookings(filters, ctx) {
       filter.providerId = filters.providerId;
     }
   }
-  const total = await Booking.countDocuments(filter);
-  const data = await Booking.find(filter).sort({ createdAt: -1, _id: -1 })
-    .skip((filters.page - 1) * filters.limit).limit(filters.limit)
-    .populate('userId', 'name email telephone');
-  return { data, count: data.length, today, pagination: {
-    page: filters.page, limit: filters.limit, total, pages: Math.ceil(total / filters.limit),
-  } };
+  return listForFilter(filter, filters, today);
 }
 
 async function getBooking(id, ctx) {
@@ -209,4 +214,28 @@ function cancelBooking(id, ctx) {
   return writeBooking(id, null, ctx, 'cancel');
 }
 
-module.exports = { createBooking, updateBookingDates, cancelBooking, getBooking, listBookings };
+
+async function listCompanyBookings(filters, ctx) {
+  await requireApprovedCompany(ctx.actor);
+  if (filters.vehicleId && !(await Vehicle.exists({ _id: filters.vehicleId, providerId: ctx.actor.providerId }))) {
+    fail(404, 'The vehicle was not found.');
+  }
+  const today = todayBangkok(ctx.clock ? ctx.clock.now() : new Date());
+  const filter = { providerId: ctx.actor.providerId, ...statusFilter(filters.status, today) };
+  if (filters.vehicleId) {
+    filter.vehicleId = filters.vehicleId;
+  }
+  return listForFilter(filter, filters, today);
+}
+
+async function getCompanyBooking(id, ctx) {
+  await requireApprovedCompany(ctx.actor);
+  const booking = await Booking.findOne({ _id: id, providerId: ctx.actor.providerId })
+    .populate('userId', 'name email telephone');
+  if (!booking) {
+    fail(404, 'The booking was not found.');
+  }
+  return booking;
+}
+module.exports = { createBooking, updateBookingDates, cancelBooking, getBooking, listBookings,
+  listCompanyBookings, getCompanyBooking };

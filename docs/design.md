@@ -323,3 +323,7 @@ sequenceDiagram
     Service->>DB: Save dates, snapshot and calculated total; commit
     Service-->>Customer: Booking with selected current customer contact
 ```
+
+### B04 company access and suspension integration
+
+Company booking reads require current approved status, scope by provider before population, and return current selected customer contact with booked snapshots. A company vehicle filter is checked for ownership before querying bookings. The A03 cancellation helper remains unchanged. HTTP race tests hold real booking guard writes until MongoDB reports contention, then verify suspension leaves no confirmed non-completed booking. Fault injection after actual cancellation writes verifies rollback of provider state, bookings and user/vehicle guard revisions.

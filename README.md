@@ -1,6 +1,6 @@
 # Dobby Rental Car Booking
 
-A rental car booking backend by Saint (A) and Poom (B). A00 provides the Express foundation, A01 adds authentication, A02 adds company applications/admin review, B00 adds date/money helpers, and B01 adds Vehicle/Booking models, validators and serializers. A03 suspension/reactivation is integrated as a development dependency. B02 provides public discovery and company vehicle APIs. B03 provides customer/admin booking operations. Company booking views, seed/reset and the combined demo follow in later tasks.
+A rental car booking backend by Saint (A) and Poom (B). A00 provides the Express foundation, A01 adds authentication, A02 adds company applications/admin review, B00 adds date/money helpers, and B01 adds Vehicle/Booking models, validators and serializers. A03 suspension/reactivation is integrated as a development dependency. B02 provides public discovery and company vehicle APIs. B03 provides customer/admin booking operations. B04 adds approved-company booking views and suspension integration. Seed/reset and the combined demo follow in B05 integration.
 
 ## Start here
 
