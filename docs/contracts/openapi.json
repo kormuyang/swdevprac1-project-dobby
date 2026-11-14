@@ -3,7 +3,7 @@
   "info": {
     "title": "Dobby Rental Car Booking API",
     "version": "1.0.0",
-    "description": "Design contract for a backend-only pair project. Not a deployed or implemented API. All date-only rules use Asia/Bangkok; monetary values are integer satang. Unknown input/query fields are rejected. API contract is authoritative; examples are synthetic. See docs/design.md for error precedence and atomic behavior."
+    "description": "Target API contract for a backend-only pair project. The health handler, Swagger mount, and JSON 404/429 responses are defined in server.js. See README.md for setup and runtime verification limits. Other feature endpoints, validation, and JSON error handling are planned. Planned date-only rules use Asia/Bangkok; monetary values are integer satang. Examples are synthetic. See docs/design.md for validation order and atomic behavior."
   },
   "servers": [
     {
@@ -14,7 +14,7 @@
   "tags": [
     {
       "name": "System",
-      "description": "Readiness"
+      "description": "Process health"
     },
     {
       "name": "Auth",
@@ -49,8 +49,8 @@
     "/health": {
       "get": {
         "operationId": "health",
-        "summary": "Check local API readiness",
-        "description": "Check local API readiness",
+        "summary": "Check process health",
+        "description": "Return the process health status; this does not check database readiness.",
         "tags": [
           "System"
         ],
@@ -198,7 +198,7 @@
       "post": {
         "operationId": "login",
         "summary": "Log in using email/password",
-        "description": "Issue 24-hour JWT and persisted session. Suspended representative gets 403 PROVIDER_SUSPENDED; pending/rejected representatives may log in.",
+        "description": "Issue 24-hour JWT and persisted session. Suspended representative gets 403 because the representative is suspended; pending/rejected representatives may log in.",
         "tags": [
           "Auth"
         ],
@@ -2343,7 +2343,7 @@
       "post": {
         "operationId": "reviewApplication",
         "summary": "Approve or reject one pending version",
-        "description": "Pending only; repeated decision returns 409 INVALID_STATE. Rejection reason required. Approval atomically switches latest-approved pointer; cannot clear suspension. A rejected revision leaves last approved profile and eligibility intact.",
+        "description": "Pending only; repeated decision returns 409 when the resource is not in the required state. Rejection reason required. Approval atomically switches latest-approved pointer; cannot clear suspension. A rejected revision leaves last approved profile and eligibility intact.",
         "tags": [
           "Admin"
         ],
@@ -2420,7 +2420,7 @@
       "post": {
         "operationId": "suspendProvider",
         "summary": "Suspend and cancel all non-completed rentals",
-        "description": "Approved only. Atomically set suspended and cancel all confirmed bookings with dueDate >= Thailand today, including ongoing rentals. Keep completed/cancelled history. Serialize against booking mutations; report success only after commit. Repeated suspend returns 409 INVALID_STATE.",
+        "description": "Approved only. Atomically set suspended and cancel all confirmed bookings with dueDate >= Thailand today, including ongoing rentals. Keep completed/cancelled history. Serialize against booking mutations; report success only after commit. Repeated suspend returns 409 when the resource is not in the required state.",
         "tags": [
           "Admin"
         ],
@@ -2497,7 +2497,7 @@
       "post": {
         "operationId": "reactivateProvider",
         "summary": "Reactivate suspended company",
-        "description": "Suspended only with approved profile; record resolution note. Return approved but never restore cancelled bookings. Repeated reactivate returns 409 INVALID_STATE.",
+        "description": "Suspended only with approved profile; record resolution note. Return approved but never restore cancelled bookings. Repeated reactivate returns 409 when the resource is not in the required state.",
         "tags": [
           "Admin"
         ],
@@ -3686,30 +3686,6 @@
               false
             ]
           },
-          "code": {
-            "type": "string",
-            "enum": [
-              "VALIDATION_ERROR",
-              "UNAUTHENTICATED",
-              "FORBIDDEN",
-              "PROVIDER_SUSPENDED",
-              "PROVIDER_NOT_APPROVED",
-              "NOT_FOUND",
-              "EMAIL_TAKEN",
-              "REGISTRATION_NUMBER_TAKEN",
-              "VIN_TAKEN",
-              "PENDING_APPLICATION_EXISTS",
-              "INVALID_STATE",
-              "BOOKING_LIMIT_REACHED",
-              "VEHICLE_UNAVAILABLE",
-              "BOOKING_OVERLAP",
-              "BOOKING_LOCKED",
-              "WINDOW_CONFLICT",
-              "WRITE_CONFLICT",
-              "RATE_LIMITED",
-              "INTERNAL_ERROR"
-            ]
-          },
           "message": {
             "type": "string",
             "minLength": 1,
@@ -3718,7 +3694,6 @@
         },
         "required": [
           "success",
-          "code",
           "message"
         ]
       },

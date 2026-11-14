@@ -24,9 +24,12 @@ Most choices were agreed on November 11, 2026. “User” means a confirmed prod
 | D-27, D-29 | User | Suspension cancels upcoming/ongoing bookings and blocks protected company reads/writes, including old sessions. Admin cannot create bookings. |
 | D-34 | Default | Node 24/CommonJS, Express 5/Mongoose 9; routes/controllers/models plus focused services. |
 | D-35 | Default | JWT Bearer with revocable sessions. |
-| D-36 | Default | One representative per company; immutable login/registration identity; booked vehicle/branch/rate snapshots and current customer contact in company views. Use allowlists, shared transaction guards and isolated DB tests. |
+| D-36 | Default | One representative per company; immutable login/registration identity; booked vehicle/branch/rate snapshots and current customer contact in company views. Use allowlists, coordinated transaction guards and isolated DB tests. |
 | D-37 | User + default | Self-contained docs; example code is optional reference. Swagger serves committed OpenAPI. |
 | D-38 | User + default | Keep the A/B split and T01–T42. Features and runtime checks are still to be implemented. |
+| D-39 | User, November 13 | Defer a centralized API error abstraction until the codebase is mature enough to demonstrate its value. Services use ordinary errors with HTTP `status`, and controllers map HTTP errors locally. |
+| D-40 | User, November 13 | A00 has no shared transaction wrapper. Feature services implement and own their transaction boundaries when needed, passing the same session through all operations in one transaction. |
+| D-41 | User, November 13 | API errors use `{success:false,message}` with HTTP status conveying the category. Do not include an error `code` field or require custom error identifiers. |
 
 Booking records supply occupied dates; do not duplicate the list on Vehicle.
 
