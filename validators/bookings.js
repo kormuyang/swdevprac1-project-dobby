@@ -1,5 +1,6 @@
+const { listPage } = require('./rentalLists');
 const { inclusiveDays } = require('../utils/dates');
-const { requireObject, rejectUnknownFields, objectIdField } = require('./fields');
+const { requireObject, rejectUnknownFields, objectIdField, enumField } = require('./fields');
 
 function validateBookingDatesUpdate(body) {
   requireObject(body, 'Request body');
@@ -18,4 +19,22 @@ function validateBookingCreate(body) {
   };
 }
 
-module.exports = { validateBookingCreate, validateBookingDatesUpdate };
+
+function validateBookingFilters(query, today, actor) {
+  const fields = ['status'];
+  if (actor?.role === 'admin') {
+    fields.push('providerId', 'userId');
+  }
+  const result = listPage(query, fields);
+  if (query.status !== undefined) {
+    result.status = enumField(query.status, 'status', ['upcoming', 'ongoing', 'completed', 'cancelled']);
+  }
+  for (const field of ['providerId', 'userId']) {
+    if (query[field] !== undefined) {
+      result[field] = objectIdField(query[field], field);
+    }
+  }
+  return result;
+}
+
+module.exports = { validateBookingCreate, validateBookingDatesUpdate, validateBookingFilters };

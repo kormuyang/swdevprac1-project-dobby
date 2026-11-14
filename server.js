@@ -44,6 +44,7 @@ app.get('/api/v1/health', (req, res) => {
 });
 
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/bookings', require('./routes/bookings'));
 app.use('/api/v1', require('./routes/publicVehicles'));
 app.use('/api/v1/company/vehicles', require('./routes/companyVehicles'));
 app.use('/api/v1/company', companyRoutes);
