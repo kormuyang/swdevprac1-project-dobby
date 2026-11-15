@@ -47,4 +47,22 @@ async function cancelBooking(req, res) {
     return sendError(res, error);
   }
 }
-module.exports = { listBookings, getBooking, createBooking, updateBookingDates, cancelBooking };
+
+async function listCompanyBookings(req, res) {
+  try {
+    const result = await service.listCompanyBookings(req.filters, { actor: req.actor });
+    return res.json({ success: true, data: result.data.map((booking) => bookingDto(booking, result.today)),
+      count: result.count, pagination: result.pagination });
+  } catch (error) {
+    return sendError(res, error);
+  }
+}
+async function getCompanyBooking(req, res) {
+  try {
+    return res.json({ success: true, data: bookingDto(await service.getCompanyBooking(req.resourceId, { actor: req.actor })) });
+  } catch (error) {
+    return sendError(res, error);
+  }
+}
+module.exports = { listBookings, getBooking, createBooking, updateBookingDates, cancelBooking,
+  listCompanyBookings, getCompanyBooking };

@@ -98,11 +98,11 @@ async function apiFixture(t, extraRoutes = []) {
   app.use('/api/v1', require('../../routes/publicVehicles'));
   app.use('/api/v1/company/vehicles', require('../../routes/companyVehicles'));
   app.use('/api/v1/auth', require('../../routes/auth'));
-  app.use('/api/v1/company', require('../../routes/company'));
   app.use('/api/v1/admin/providers', require('../../routes/providerLifecycle'));
   for (const [route, router] of extraRoutes) {
     app.use(route, router);
   }
+  app.use('/api/v1/company', require('../../routes/company'));
   app.use((req, res) => res.status(404).json({ success: false, message: 'Not found.' }));
   server = app.listen(0, '127.0.0.1');
   await new Promise((resolve, reject) => { server.once('listening', resolve); server.once('error', reject); });
