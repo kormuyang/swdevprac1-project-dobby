@@ -13,7 +13,7 @@ flowchart LR
     Company --> Vehicles["GET, POST /company/vehicles<br/>PATCH details, availability and activation"]
     Customer[Customer] --> Bookings["GET, POST /bookings<br/>GET, PATCH, DELETE booking detail"]
     Company --> CompanyBookings["GET /company/bookings<br/>GET booking detail"]
-    Admin --> Bookings
+    Admin -->|Read, date-edit, cancel| Bookings
     Vehicles --> Rentals[(Vehicle / Booking)]
     Bookings --> Rentals
     CompanyBookings --> Rentals

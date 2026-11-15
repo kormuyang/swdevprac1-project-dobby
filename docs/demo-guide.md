@@ -21,4 +21,5 @@ Allow up to three minutes afterward for questions. The collection asserts the AP
 - Update the [use cases](use-cases.md), [API map](diagrams/api.md), design sequence diagrams and [contributions](contributions.md) when the implementation changes.
 - D-07: confirm the instructor's UML Profile for API notation. Current Mermaid diagrams are engineering diagrams.
 - D-10: confirm AI disclosure, extra credit and teaching-video expectations. No institution-specific policy is inferred.
-- Saint must approve B PRs before merge; automated checks do not establish partner approval.
+- Review and merge timing follow D-43; Saint reviews integrated main afterward.
+- D-45 defers the existing Newman dependency findings. Use the trusted project collection against the local API; remediation remains open.
