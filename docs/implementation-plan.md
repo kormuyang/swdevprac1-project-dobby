@@ -95,3 +95,5 @@ The user authorized implementing B02–B05 sequentially on stacked branches whil
 Saint implemented the agreed `services/bookingCancellation.js` interface against real collections to unblock suspension while B's API/models are absent. Local replica-set tests exercise cancellation, rollback and the shared guard protocol. B must integrate its booking writers with this provider/user/vehicle guard order and review the helper. G2/G3 and T35 across actual B HTTP endpoints remain pending.
 
 B02 implements vehicle/discovery endpoints on B01 and the reviewed A03 dependency. A03 uses the agreed real guard/cancellation operations; B02 repeats the provider guard for vehicle writes. The B02 PR records results and remaining acceptance limits.
+
+B03 implements customer/admin booking reads, create/date-edit/cancel and the shared-guard integration. It reuses A03 cancellation unchanged. Company views and combined suspension races follow in B04; each PR awaits Saint review.

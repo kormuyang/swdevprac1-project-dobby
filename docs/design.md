@@ -254,6 +254,8 @@ Counting inside a transaction alone can still allow competing inserts. All affec
 
 ### Booking writes — B
 
+B03 records returned by booking services populate only `userId` with current name/email/telephone, after applying ownership scope. The booking serializer accepts that selected customer record and still returns a scalar userId. Writes clear the completed transaction session before response population. Date-edit request validation checks shape/calendar ordering; cutoff, duration, eligibility, cap and overlap run in the service in the documented order.
+
 1. Identify fixed provider/user/vehicle references. Preliminary reads only identify targets; do not trust them for final validation.
 2. Start the service-owned transaction, take guards in order, re-read records and check matching references, scope and provider/vehicle eligibility.
 3. Check state/cutoff before proposed dates, then cap and overlap. Date PATCH needs both dates, new start >= today and the full rental inside the window. Count owner bookings excluding self on edit: fewer than three before creation, at most three after edit.
@@ -304,4 +306,20 @@ sequenceDiagram
     Service->>DB: Recheck approval, ownership and retained bookings
     Service->>DB: Save and commit
     Service-->>Company: Safe vehicle response
+```
+
+### B03 booking flow
+
+```mermaid
+sequenceDiagram
+    actor Customer
+    participant Route as Booking route
+    participant Service as Booking service
+    participant DB as MongoDB
+    Customer->>Route: Vehicle and rental dates
+    Route->>Service: Validated input and actor
+    Service->>DB: Guard provider, customer and vehicle in one transaction
+    Service->>DB: Recheck eligibility, counted bookings and overlap
+    Service->>DB: Save dates, snapshot and calculated total; commit
+    Service-->>Customer: Booking with selected current customer contact
 ```

@@ -2,10 +2,11 @@ const { bookingStatus } = require('../utils/dates');
 const { serializeVehicleSnapshot } = require('./vehicles');
 
 function serializeBooking(booking, customer, today) {
+  const userId = booking.userId?._id || booking.userId;
   // Require the caller to supply the current, scoped customer; never load it here.
   if (
     !customer ||
-    String(customer._id) !== String(booking.userId) ||
+    String(customer._id) !== String(userId) ||
     typeof customer.name !== 'string' ||
     typeof customer.email !== 'string' ||
     typeof customer.telephone !== 'string'
@@ -22,7 +23,7 @@ function serializeBooking(booking, customer, today) {
   }
   return {
     id: String(booking._id),
-    userId: String(booking.userId),
+    userId: String(userId),
     providerId: String(booking.providerId),
     vehicleId: String(booking.vehicleId),
     customer: {
