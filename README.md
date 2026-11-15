@@ -55,3 +55,7 @@ npm run test:integration
 ```
 
 Auth/company-review tests use `TEST_MONGO_URI` and accept only `dobby_test_a`. Rental model tests use `TEST_MONGO_URI_B` and accept only `dobby_test_b`. All need a replica set, create indexes first and clean up only their synthetic fixtures. Keep them separate from development data. Test results and unverified cases belong in the PR description; the checklist tracks acceptance coverage.
+
+## Company lifecycle
+
+Admin suspend/reactivate routes are mounted under `/api/v1/admin/providers`. The controller owns the transaction. `services/bookingCancellation.js` uses the caller's session and the shared provider/user/vehicle guard order. See [A03 diagrams](docs/diagrams/a03-provider-lifecycle.md). Actual B HTTP integration and Atlas acceptance require separate verification.
