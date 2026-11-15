@@ -55,3 +55,7 @@ npm run test:integration
 ```
 
 Integration tests accept only the dedicated `dobby_test_a` replica-set database, create indexes first and clean up their synthetic fixtures. Use a separate database from development and B's tests. Test results and unverified cases belong in the PR description; the checklist tracks acceptance coverage.
+
+## Company lifecycle
+
+Admin suspend/reactivate routes are mounted under `/api/v1/admin/providers`. The controller owns the transaction. `services/bookingCancellation.js` uses the caller's session and the shared provider/user/vehicle guard order. See [A03 diagrams](docs/diagrams/a03-provider-lifecycle.md). Actual B HTTP integration and Atlas acceptance require separate verification.
