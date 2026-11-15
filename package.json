@@ -12,7 +12,8 @@
     "test": "node --test tests/auth.test.js tests/dates.test.js tests/money.test.js tests/providers.test.js tests/vehicles.test.js tests/bookings.test.js",
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "test:integration": "node --test tests/auth.integration.test.js tests/providers.integration.test.js tests/rentals.integration.test.js tests/lifecycle.integration.test.js"
+    "test:integration": "node --test tests/auth.integration.test.js tests/providers.integration.test.js tests/rentals.integration.test.js tests/lifecycle.integration.test.js tests/vehicles.api.integration.test.js"
+
   },
   "dependencies": {
     "bcryptjs": "3.0.3",
