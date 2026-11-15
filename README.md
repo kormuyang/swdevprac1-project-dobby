@@ -65,3 +65,7 @@ Admin suspend/reactivate routes are mounted under `/api/v1/admin/providers`. The
 `npm run seed` accepts only `dobby_dev_a` or `dobby_test_a` through MONGO_URI. Supply SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD and SEED_FIXTURE_PASSWORD locally; passwords require 8–72 UTF-8 bytes. It creates an admin, two customers and four company-state fixtures. It builds indexes and replaces identified fixtures only, refusing replacement when vehicle or booking data depends on them.
 
 `npm run reset:test` requires TEST_MONGO_URI to name `dobby_test_a` and ALLOW_TEST_DB_RESET=true. It deletes that test database. Normal startup runs neither seed nor reset. Rental fixtures and explicit B reset follow in B05.
+
+## Auth and provider demo
+
+After seeding and starting the local API, supply the seed administrator credentials locally and run `npm run test:demo`. The runner generates synthetic account credentials in memory and runs the [auth/provider collection](postman/a-auth-provider.postman_collection.json) against loopback hosts only. See the [demo guide](docs/demo-guide.md), [use cases](docs/use-cases-a.md) and [API map](docs/diagrams/a-api.md). B05 consolidates the full rental journey.

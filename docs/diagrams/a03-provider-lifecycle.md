@@ -31,3 +31,24 @@ sequenceDiagram
 `services/bookingCancellation.js` implements the agreed B-owned helper interface. It uses real `bookings` and `vehicles` collections and User guards; it requires the caller's active transaction and provider guard. Saint implemented this dependency to unblock A03 while B's models/API are absent. B owns its subsequent integration and review.
 
 Booking writers must use provider → sorted users → sorted vehicles guards and recheck eligibility inside the same transaction. The integration test uses synthetic native collection fixtures and a competing B-style guarded transaction. It verifies persisted cancellation, rollback after cancellation writes, old-session denial/logout, no restoration and serialization with that competing transaction. It does not verify unimplemented B HTTP endpoints or establish T35 for those endpoints.
+
+## Reactivate
+
+```mermaid
+sequenceDiagram
+    actor Admin
+    participant Route as Admin provider lifecycle route
+    participant Controller as Provider lifecycle controller
+    participant DB as MongoDB
+    Admin->>Route: POST /admin/providers/{providerId}/reactivate with resolutionNote
+    Route->>Route: Authenticate and authorize admin
+    Route->>Controller: Validated request
+    Controller->>DB: Start transaction and take provider guard
+    Controller->>DB: Require suspended provider and approved application
+    Controller->>DB: Set status to approved and save resolution note
+    Controller->>DB: Commit
+    Controller-->>Admin: 200 provider
+    Note over Controller,DB: Previously cancelled bookings and revoked sessions stay unchanged
+```
+
+These diagrams describe interfaces and implementation behavior. They do not establish a live database result. The instructor-specific API UML notation remains unresolved under D-07.
