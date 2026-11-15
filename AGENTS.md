@@ -37,4 +37,4 @@ Use short headings, direct sentences and bullets for rules or assumptions. Expla
 
 ## Current state
 
-A00 provides the foundation, A01 implements authentication, A02 implements company applications/admin review, and B00 provides date/money helpers. See [README](README.md) for setup and test commands. Other feature APIs, seed/reset and the Newman demo remain planned. Return errors as `{success:false,message}` and map service errors locally in controllers. See [D-39 and D-41](docs/decisions.md#accepted-decisions) and [error handling](docs/design.md#service-interfaces-and-transactions).
+A00 provides the foundation, A01/A02 implement authentication and company review, B00 provides date/money helpers, and B01 implements Vehicle/Booking models, validators and serializers. See [README](README.md) for setup and test commands. Other feature APIs, seed/reset and the Newman demo remain planned. Return errors as `{success:false,message}` and map service errors locally in controllers. See [D-39 and D-41](docs/decisions.md#accepted-decisions) and [error handling](docs/design.md#service-interfaces-and-transactions).

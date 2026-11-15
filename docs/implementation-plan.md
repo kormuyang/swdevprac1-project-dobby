@@ -44,6 +44,8 @@ After G0, continue A01/A02 and B01. B can build reads and validation while waiti
 
 B00 is merged in [PR #9](https://github.com/kormuyang/swdevprac1-project-dobby/pull/9). A01 integrates it into the shared local test command; G0 verification remains pending.
 
+B01 is implemented on `codex/b01-vehicle-booking-models`, integrated with main after A01/A02. Saint must review and approve its PR before merge. See [module interfaces and data relationships](design.md#b01-module-interfaces). Shared validation extraction, test scripts and example configuration are proposed for A's review. Endpoints and transaction/race checks remain B02–B04 work.
+
 ## Joining booking and suspension
 
 Split A03/B03 so neither waits for the other's unfinished service:
@@ -84,7 +86,7 @@ npm run reset:test
 npm run test:demo
 ```
 
-Integration/reset use TEST_MONGO_URI and database dobby_test_<owner>; reset also needs an explicit flag. Seed only an explicitly named dev/test database. test:demo runs Newman once the collection exists. A04 documents the working setup in README.
+Auth integration uses TEST_MONGO_URI with dobby_test_a; B integration uses TEST_MONGO_URI_B with dobby_test_b. Reset uses TEST_MONGO_URI with an explicitly allowed database and also needs an explicit flag. Seed only an explicitly named dev/test database. test:demo runs Newman once the collection exists. A04 documents the working setup in README.
 
 When requesting work, name one task and ask for its tests/docs/diagrams, results and remaining dependencies. Stop for review of that task before starting another.
 

@@ -1,6 +1,6 @@
 # Dobby Rental Car Booking
 
-A rental car booking backend by Saint (A) and Poom (B). A00 provides the Express foundation, A01 adds authentication, A02 adds company applications/admin review, and B00 adds date/money helpers. Vehicle/booking APIs, seed/reset and the Newman demo remain planned.
+A rental car booking backend by Saint (A) and Poom (B). A00 provides the Express foundation, A01 adds authentication, A02 adds company applications/admin review, B00 adds date/money helpers, and B01 adds Vehicle/Booking models, validators and serializers. Vehicle/booking APIs, seed/reset and the Newman demo remain planned.
 
 ## Start here
 
@@ -48,13 +48,13 @@ Run all local tests without a database:
 npm test
 ```
 
-Run database integration tests with `TEST_MONGO_URI` supplied locally:
+Run all database integration tests with both test connections supplied locally:
 
 ```text
 npm run test:integration
 ```
 
-Integration tests accept only the dedicated `dobby_test_a` replica-set database, create indexes first and clean up their synthetic fixtures. Use a separate database from development and B's tests. Test results and unverified cases belong in the PR description; the checklist tracks acceptance coverage.
+Auth/company-review tests use `TEST_MONGO_URI` and accept only `dobby_test_a`. Rental model tests use `TEST_MONGO_URI_B` and accept only `dobby_test_b`. All need a replica set, create indexes first and clean up only their synthetic fixtures. Keep them separate from development data. Test results and unverified cases belong in the PR description; the checklist tracks acceptance coverage.
 
 ## Company lifecycle
 
