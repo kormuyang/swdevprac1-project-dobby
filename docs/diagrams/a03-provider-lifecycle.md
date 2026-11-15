@@ -28,9 +28,9 @@ sequenceDiagram
 
 ## Integration contract
 
-`services/bookingCancellation.js` implements the agreed B-owned helper interface. It uses real `bookings` and `vehicles` collections and User guards; it requires the caller's active transaction and provider guard. Saint implemented this dependency to unblock A03 while B's models/API are absent. B owns its subsequent integration and review.
+`services/bookingCancellation.js` implements the agreed B-owned helper interface. It uses real `bookings` and `vehicles` collections and User guards; it requires the caller's active transaction and provider guard. Saint implemented this dependency to unblock A03 before B’s models/API were available. B owns its subsequent integration and review.
 
-Booking writers must use provider → sorted users → sorted vehicles guards and recheck eligibility inside the same transaction. The integration test uses synthetic native collection fixtures and a competing B-style guarded transaction. It verifies persisted cancellation, rollback after cancellation writes, old-session denial/logout, no restoration and serialization with that competing transaction. It does not verify unimplemented B HTTP endpoints or establish T35 for those endpoints.
+Booking writers must use provider → sorted users → sorted vehicles guards and recheck eligibility inside the same transaction. The integration test uses synthetic native collection fixtures and a competing B-style guarded transaction. It verifies persisted cancellation, rollback after cancellation writes, old-session denial/logout, no restoration and serialization with that competing transaction. Actual B HTTP races and rollback are covered separately in [combined lifecycle integration](../../tests/booking-lifecycle.api.integration.test.js); Atlas acceptance remains pending.
 
 ## Reactivate
 

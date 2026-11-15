@@ -2,7 +2,7 @@
 
 Use [OpenAPI](contracts/openapi.json) for endpoint names, inputs and response shapes. This file covers data, shared API rules and service functions. Update affected definitions together before changing the implementation.
 
-The foundation, A01 auth endpoints/models and A02 company application/profile review endpoints are implemented. Vehicle and booking APIs below remain planned. See README for verification limits.
+The branch implements authentication, company review/lifecycle, vehicles and bookings, plus setup/demo tooling. Review and merge status are tracked in the implementation plan and PRs. See README for verification limits.
 
 ## Contents
 
@@ -90,7 +90,7 @@ All collections use timestamps and ObjectId references. A owns User/Provider/Pro
 - Money: integer satang, currency THB; rate 1..1,000,000,000 and total 1..30,000,000,000.
 - Trim strings. Maximum lengths: name 120, legalName 200, address 500, branch name/address 120/500, email 254, model 120, optional brand 80, document URL 2048.
 - Other lengths: telephone 3..30, registration number 1..50, VIN 6..40, reasons/notes 1..1000. No legal ID checksum checks.
-- Password: 8–72 UTF-8 bytes. Optional model year: integer 1900..2100. Seats: integer 1..20.
+- Password: 8–72 UTF-8 bytes. OpenAPI permits non-empty strings because its character-length constraint cannot express the byte limit; server validation enforces the byte rule. Optional model year: integer 1900..2100. Seats: integer 1..20.
 - Transmission: automatic/manual. Fuel: petrol/diesel/hybrid/electric/other.
 
 ### User — A
@@ -327,3 +327,11 @@ sequenceDiagram
 ### B04 company access and suspension integration
 
 Company booking reads require current approved status, scope by provider before population, and return current selected customer contact with booked snapshots. A company vehicle filter is checked for ownership before querying bookings. The A03 cancellation helper remains unchanged. HTTP race tests hold real booking guard writes until MongoDB reports contention, then verify suspension leaves no confirmed non-completed booking. Fault injection after actual cancellation writes verifies rollback of provider state, bookings and user/vehicle guard revisions.
+
+### B05 setup and delivery
+
+The combined Postman collection extends A05 with vehicle/booking folders and assertions for suspension cancellation and no restoration. Credentials and generated tokens stay in memory. Seed adds two approved-company vehicles and a fixed synthetic historical booking; reseeding can replace only identified fixtures and refuses other dependent data. Reset defaults to A; `--owner=b` explicitly selects B and still requires the reset flag. Performance checks use a separate `TEST_PERF_MONGO_URI` naming `dobby_test_performance`, build the prescribed two-provider/ten-vehicle/thirty-history dataset and report every elapsed time. Local runs do not establish Atlas results.
+
+### Course alignment for B
+
+Vehicle and booking endpoints retain the course route/controller/model structure. Focused services own the transactions because booking caps, overlap and suspension span multiple records. Dobby adds fixed booking snapshots, integer-satang calculations, Thailand calendar rules, scoped output and real race checks to implement the agreed rental requirements.

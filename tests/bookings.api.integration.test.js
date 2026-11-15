@@ -36,6 +36,11 @@ test('booking API enforces ownership, snapshots, cutoffs and real concurrent lim
   assert.equal(edited.body.data.ratePerDaySatang, 100_000);
   assert.equal(edited.body.data.totalPriceSatang, 200_000);
   assert.equal(edited.body.data.vehicleSnapshot.pickupBranch.name, 'Branch A');
+  const adminEdit = await f.request(`/bookings/${id}`, { method: 'PATCH', actor: f.admin,
+    body: { startDate: addDays(f.today, 8), dueDate: addDays(f.today, 9) } });
+  assert.equal(adminEdit.status, 200);
+  assert.equal(adminEdit.body.data.userId, f.customer.user.id);
+  assert.equal(adminEdit.body.data.ratePerDaySatang, 100_000);
   const cancelled = await f.request(`/bookings/${id}`, { method: 'DELETE', actor: f.customer });
   assert.equal(cancelled.status, 200);
   const again = await f.request(`/bookings/${id}`, { method: 'DELETE', actor: f.customer });

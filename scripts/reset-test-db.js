@@ -15,19 +15,24 @@ function getDatabaseName(uri) {
   return parsed.pathname.replace(/^\//, '');
 }
 
-function validateConfiguration() {
-  const uri = process.env.TEST_MONGO_URI;
-  if (!uri || getDatabaseName(uri) !== 'dobby_test_a') {
-    throw new Error('TEST_MONGO_URI must explicitly name dobby_test_a.');
+function validateConfiguration(owner = 'a') {
+  if (!['a', 'b'].includes(owner)) {
+    throw new Error('Reset owner must be a or b.');
+  }
+  const variable = owner === 'b' ? 'TEST_MONGO_URI_B' : 'TEST_MONGO_URI';
+  const database = `dobby_test_${owner}`;
+  const uri = process.env[variable];
+  if (!uri || getDatabaseName(uri) !== database) {
+    throw new Error(`${variable} must explicitly name ${database}.`);
   }
   if (process.env.ALLOW_TEST_DB_RESET !== 'true') {
-    throw new Error('Set ALLOW_TEST_DB_RESET=true to reset dobby_test_a.');
+    throw new Error(`Set ALLOW_TEST_DB_RESET=true to reset ${database}.`);
   }
   return uri;
 }
 
-async function resetTestDatabase() {
-  const uri = validateConfiguration();
+async function resetTestDatabase(owner = 'a') {
+  const uri = validateConfiguration(owner);
   await mongoose.connect(uri);
   try {
     await mongoose.connection.dropDatabase();
@@ -37,8 +42,15 @@ async function resetTestDatabase() {
 }
 
 if (require.main === module) {
-  resetTestDatabase().then(() => {
-    console.log('Reset dobby_test_a.');
+  let owner = 'invalid';
+  if (process.argv[2] === undefined || process.argv[2] === '--owner=a') {
+    owner = 'a';
+  }
+  if (process.argv[2] === '--owner=b') {
+    owner = 'b';
+  }
+  resetTestDatabase(owner).then(() => {
+    console.log(`Reset dobby_test_${owner}.`);
   }).catch((error) => {
     const safeConfigurationError = /^(TEST_MONGO_URI|Set ALLOW_TEST_DB_RESET)/.test(error.message);
     console.error(safeConfigurationError ? error.message : 'Reset failed. Check the local test database connection.');

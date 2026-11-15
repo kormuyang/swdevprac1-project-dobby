@@ -189,3 +189,16 @@ test('protect loads current actor and rejects missing sessions, suspension and d
   }
 });
 
+
+test('OpenAPI password character limits do not exclude valid UTF-8 byte-length passwords', () => {
+  const schemas = require('../docs/contracts/openapi.json').components.schemas;
+  const password = 'é'.repeat(4);
+  assert.equal(Buffer.byteLength(password, 'utf8'), 8);
+  assert.equal(validateRegistration({ ...registration, password }).password, password);
+  for (const name of ['RegistrationInput', 'CompanyRegistrationInput', 'LoginInput']) {
+    const constraint = schemas[name].properties.password;
+    assert.ok(Array.from(password).length >= constraint.minLength);
+    assert.ok(Array.from(password).length <= constraint.maxLength);
+    assert.match(constraint.description, /UTF-8 bytes/);
+  }
+});

@@ -1,6 +1,6 @@
-# A use cases
+# Use cases
 
-These use cases cover A01 authentication, A02 company applications, and A03 provider lifecycle. B-owned vehicle and booking flows are not included. Endpoint names and fields follow the [OpenAPI contract](contracts/openapi.json).
+These use cases cover the integrated A/B API. Endpoint names and fields follow the [OpenAPI contract](contracts/openapi.json).
 
 ## Visitor and account holder
 
@@ -22,6 +22,25 @@ These use cases cover A01 authentication, A02 company applications, and A03 prov
 - An administrator suspends an approved provider with a reason. Suspension and cancellation of non-completed bookings share the transaction boundary.
 - An administrator reactivates a suspended provider with a resolution note. Reactivation restores provider eligibility, not cancelled bookings.
 
+## Customer
+
+- A visitor browses approved providers and active vehicle listings, optionally for rental dates.
+- A customer books a specific eligible vehicle for 1–30 inclusive Thailand days, within the three-booking cap.
+- A customer reads only their own bookings, edits dates before the original start while retaining the agreed rate, or cancels before start.
+- Cancellation keeps history and frees dates; completion is derived after the due date.
+
+## Approved company vehicle operations
+
+- The company creates and reads its vehicles, changes branch/rate, offering period and activation.
+- Existing booking snapshots remain fixed. Window changes must retain upcoming/ongoing bookings.
+- The company reads own-vehicle booking history with current customer contact; it cannot edit or cancel bookings.
+
+## Administrator booking operations
+
+- The admin reads bookings across providers and edits dates under the same pre-start cutoff.
+- The admin can cancel ongoing rentals in an emergency. Completed bookings stay historical.
+- Concurrent booking and suspension operations preserve the cap, availability and atomic cancellation rules.
+
 ## API entry points
 
 - Authentication: `POST /auth/register`, `POST /auth/register-company`, `POST /auth/login`, `GET /auth/me`, `POST /auth/logout`.
@@ -33,4 +52,4 @@ These use cases cover A01 authentication, A02 company applications, and A03 prov
 
 The sequence diagrams are Mermaid engineering diagrams. They do not claim to use the instructor's UML Profile for API. D-07 remains open until the required notation is confirmed.
 
-See the [implemented A API map](diagrams/a-api.md) for access and endpoint groups.
+See the [implemented API map](diagrams/api.md) for access and endpoint groups.
