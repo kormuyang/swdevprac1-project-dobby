@@ -42,6 +42,10 @@ After G0, continue A01/A02 and B01. B can build reads and validation while waiti
 | B04 | Company/admin booking views and integration/race tests | B03 + A03 integration | T25, T31–T39, especially suspension races and rollback |
 | B05 | Vehicle/booking use cases, sequence/API diagrams and Postman folders; review A's changes | Related features | B's part of T40–T42; review approval/suspension integration |
 
+B00 is merged in [PR #9](https://github.com/kormuyang/swdevprac1-project-dobby/pull/9). A01 integrates it into the shared local test command; G0 verification remains pending.
+
+B01 is implemented on `codex/b01-vehicle-booking-models`, integrated with main after A01/A02. Saint must review and approve its PR before merge. See [module interfaces and data relationships](design.md#b01-module-interfaces). Shared validation extraction, test scripts and example configuration are proposed for A's review. Endpoints and transaction/race checks remain B02–B04 work.
+
 ## Joining booking and suspension
 
 Split A03/B03 so neither waits for the other's unfinished service:
@@ -82,10 +86,16 @@ npm run reset:test
 npm run test:demo
 ```
 
-Integration/reset use TEST_MONGO_URI and database dobby_test_<owner>; reset also needs an explicit flag. Seed only an explicitly named dev/test database. test:demo runs Newman once the collection exists. A04 documents the working setup in README.
+Auth integration uses TEST_MONGO_URI with dobby_test_a; B integration uses TEST_MONGO_URI_B with dobby_test_b. Reset uses TEST_MONGO_URI with an explicitly allowed database and also needs an explicit flag. Seed only an explicitly named dev/test database. test:demo runs Newman once the collection exists. A04 documents the working setup in README.
 
-When requesting work, name one task and ask for its tests/docs/diagrams, results and remaining dependencies. Stop for review of that task before starting another.
+The user authorized implementing B02–B05 sequentially on stacked branches while Saint reviews earlier B PRs. Finish each task with tests, relevant diagrams and a PR before starting the next. Do not merge B work before Saint approves.
 
 ## A03 integration status
 
 Saint implemented the agreed `services/bookingCancellation.js` interface against real collections to unblock suspension while B's API/models are absent. Local replica-set tests exercise cancellation, rollback and the shared guard protocol. B must integrate its booking writers with this provider/user/vehicle guard order and review the helper. G2/G3 and T35 across actual B HTTP endpoints remain pending.
+
+B02 implements vehicle/discovery endpoints on B01 and the reviewed A03 dependency. A03 uses the agreed real guard/cancellation operations; B02 repeats the provider guard for vehicle writes. The B02 PR records results and remaining acceptance limits.
+
+B03 implements customer/admin booking reads, create/date-edit/cancel and the shared-guard integration. It reuses A03 cancellation unchanged. Company views and combined suspension races follow in B04; each PR awaits Saint review.
+
+B04 adds approved-company booking views and combined A03/B HTTP race/rollback checks. A03 dependency behavior passes local real-database verification; Atlas and partner approval remain pending.
