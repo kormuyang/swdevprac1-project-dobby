@@ -13,7 +13,7 @@ Saint owns A; Poom owns B. Read the [requirements](docs/requirements.md), your [
 
 ## Coding practices
 
-Use descriptive names, explicit braces and readable multi-line conditions. Split distinct responsibilities into named functions. Avoid nested ternaries, compressed control flow and generic repository frameworks. Comments explain why a rule exists.
+Prefer the simplest correct implementation and less code. Avoid speculative abstractions; keep the transaction guards, validation and permission checks needed for correctness. Use descriptive names, explicit braces and readable multi-line conditions. Split distinct responsibilities into named functions. Avoid nested ternaries, compressed control flow and generic repository frameworks. Comments explain why a rule exists.
 
 Keep responsibilities clear:
 
@@ -37,4 +37,4 @@ Use short headings, direct sentences and bullets for rules or assumptions. Expla
 
 ## Current state
 
-The development stack includes auth/company review/lifecycle, vehicle/discovery/booking APIs, guarded setup, the combined demo and response-time tooling. See README and the implementation plan for commands, PR dependencies and verification limits. Saint must approve B PRs before merge. Atlas acceptance and D-07/D-10 remain open. Keep errors as `{success:false,message}` and transactions in their owning features.
+The development stack includes auth/company review/lifecycle, vehicle/discovery/booking APIs, guarded setup, the combined demo and response-time tooling. See README and the implementation plan for commands, PR dependencies and verification limits. Under D-43, Poom owns the merge decision with Codex-assisted review at each step; Saint reviews integrated main afterward. Atlas acceptance and D-07/D-10 remain open. Keep errors as `{success:false,message}` and transactions in their owning features.

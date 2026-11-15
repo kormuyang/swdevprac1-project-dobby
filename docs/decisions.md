@@ -32,6 +32,9 @@ Most choices were agreed on November 11, 2026. “User” means a confirmed prod
 | D-41 | User, November 13 | API errors use `{success:false,message}` with HTTP status conveying the category. Do not include an error `code` field or require custom error identifiers. |
 | D-42 | User, November 13 | Keep small, single-use feature logic in controllers. Extract services when reuse or complexity warrants it; A01 auth controllers own their signup transactions. Supersedes the service-only boundary placement in D-40. |
 
+| D-43 | User reporting agreement with Saint, November 16 | Poom may review and merge A/B work in dependency order with Codex-assisted review and verification at each step. Saint reviews the integrated main commit afterward; his approval is no longer a prerequisite for B merges. Keep review attribution accurate and unresolved acceptance checks visible. Supersedes earlier partner-before-merge instructions. |
+| D-44 | User relaying Saint’s instruction, November 16 | Prefer the simplest correct implementation with less code. Avoid speculative abstractions and broad rewrites; retain required validation, privacy and transaction guards. |
+
 Booking records supply occupied dates; do not duplicate the list on Vehicle.
 
 ## Open decisions

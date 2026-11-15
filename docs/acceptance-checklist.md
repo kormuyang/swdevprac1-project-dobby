@@ -83,7 +83,7 @@ Note: this checks the stated dataset and conditions, not production load. Run th
 
 ## Recording results
 
-For each PR, list test IDs, command, test environment/database, pass/fail counts and anything unverified. Link tests, collection and short logs without credentials or tokens. Both partners review shared cases before merge.
+For each PR, list test IDs, command, test environment/database, pass/fail counts and anything unverified. Link tests, collection and short logs without credentials or tokens. Review timing follows D-43; Saint’s integrated-main review remains pending until completed.
 
 ## Implemented check locations
 

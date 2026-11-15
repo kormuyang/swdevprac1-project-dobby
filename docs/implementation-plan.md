@@ -44,7 +44,7 @@ After G0, continue A01/A02 and B01. B can build reads and validation while waiti
 
 B00 is merged in [PR #9](https://github.com/kormuyang/swdevprac1-project-dobby/pull/9). A01 integrates it into the shared local test command; G0 verification remains pending.
 
-B01 is implemented on `codex/b01-vehicle-booking-models`, integrated with main after A01/A02. Saint must review and approve its PR before merge. See [module interfaces and data relationships](design.md#b01-module-interfaces). Shared validation extraction, test scripts and example configuration are proposed for A's review. Endpoints and transaction/race checks remain B02–B04 work.
+B01 is implemented on `codex/b01-vehicle-booking-models`, integrated with main after A01/A02. Review and merge follow D-43. See [module interfaces and data relationships](design.md#b01-module-interfaces). Shared validation extraction, test scripts and example configuration are proposed for A's review. Endpoints and transaction/race checks remain B02–B04 work.
 
 ## Joining booking and suspension
 
@@ -69,7 +69,7 @@ B02 writes also need the A03a guard agreement. Test-only fake dependencies can h
 
 ## Review
 
-Use small task branches such as `codex/a01-auth`. Sync main at the latest passed gate; ask the partner to review before merging. Coordinate shared files and lockfiles.
+Use small task branches such as `codex/a01-auth`. Sync main at the latest verified gate. Under D-43, Poom owns merge decisions with Codex-assisted review at each step; Saint reviews a fixed integrated main commit afterward. Coordinate shared files and lockfiles.
 
 Each PR includes task/FR IDs, interface changes, test IDs, commands/results and anything unverified. Record who implemented/reviewed it, the commit/PR, test results and diagram changes. Update diagrams with the feature.
 
@@ -88,7 +88,7 @@ npm run test:demo
 
 Auth integration uses TEST_MONGO_URI with dobby_test_a; B integration uses TEST_MONGO_URI_B with dobby_test_b. Reset uses TEST_MONGO_URI with an explicitly allowed database and also needs an explicit flag. Seed only an explicitly named dev/test database. test:demo runs Newman once the collection exists. A04 documents the working setup in README.
 
-The user authorized implementing B02–B05 sequentially on stacked branches while Saint reviews earlier B PRs. Finish each task with tests, relevant diagrams and a PR before starting the next. Do not merge B work before Saint approves.
+The user authorized implementing B02–B05 sequentially on stacked branches while Saint reviews earlier B PRs. Finish each task with tests, relevant diagrams and a PR before starting the next. D-43 supersedes the earlier Saint-approval prerequisite.
 
 ## A03 integration status
 
@@ -96,8 +96,8 @@ Saint implemented the agreed `services/bookingCancellation.js` interface against
 
 B02 implements vehicle/discovery endpoints on B01 and the reviewed A03 dependency. A03 uses the agreed real guard/cancellation operations; B02 repeats the provider guard for vehicle writes. The B02 PR records results and remaining acceptance limits.
 
-B03 implements customer/admin booking reads, create/date-edit/cancel and the shared-guard integration. It reuses A03 cancellation unchanged. Company views and combined suspension races follow in B04; each PR awaits Saint review.
+B03 implements customer/admin booking reads, create/date-edit/cancel and the shared-guard integration. It reuses A03 cancellation unchanged. Company views and combined suspension races follow in B04; each PR receives Codex-assisted review before merge under D-43.
 
-B04 adds approved-company booking views and combined A03/B HTTP race/rollback checks. A03 dependency behavior passes local real-database verification; Atlas and partner approval remain pending.
+B04 adds approved-company booking views and combined A03/B HTTP race/rollback checks. A03 dependency behavior passes local real-database verification; Atlas acceptance and Saint’s integrated-main review remain pending.
 
-B05 integrates the reviewed A04/A05 dependencies, combined Newman journey, rental fixtures, explicit B reset, response-time runner and consolidated delivery material. Atlas T41 execution, D-07/D-10 and Saint approvals remain pending. Test results stay in the B05 PR rather than repeated documentation.
+B05 integrates the reviewed A04/A05 dependencies, combined Newman journey, rental fixtures, explicit B reset, response-time runner and consolidated delivery material. Atlas T41 execution, D-07/D-10 and Saint’s integrated-main review remain pending. Test results stay in the B05 PR rather than repeated documentation.
