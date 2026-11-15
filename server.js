@@ -12,6 +12,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
 const companyRoutes = require('./routes/company');
 const adminProviderRoutes = require('./routes/adminProviders');
+const providerLifecycleRoutes = require('./routes/providerLifecycle');
 
 const app = express();
 const PORT = process.env.PORT || 5003;
@@ -44,6 +45,7 @@ app.get('/api/v1/health', (req, res) => {
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/company', companyRoutes);
+app.use('/api/v1/admin/providers', providerLifecycleRoutes);
 app.use('/api/v1/admin', adminProviderRoutes);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
