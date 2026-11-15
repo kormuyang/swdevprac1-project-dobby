@@ -1,36 +1,9 @@
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+\.[^\s@]+$/;
+const { requireObject, rejectUnknownFields, stringField } = require('./fields');
 
 function badRequest(message) {
   const error = new Error(message);
   error.status = 400;
   return error;
-}
-
-function requireObject(value, label) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw badRequest(`${label} must be an object.`);
-  }
-}
-
-function rejectUnknownFields(value, allowed, label) {
-  const unknown = Object.keys(value).filter((key) => !allowed.includes(key));
-  if (unknown.length > 0) {
-    throw badRequest(`Unknown ${label} field: ${unknown[0]}.`);
-  }
-}
-
-function stringField(value, field, { min, max, email = false } = {}) {
-  if (typeof value !== 'string') {
-    throw badRequest(`${field} must be a string.`);
-  }
-  const normalized = value.trim();
-  if (normalized.length < min || normalized.length > max) {
-    throw badRequest(`${field} must be between ${min} and ${max} characters.`);
-  }
-  if (email && (!EMAIL_PATTERN.test(normalized) || normalized.length > 254)) {
-    throw badRequest(`${field} must be a valid email address.`);
-  }
-  return normalized;
 }
 
 function passwordField(value) {

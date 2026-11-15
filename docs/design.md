@@ -168,6 +168,25 @@ Create collections/indexes in explicit bootstrap/seed before mutation tests. Do 
 
 Serialize _id as id; hide __v, revisions, passwordHash, sid and raw claims. Select populated fields explicitly. Public provider fields are id/name/address/telephone; application history is owner/admin only. Password hashes stay hidden even after login uses select('+passwordHash').
 
+### B01 module interfaces
+
+- `validators/vehicles.js`: `validateVehicleCreate(body)`, `validateVehicleUpdate(body)`, `validateAvailabilityUpdate(body)`, `validateActivationUpdate(body)` return allowlisted input matching OpenAPI. Creation permits an omitted end date; availability updates require both fields, with null for no end.
+- `validators/bookings.js`: `validateBookingCreate(body)`, `validateBookingDatesUpdate(body)` validate request shape and calendar ranges. B03 checks the original booking cutoff before applying `validateRentalDates` to proposed dates, preserving the validation order above.
+- `validators/fields.js` holds the existing scalar/object checks shared with auth; moving those checks does not change auth behavior. List/query validation belongs to B02/B03 with its routes.
+- `serializers/vehicles.js`: `serializeVehicle(vehicle)`, `serializeVehicleSnapshot(vehicle)`. `serializers/bookings.js`: `serializeBooking(booking, customer, today)` requires explicitly selected current customer contact and one captured Thailand date. These return DTOs, not HTTP envelopes, and never populate database references themselves.
+- Vehicle and Booking enforce field constraints and fixed snapshots on document saves. Booking checks that dates, days and total agree; historical records remain valid. Later services own eligibility, permissions, state transitions and concurrency guards. Query writes must use allowlisted fields and enable update validation; multi-field booking edits use document saves so the consistency checks run.
+- `npm run test:integration` runs both owners' suites. Auth/company-review tests use `TEST_MONGO_URI` with `dobby_test_a`; rental models use `TEST_MONGO_URI_B` with `dobby_test_b`. Each suite rejects a different database name before connecting and deletes only its synthetic fixture IDs.
+
+```mermaid
+erDiagram
+    Provider ||--o{ Vehicle : owns
+    User ||--o{ Booking : makes
+    Provider ||--o{ Booking : receives
+    Vehicle ||--o{ Booking : reserves
+```
+
+Booking embeds the booked vehicle details and branch; its rate is stored separately. Those values remain fixed when the listing changes.
+
 ## Service interfaces and transactions
 
 Use CommonJS named exports. Keep small, single-use feature logic in controllers (D-42); extract a service when reuse or complexity warrants it. Controllers serialize OpenAPI DTOs. Extracted I/O functions return promises and records, not Express responses. No private controller imports across modules.
@@ -189,12 +208,21 @@ req.actor = {
 
 Services receive `ctx = { actor: req.actor, clock }`, where clock has `now(): Date`. Use a real shared clock by default and inject it for tests. Services must recheck scope/provider state inside transactions. Admin service calls also check actor.role, even with route middleware. The controller or service implementing an operation owns its transaction boundary when it needs atomic writes. Every database operation in one transaction uses the same session, sequentially. Select transaction options and retry handling when implementing the feature; no shared transaction wrapper is part of A00.
 
-B provides pure helpers:
+#### B00 helper contracts
 
-- utils/dates.js: `todayBangkok(now)`, `validateDateOnly(value)`, `inclusiveDays(startDate,dueDate)`, `overlaps(aStart,aDue,bStart,bDue)`, `bookingStatus(booking,today)`.
-- utils/money.js: `calculateTotal(ratePerDaySatang,rentalDays)`.
+B's helpers use CommonJS named exports. They do not load the app or database. Invalid input throws an ordinary `Error` with `status: 400` and a safe message.
 
-Invalid helper input throws an ordinary error with status 400 and a safe reason. Importing helpers must not load app/DB.
+| Module | Function | Returns |
+| --- | --- | --- |
+| `utils/dates.js` | `todayBangkok(now)` | Thailand `YYYY-MM-DD` for a supplied valid `Date` |
+| | `validateDateOnly(value)` | Unchanged real date string, years 0001–9999; no whitespace or type coercion |
+| | `inclusiveDays(startDate,dueDate)` | Inclusive day count; rejects reversed dates |
+| | `validateRentalDates(startDate,dueDate,today)` | Day count after checking start >= today and duration 1–30 days |
+| | `overlaps(aStart,aDue,bStart,bDue)` | Whether valid ordered ranges share any day, including endpoints |
+| | `bookingStatus(booking,today)` | Derived cancelled/upcoming/ongoing/completed status from confirmed/cancelled state and valid dates |
+| `utils/money.js` | `calculateTotal(ratePerDaySatang,rentalDays)` | Integer satang total; integer rate 1–1,000,000,000 and days 1–30 |
+
+Keep calendar calculations separate from new-rental validation: historical bookings still need a status, and offering periods may exceed 30 days. Later feature validators apply these helpers in the HTTP validation order; serializers return date strings, integer satang and derived status.
 
 A's provider service can import B's bookingCancellation. Keep feature services independent to avoid circular imports; transaction and guard code stays with the feature that owns it.
 
@@ -218,11 +246,15 @@ IDs are normalized strings; list filters are parsed/validated. Services still en
 
 ### Transaction-sensitive writes
 
+B02/B03 use the A03 guard fields directly: increment Provider.revision, then sorted User.bookingRevision values, then sorted Vehicle.revision values. Feature services own their sessions and use snapshot/majority transactions with a 2500 ms driver retry budget. Every attempt captures one Thailand date. Known uncommitted transient conflicts return 409; uncertain commit results remain safe 500 responses. Reads use allowlisted filters before pagination; discovery joins only approved profiles and excludes occupied vehicles before counting.
+
 Use transactions for the multi-record writes identified below. Guard operations are implemented in the owning feature services and coordinated between A and B; A03a is the guard agreement and integration point, not a generic transaction framework. Acquire guards in this order: provider → sorted users → sorted vehicles. Each transaction concerns one provider; never acquire another provider after user locks. The User guard protects the booking cap across providers. Missing guard targets return scoped 404 responses, not placeholder records.
 
 Counting inside a transaction alone can still allow competing inserts. All affected write paths need the specified guards, same-session checks and writes, and rechecks after acquiring guards.
 
 ### Booking writes — B
+
+B03 records returned by booking services populate only `userId` with current name/email/telephone, after applying ownership scope. The booking serializer accepts that selected customer record and still returns a scalar userId. Writes clear the completed transaction session before response population. Date-edit request validation checks shape/calendar ordering; cutoff, duration, eligibility, cap and overlap run in the service in the documented order.
 
 1. Identify fixed provider/user/vehicle references. Preliminary reads only identify targets; do not trust them for final validation.
 2. Start the service-owned transaction, take guards in order, re-read records and check matching references, scope and provider/vehicle eligibility.
@@ -259,3 +291,39 @@ B locks provider then vehicle for branch/rate/window/activation changes, recheck
 ### A03 implementation boundary
 
 The lifecycle controller owns suspend/reactivate transactions. The agreed cancellation helper operates on real booking/vehicle collections and User guards using the caller session. Its interface remains available for B integration; it does not supply B's booking or vehicle APIs. See [A03 integration checks](diagrams/a03-provider-lifecycle.md).
+
+### B02 vehicle flow
+
+```mermaid
+sequenceDiagram
+    actor Company
+    participant Route as Vehicle route
+    participant Service as Vehicle service
+    participant DB as MongoDB
+    Company->>Route: Validated vehicle change
+    Route->>Service: Actor, id and allowlisted input
+    Service->>DB: Begin transaction; guard provider then vehicle
+    Service->>DB: Recheck approval, ownership and retained bookings
+    Service->>DB: Save and commit
+    Service-->>Company: Safe vehicle response
+```
+
+### B03 booking flow
+
+```mermaid
+sequenceDiagram
+    actor Customer
+    participant Route as Booking route
+    participant Service as Booking service
+    participant DB as MongoDB
+    Customer->>Route: Vehicle and rental dates
+    Route->>Service: Validated input and actor
+    Service->>DB: Guard provider, customer and vehicle in one transaction
+    Service->>DB: Recheck eligibility, counted bookings and overlap
+    Service->>DB: Save dates, snapshot and calculated total; commit
+    Service-->>Customer: Booking with selected current customer contact
+```
+
+### B04 company access and suspension integration
+
+Company booking reads require current approved status, scope by provider before population, and return current selected customer contact with booked snapshots. A company vehicle filter is checked for ownership before querying bookings. The A03 cancellation helper remains unchanged. HTTP race tests hold real booking guard writes until MongoDB reports contention, then verify suspension leaves no confirmed non-completed booking. Fault injection after actual cancellation writes verifies rollback of provider state, bookings and user/vehicle guard revisions.

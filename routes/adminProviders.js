@@ -8,15 +8,15 @@ const router = express.Router();
 const parseJson = express.json({ limit: '16kb' });
 
 
-function pageOptions(req, res, next) {
-  try {
-    req.page = validatePage(req.query, req.path === '/applications'
-      ? { statuses: ['pending', 'approved', 'rejected'], allowProviderId: true }
-      : { statuses: ['pending', 'rejected', 'approved', 'suspended'] });
-    return next();
-  } catch (error) {
-    return res.status(error.status || 400).json({ success: false, message: error.message });
-  }
+function pageOptions(options) {
+  return function validateListQuery(req, res, next) {
+    try {
+      req.page = validatePage(req.query, options);
+      return next();
+    } catch (error) {
+      return res.status(error.status || 400).json({ success: false, message: error.message });
+    }
+  };
 }
 
 function pathId(req, res, next) {
@@ -39,9 +39,14 @@ function reviewInput(req, res, next) {
 }
 
 router.use(protect(), authorize('admin'), parseJson);
-router.get('/providers', pageOptions, rejectBody, controller.listAdminProviders);
+router.get('/providers', pageOptions({
+  statuses: ['pending', 'rejected', 'approved', 'suspended'],
+}), rejectBody, controller.listAdminProviders);
 router.get('/providers/:providerId', rejectQuery, pathId, rejectBody, controller.getAdminProvider);
-router.get('/applications', pageOptions, rejectBody, controller.listAdminApplications);
+router.get('/applications', pageOptions({
+  statuses: ['pending', 'approved', 'rejected'],
+  allowProviderId: true,
+}), rejectBody, controller.listAdminApplications);
 router.get('/applications/:applicationId', rejectQuery, pathId, rejectBody, controller.getAdminApplication);
 router.post('/applications/:applicationId/review', rejectQuery, pathId, reviewInput, controller.reviewApplication);
 
