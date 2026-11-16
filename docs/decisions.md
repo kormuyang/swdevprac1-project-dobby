@@ -52,3 +52,7 @@ Booking records supply occupied dates; do not duplicate the list on Vehicle.
 - **Provider history:** keeping every suspension/reactivation event was proposed but not agreed. For now, the model keeps the latest lifecycle details and all application versions.
 
 Record new decisions with their date, who agreed and affected work. Keep course requirements separate from team defaults.
+
+## D-54: Restore focused middleware and shared errors
+
+User, November 16: restore route validation and approved-provider middleware. Store normalized body/query/params in `req.validated`, leaving Express request properties untouched. Use a small `AppError(status, message)` class for expected failures and one JSON error handler for controller, parser and framework errors. Controllers forward failures with `next(error)`; keep transaction checks. Retain the global rate limit only, provider naming, named imports, resource routers and global `express.json()`. Supersedes the placement/error policies in D-48–D-50 and D-52.

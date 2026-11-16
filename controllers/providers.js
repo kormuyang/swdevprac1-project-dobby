@@ -1,4 +1,4 @@
-const { rejectBody, rejectQuery } = require('../validators/request');
+const AppError = require('../utils/AppError');
 const mongoose = require('mongoose');
 const Provider = require('../models/Provider');
 const ProviderApplication = require('../models/ProviderApplication');
@@ -7,23 +7,13 @@ const {
   serializePage,
   serializeProvider,
 } = require('../serializers/providers');
-const {
-  validateApplication,
-  validateObjectId,
-  validatePage,
-  validateReview,
-} = require('../validators/providers');
 
 function notFound() {
-  const error = new Error('The requested resource was not found.');
-  error.status = 404;
-  return error;
+  return new AppError(404, 'The requested resource was not found.');
 }
 
 function conflict(message = 'The resource is not in the required state.') {
-  const error = new Error(message);
-  error.status = 409;
-  return error;
+  return new AppError(409, message);
 }
 
 function mapDuplicate(error) {
@@ -47,10 +37,8 @@ async function providerForResponse(provider) {
   return serializeProvider(provider, approved);
 }
 
-async function getOwnProvider(req, res) {
+async function getOwnProvider(req, res, next) {
   try {
-    rejectQuery(req);
-    rejectBody(req);
     const provider = await Provider.findOne({
       _id: req.actor.providerId,
       representativeId: req.actor.userId,
@@ -60,16 +48,13 @@ async function getOwnProvider(req, res) {
     }
     return res.status(200).json({ success: true, data: await providerForResponse(provider) });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    const message = status >= 500 ? 'The request could not be completed.' : error.message;
-    return res.status(status).json({ success: false, message });
+    return next(error);
   }
 }
 
-async function listOwnApplications(req, res) {
+async function listOwnApplications(req, res, next) {
   try {
-    const page = validatePage(req.query);
-    rejectBody(req);
+    const page = req.validated.query;
     const filter = { providerId: req.actor.providerId };
     const [applications, total] = await Promise.all([
       ProviderApplication.find(filter)
@@ -82,17 +67,13 @@ async function listOwnApplications(req, res) {
       .status(200)
       .json(serializePage(applications.map(serializeApplication), total, page.page, page.limit));
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    const message = status >= 500 ? 'The request could not be completed.' : error.message;
-    return res.status(status).json({ success: false, message });
+    return next(error);
   }
 }
 
-async function getOwnApplication(req, res) {
+async function getOwnApplication(req, res, next) {
   try {
-    rejectQuery(req);
-    const applicationId = validateObjectId(req.params.applicationId, 'applicationId');
-    rejectBody(req);
+    const applicationId = req.validated.params.applicationId;
     const application = await ProviderApplication.findOne({
       _id: applicationId,
       providerId: req.actor.providerId,
@@ -102,17 +83,14 @@ async function getOwnApplication(req, res) {
     }
     return res.status(200).json({ success: true, data: serializeApplication(application) });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    const message = status >= 500 ? 'The request could not be completed.' : error.message;
-    return res.status(status).json({ success: false, message });
+    return next(error);
   }
 }
 
-async function submitApplication(req, res) {
+async function submitApplication(req, res, next) {
   let session;
   try {
-    rejectQuery(req);
-    const profile = validateApplication(req.body);
+    const profile = req.validated.body;
     session = await mongoose.startSession();
     let submitted;
     await session.withTransaction(async () => {
@@ -133,9 +111,7 @@ async function submitApplication(req, res) {
         if (!exists) {
           throw notFound();
         }
-        const suspended = new Error('This provider account is suspended.');
-        suspended.status = 403;
-        throw suspended;
+        throw new AppError(403, 'This provider account is suspended.');
       }
       const pending = await ProviderApplication.exists({
         providerId: provider._id,
@@ -169,10 +145,7 @@ async function submitApplication(req, res) {
     });
     return res.status(201).json({ success: true, data: serializeApplication(submitted) });
   } catch (error) {
-    const responseError = mapDuplicate(error);
-    const status = Number.isInteger(responseError.status) ? responseError.status : 500;
-    const message = status >= 500 ? 'The request could not be completed.' : responseError.message;
-    return res.status(status).json({ success: false, message });
+    return next(mapDuplicate(error));
   } finally {
     if (session) {
       await session.endSession();
@@ -180,12 +153,9 @@ async function submitApplication(req, res) {
   }
 }
 
-async function listAdminProviders(req, res) {
+async function listAdminProviders(req, res, next) {
   try {
-    const page = validatePage(req.query, {
-      statuses: ['pending', 'rejected', 'approved', 'suspended'],
-    });
-    rejectBody(req);
+    const page = req.validated.query;
     const filter = page.status ? { status: { $eq: String(page.status) } } : {};
     const [providers, total] = await Promise.all([
       Provider.find(filter)
@@ -200,36 +170,26 @@ async function listAdminProviders(req, res) {
     }
     return res.status(200).json(serializePage(data, total, page.page, page.limit));
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    const message = status >= 500 ? 'The request could not be completed.' : error.message;
-    return res.status(status).json({ success: false, message });
+    return next(error);
   }
 }
 
-async function getAdminProvider(req, res) {
+async function getAdminProvider(req, res, next) {
   try {
-    rejectQuery(req);
-    const providerId = validateObjectId(req.params.providerId, 'providerId');
-    rejectBody(req);
+    const providerId = req.validated.params.providerId;
     const provider = await Provider.findById(providerId);
     if (!provider) {
       throw notFound();
     }
     return res.status(200).json({ success: true, data: await providerForResponse(provider) });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    const message = status >= 500 ? 'The request could not be completed.' : error.message;
-    return res.status(status).json({ success: false, message });
+    return next(error);
   }
 }
 
-async function listAdminApplications(req, res) {
+async function listAdminApplications(req, res, next) {
   try {
-    const page = validatePage(req.query, {
-      statuses: ['pending', 'approved', 'rejected'],
-      allowProviderId: true,
-    });
-    rejectBody(req);
+    const page = req.validated.query;
     const filter = {};
     if (page.status) {
       filter.status = { $eq: String(page.status) };
@@ -248,35 +208,28 @@ async function listAdminApplications(req, res) {
       .status(200)
       .json(serializePage(applications.map(serializeApplication), total, page.page, page.limit));
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    const message = status >= 500 ? 'The request could not be completed.' : error.message;
-    return res.status(status).json({ success: false, message });
+    return next(error);
   }
 }
 
-async function getAdminApplication(req, res) {
+async function getAdminApplication(req, res, next) {
   try {
-    rejectQuery(req);
-    const applicationId = validateObjectId(req.params.applicationId, 'applicationId');
-    rejectBody(req);
+    const applicationId = req.validated.params.applicationId;
     const application = await ProviderApplication.findById(applicationId);
     if (!application) {
       throw notFound();
     }
     return res.status(200).json({ success: true, data: serializeApplication(application) });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    const message = status >= 500 ? 'The request could not be completed.' : error.message;
-    return res.status(status).json({ success: false, message });
+    return next(error);
   }
 }
 
-async function reviewApplication(req, res) {
+async function reviewApplication(req, res, next) {
   let session;
   try {
-    rejectQuery(req);
-    const applicationId = validateObjectId(req.params.applicationId, 'applicationId');
-    const input = validateReview(req.body);
+    const applicationId = req.validated.params.applicationId;
+    const input = req.validated.body;
     const preliminary = await ProviderApplication.findById(applicationId).select('providerId');
     if (!preliminary) {
       throw notFound();
@@ -329,9 +282,7 @@ async function reviewApplication(req, res) {
     });
     return res.status(200).json({ success: true, data: serializeApplication(reviewed) });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    const message = status >= 500 ? 'The request could not be completed.' : error.message;
-    return res.status(status).json({ success: false, message });
+    return next(error);
   } finally {
     if (session) {
       await session.endSession();

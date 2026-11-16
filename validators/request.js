@@ -1,7 +1,6 @@
+const AppError = require('../utils/AppError');
 function badRequest(message) {
-  const error = new Error(message);
-  error.status = 400;
-  throw error;
+  throw new AppError(400, message);
 }
 
 function rejectQuery(req) {

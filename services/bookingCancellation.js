@@ -1,3 +1,4 @@
+const AppError = require('../utils/AppError');
 const mongoose = require('mongoose');
 const User = require('../models/User');
 
@@ -27,9 +28,7 @@ async function cancelNonCompletedForProvider({ providerId, actorId, today, now, 
       { session },
     );
     if (result.matchedCount !== 1) {
-      const error = new Error('A booking customer was not found.');
-      error.status = 404;
-      throw error;
+      throw new AppError(404, 'A booking customer was not found.');
     }
   }
   for (const vehicleId of vehicleIds) {
@@ -39,9 +38,7 @@ async function cancelNonCompletedForProvider({ providerId, actorId, today, now, 
       { session },
     );
     if (result.matchedCount !== 1) {
-      const error = new Error('A booked vehicle was not found.');
-      error.status = 404;
-      throw error;
+      throw new AppError(404, 'A booked vehicle was not found.');
     }
   }
   const result = await bookings.updateMany(

@@ -1,3 +1,4 @@
+const AppError = require('../utils/AppError');
 const { inclusiveDays, validateDateOnly } = require('../utils/dates');
 const {
   requireObject,
@@ -76,9 +77,7 @@ function validateVehicleUpdate(body) {
   requireObject(body, 'Request body');
   rejectUnknownFields(body, ['pickupBranch', 'ratePerDaySatang'], 'request');
   if (Object.keys(body).length === 0) {
-    const error = new Error('Provide a pickup branch or daily rate to update.');
-    error.status = 400;
-    throw error;
+    throw new AppError(400, 'Provide a pickup branch or daily rate to update.');
   }
   const input = {};
   if (Object.hasOwn(body, 'pickupBranch')) {
@@ -105,9 +104,7 @@ function validateActivationUpdate(body) {
   requireObject(body, 'Request body');
   rejectUnknownFields(body, ['isActive'], 'request');
   if (typeof body.isActive !== 'boolean') {
-    const error = new Error('isActive must be a boolean.');
-    error.status = 400;
-    throw error;
+    throw new AppError(400, 'isActive must be a boolean.');
   }
   return { isActive: body.isActive };
 }
@@ -166,9 +163,7 @@ function validatePublicVehicleFilters(query, today) {
     }
   }
   if (result.minRatePerDaySatang > result.maxRatePerDaySatang) {
-    const error = new Error('The minimum rate must not exceed the maximum rate.');
-    error.status = 400;
-    throw error;
+    throw new AppError(400, 'The minimum rate must not exceed the maximum rate.');
   }
   if (query.startDate !== undefined || query.dueDate !== undefined) {
     validateRentalDates(query.startDate, query.dueDate, today);
@@ -191,9 +186,7 @@ function validateOwnVehicleFilters(query) {
   const result = listPage(query, ['isActive']);
   if (query.isActive !== undefined) {
     if (query.isActive !== 'true' && query.isActive !== 'false') {
-      const error = new Error('isActive must be true or false.');
-      error.status = 400;
-      throw error;
+      throw new AppError(400, 'isActive must be true or false.');
     }
     result.isActive = query.isActive === 'true';
   }

@@ -1,3 +1,4 @@
+const AppError = require('../utils/AppError');
 const mongoose = require('mongoose');
 const Provider = require('../models/Provider');
 const Vehicle = require('../models/Vehicle');
@@ -6,9 +7,7 @@ const { todayBangkok } = require('../utils/dates');
 const { requireApprovedProvider } = require('./providerAccess');
 
 function fail(status, message) {
-  const error = new Error(message);
-  error.status = status;
-  throw error;
+  throw new AppError(status, message);
 }
 
 function pageResult(data, total, filters) {

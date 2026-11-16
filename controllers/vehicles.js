@@ -1,17 +1,5 @@
-const { rejectBody, rejectQuery } = require('../validators/request');
-const { todayBangkok } = require('../utils/dates');
-const { objectIdField } = require('../validators/fields');
-const {
-  validatePublicProviderFilters,
-  validatePublicVehicleFilters,
-  validateOwnVehicleFilters,
-  validateVehicleCreate,
-  validateVehicleUpdate,
-  validateAvailabilityUpdate,
-  validateActivationUpdate,
-} = require('../validators/vehicles');
+const AppError = require('../utils/AppError');
 const Vehicle = require('../models/Vehicle');
-const { requireApprovedProvider } = require('../services/providerAccess');
 const service = require('../services/vehicles');
 const { serializeVehicle } = require('../serializers/vehicles');
 
@@ -25,75 +13,51 @@ function serializePublicProvider(provider) {
   };
 }
 
-async function listPublicProviders(req, res) {
+async function listPublicProviders(req, res, next) {
   try {
-    rejectBody(req);
-    const filters = validatePublicProviderFilters(req.query);
+    const filters = req.validated.query;
     const result = await service.listPublicProviders(filters);
     return res.json({ success: true, ...result, data: result.data.map(serializePublicProvider) });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 
-async function getPublicProvider(req, res) {
+async function getPublicProvider(req, res, next) {
   try {
-    rejectBody(req);
-    rejectQuery(req);
-    const providerId = objectIdField(req.params.providerId, 'providerId');
+    const providerId = req.validated.params.providerId;
     const provider = await service.getPublicProvider(providerId);
     const data = serializePublicProvider(provider);
     return res.json({ success: true, data });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 
-async function listPublicVehicles(req, res) {
+async function listPublicVehicles(req, res, next) {
   try {
-    rejectBody(req);
-    const filters = validatePublicVehicleFilters(req.query, todayBangkok(new Date()));
+    const filters = req.validated.query;
     const result = await service.listPublicVehicles(filters);
     return res.json({ success: true, ...result, data: result.data.map(serializeVehicle) });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 
-async function getPublicVehicle(req, res) {
+async function getPublicVehicle(req, res, next) {
   try {
-    rejectBody(req);
-    rejectQuery(req);
-    const vehicleId = objectIdField(req.params.vehicleId, 'vehicleId');
+    const vehicleId = req.validated.params.vehicleId;
     const vehicle = await service.getPublicVehicle(vehicleId);
     const data = serializeVehicle(vehicle);
     return res.json({ success: true, data });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 
-async function listOwnVehicles(req, res) {
+async function listOwnVehicles(req, res, next) {
   try {
-    await requireApprovedProvider(req.actor);
-    rejectBody(req);
-    const filters = validateOwnVehicleFilters(req.query);
+    const filters = req.validated.query;
     const filter = { providerId: req.actor.providerId };
     if (filters.isActive !== undefined) {
       filter.isActive = filters.isActive;
@@ -116,106 +80,71 @@ async function listOwnVehicles(req, res) {
       },
     });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 
-async function getOwnVehicle(req, res) {
+async function getOwnVehicle(req, res, next) {
   try {
-    await requireApprovedProvider(req.actor);
-    rejectBody(req);
-    rejectQuery(req);
-    const vehicleId = objectIdField(req.params.vehicleId, 'vehicleId');
+    const vehicleId = req.validated.params.vehicleId;
     const vehicle = await Vehicle.findOne({
       _id: vehicleId,
       providerId: req.actor.providerId,
     });
     if (!vehicle) {
-      return res.status(404).json({ success: false, message: 'The vehicle was not found.' });
+      throw new AppError(404, 'The vehicle was not found.');
     }
     const data = serializeVehicle(vehicle);
     return res.json({ success: true, data });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 
-async function createVehicle(req, res) {
+async function createVehicle(req, res, next) {
   try {
-    await requireApprovedProvider(req.actor);
-    rejectQuery(req);
-    const input = validateVehicleCreate(req.body);
+    const input = req.validated.body;
     const vehicle = await service.createVehicle(input, req.actor);
     const data = serializeVehicle(vehicle);
     return res.status(201).json({ success: true, data });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 
-async function updateVehicle(req, res) {
+async function updateVehicle(req, res, next) {
   try {
-    await requireApprovedProvider(req.actor);
-    rejectQuery(req);
-    const vehicleId = objectIdField(req.params.vehicleId, 'vehicleId');
-    const input = validateVehicleUpdate(req.body);
+    const vehicleId = req.validated.params.vehicleId;
+    const input = req.validated.body;
     const vehicle = await service.updateVehicle(vehicleId, input, req.actor);
     const data = serializeVehicle(vehicle);
     return res.json({ success: true, data });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 
-async function updateAvailability(req, res) {
+async function updateAvailability(req, res, next) {
   try {
-    await requireApprovedProvider(req.actor);
-    rejectQuery(req);
-    const vehicleId = objectIdField(req.params.vehicleId, 'vehicleId');
-    const input = validateAvailabilityUpdate(req.body);
+    const vehicleId = req.validated.params.vehicleId;
+    const input = req.validated.body;
     const vehicle = await service.updateAvailability(vehicleId, input, req.actor);
     const data = serializeVehicle(vehicle);
     return res.json({ success: true, data });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 
-async function setVehicleActivation(req, res) {
+async function setVehicleActivation(req, res, next) {
   try {
-    await requireApprovedProvider(req.actor);
-    rejectQuery(req);
-    const vehicleId = objectIdField(req.params.vehicleId, 'vehicleId');
-    const input = validateActivationUpdate(req.body);
+    const vehicleId = req.validated.params.vehicleId;
+    const input = req.validated.body;
     const vehicle = await service.setVehicleActivation(vehicleId, input, req.actor);
     const data = serializeVehicle(vehicle);
     return res.json({ success: true, data });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 

@@ -1,3 +1,4 @@
+const AppError = require('./AppError');
 function calculateTotal(ratePerDaySatang, rentalDays) {
   if (
     !Number.isSafeInteger(ratePerDaySatang) ||
@@ -7,11 +8,10 @@ function calculateTotal(ratePerDaySatang, rentalDays) {
     rentalDays < 1 ||
     rentalDays > 30
   ) {
-    const error = new Error(
+    throw new AppError(
+      400,
       'Use an integer daily rate of 1–1,000,000,000 satang and 1–30 rental days.',
     );
-    error.status = 400;
-    throw error;
   }
 
   return ratePerDaySatang * rentalDays;

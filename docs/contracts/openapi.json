@@ -3,7 +3,7 @@
   "info": {
     "title": "Dobby Rental Car Booking API",
     "version": "1.0.0",
-    "description": "API contract for the backend-only Dobby rental project. The development stack implements authentication, provider review/lifecycle, public discovery, vehicle management and bookings. Dates use Asia/Bangkok calendar days and money uses integer satang. See README and PRs for setup, review status and verification limits. JSON bodies use one app-level parser with a 100 KB limit; malformed JSON returns 400 and oversized JSON returns 413 before route authentication, using Express default HTML errors. Controller errors retain the JSON envelope. Examples are synthetic."
+    "description": "API contract for the backend-only Dobby rental project. The development stack implements authentication, provider review/lifecycle, public discovery, vehicle management and bookings. Dates use Asia/Bangkok calendar days and money uses integer satang. See README and PRs for setup, review status and verification limits. JSON bodies use one app-level parser with a 100 KB limit; malformed JSON returns 400 and oversized JSON returns 413 before route authentication, using the JSON error envelope. All API errors return safe JSON messages. Examples are synthetic."
   },
   "servers": [
     {
@@ -3716,18 +3716,12 @@
     },
     "responses": {
       "400": {
-        "description": "Invalid request shape, date, bounds or unknown fields. Malformed JSON uses Express default HTML instead of the application JSON envelope.",
+        "description": "Invalid JSON syntax, request shape, date, bounds or unknown fields.",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
             }
-          },
-          "text/html": {
-            "schema": {
-              "type": "string"
-            },
-            "example": "<!DOCTYPE html><html><body><pre>Bad Request</pre></body></html>"
           }
         }
       },
@@ -3782,26 +3776,21 @@
         }
       },
       "500": {
-        "description": "Unexpected server error; no sensitive details. Uncaught framework errors use Express default HTML.",
+        "description": "Unexpected server error; returns a generic message without sensitive details.",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
             }
-          },
-          "text/html": {
-            "schema": {
-              "type": "string"
-            }
           }
         }
       },
       "413": {
-        "description": "JSON request body exceeds the Express default 100 KB limit. Uses Express default HTML error handling before authentication.",
+        "description": "JSON request body exceeds the 100 KB limit; rejected before authentication.",
         "content": {
-          "text/html": {
+          "application/json": {
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/Error"
             }
           }
         }

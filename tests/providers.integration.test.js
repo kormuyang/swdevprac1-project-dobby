@@ -139,6 +139,7 @@ test('provider review and profile versioning persist atomically', async (t) => {
   const app = express();
   app.use(express.json());
   app.use('/api/v1', providerRoutes);
+  app.use(require('../middleware/errorHandler').errorHandler);
   server = http.createServer(app);
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${server.address().port}/api/v1`;

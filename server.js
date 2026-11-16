@@ -14,6 +14,8 @@ const providerRoutes = require('./routes/providers');
 const vehicleRoutes = require('./routes/vehicles');
 const bookingRoutes = require('./routes/bookings');
 
+const { errorHandler } = require('./middleware/errorHandler');
+
 const app = express();
 const PORT = process.env.PORT || 5003;
 
@@ -60,6 +62,8 @@ app.use((req, res) => {
     message: 'The requested resource was not found.',
   });
 });
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Dobby API listening on port ${PORT}`);

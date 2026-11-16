@@ -135,3 +135,9 @@ The user chose resource grouping, unchanged URLs and router.route() chains. Four
 Local routing checks compare every routed OpenAPI operation with its handler and exercise visitor/customer/provider/admin access, public-route fallthrough, unknown paths and the suspended-account logout exception. Authentication and controller handlers are mocked only in this routing test; it does not prove database behavior.
 
 Verification on November 16: Node 24 local tests passed 45/45, including the full 33-operation routing/access matrix. Lint, format checks, static local imports and git diff checks passed. Neither dedicated test database connection was available, so Atlas integration, database races and the full Newman journey remain unrun.
+
+## Focused middleware restoration (D-54)
+
+Restore feature validation middleware, normalized req.validated input, provider approval middleware, AppError and a shared JSON error handler. Keep in-transaction checks, resource routes, provider naming and the global-only rate limit. This supersedes the earlier controller-validation/parser-error implementation notes above. Validate with the local HTTP regression, full unit suite, lint and formatting; database acceptance remains separate.
+
+Verification: Node 24.22.3 local suite passed 45/45, including request validation/permission order, normalized vehicle input, domain conflict forwarding, parser 400/413 and safe unexpected 500 responses. Lint, formatting and OpenAPI local-reference checks passed. Dedicated integration connections are unavailable; Atlas acceptance and concurrency checks were not run.

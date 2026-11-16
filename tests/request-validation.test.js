@@ -1,3 +1,4 @@
+const AppError = require('../utils/AppError');
 const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const test = require('node:test');
@@ -7,7 +8,7 @@ const Provider = require('../models/Provider');
 const vehicles = require('../services/vehicles');
 const { vehicleInput } = require('./fixtures/rentals');
 
-test('routes retain controller validation and permission order with synthetic actors', async (t) => {
+test('routes retain middleware validation and permission order with synthetic actors', async (t) => {
   const id = '507f1f77bcf86cd799439011';
   const previousSecret = process.env.JWT_SECRET;
   process.env.JWT_SECRET = randomUUID();
@@ -39,6 +40,7 @@ test('routes retain controller validation and permission order with synthetic ac
   app.use('/', require('../routes/providers'));
   app.use('/', require('../routes/vehicles'));
   app.use('/', require('../routes/bookings'));
+  app.use(require('../middleware/errorHandler').errorHandler);
   const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
   t.after(() => new Promise((resolve) => server.close(resolve)));
@@ -86,6 +88,15 @@ test('routes retain controller validation and permission order with synthetic ac
     ['GET', '/admin/providers/invalid', 'admin', undefined, /providerId/],
     ['GET', '/admin/applications?providerId=invalid', 'admin', undefined, /providerId/],
     ['GET', '/admin/applications/invalid', 'admin', undefined, /applicationId/],
+    ['POST', '/admin/providers/invalid/suspend', 'admin', { reason: 'Test' }, /providerId/],
+    ['POST', `/admin/providers/${id}/suspend`, 'admin', { reason: ' ' }, /reason/],
+    [
+      'POST',
+      `/admin/providers/${id}/reactivate`,
+      'admin',
+      { resolutionNote: ' ' },
+      /resolutionNote/,
+    ],
     ['POST', `/admin/applications/${id}/review`, 'admin', { decision: 'reject' }, /reason/],
     ['GET', '/provider/vehicles?isActive=other', 'provider', undefined, /isActive/],
     ['POST', '/provider/vehicles', 'provider', { providerId: id }, /Unknown request field/],
@@ -124,6 +135,16 @@ test('routes retain controller validation and permission order with synthetic ac
   assert.equal(created.status, 201);
   assert.equal(created.body.data.vin, 'SYNTHETIC-VIN-001');
   assert.equal(created.body.data.providerId, id);
+
+  t.mock.method(vehicles, 'createVehicle', async () => {
+    throw new AppError(409, 'A vehicle with this VIN already exists.');
+  });
+  const conflict = await request('POST', '/provider/vehicles', 'provider', body);
+  assert.equal(conflict.status, 409);
+  assert.deepEqual(conflict.body, {
+    success: false,
+    message: 'A vehicle with this VIN already exists.',
+  });
 
   t.mock.method(vehicles, 'createVehicle', async () => {
     throw new Error('Synthetic internal database diagnostic');

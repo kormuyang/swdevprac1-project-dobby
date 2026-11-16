@@ -1,9 +1,8 @@
+const AppError = require('../utils/AppError');
 const { validateProfile } = require('./auth');
 
 function badRequest(message) {
-  const error = new Error(message);
-  error.status = 400;
-  return error;
+  return new AppError(400, message);
 }
 
 function validateReview(body) {

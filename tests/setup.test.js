@@ -94,7 +94,7 @@ test('B reset requires its own connection and explicit reset flag', () => {
   assert.match(noFlag.stderr, /ALLOW_TEST_DB_RESET=true/);
 });
 
-test('global JSON parsing uses Express default errors before authentication', async (t) => {
+test('global JSON parsing uses safe JSON errors before authentication', async (t) => {
   const express = require('express');
   const app = express();
   app.set('env', 'test');
@@ -104,6 +104,7 @@ test('global JSON parsing uses Express default errors before authentication', as
     throw new Error('Synthetic internal diagnostic');
   });
   app.use('/', require('../routes/bookings'));
+  app.use(require('../middleware/errorHandler').errorHandler);
   const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
   t.after(() => new Promise((resolve) => server.close(resolve)));
@@ -121,8 +122,11 @@ test('global JSON parsing uses Express default errors before authentication', as
   for (const route of ['/echo', '/bookings', '/unknown']) {
     const malformed = await fetch(`${base}${route}`, { method: 'POST', headers, body: '{' });
     assert.equal(malformed.status, 400);
-    assert.match(malformed.headers.get('content-type'), /text\/html/);
-    await malformed.text();
+    assert.match(malformed.headers.get('content-type'), /application\/json/);
+    assert.deepEqual(await malformed.json(), {
+      success: false,
+      message: 'The request body must contain valid JSON.',
+    });
   }
   const oversized = await fetch(`${base}/bookings`, {
     method: 'POST',
@@ -130,13 +134,19 @@ test('global JSON parsing uses Express default errors before authentication', as
     body: JSON.stringify({ text: 'a'.repeat(100 * 1024) }),
   });
   assert.equal(oversized.status, 413);
-  assert.match(oversized.headers.get('content-type'), /text\/html/);
-  await oversized.text();
+  assert.match(oversized.headers.get('content-type'), /application\/json/);
+  assert.deepEqual(await oversized.json(), {
+    success: false,
+    message: 'The request body exceeds the 100 KB limit.',
+  });
 
   const unauthorized = await fetch(`${base}/bookings`, { method: 'POST', headers, body: '{}' });
   assert.equal(unauthorized.status, 401);
   const failure = await fetch(`${base}/failure`);
   assert.equal(failure.status, 500);
-  assert.match(failure.headers.get('content-type'), /text\/html/);
-  await failure.text();
+  assert.match(failure.headers.get('content-type'), /application\/json/);
+  assert.deepEqual(await failure.json(), {
+    success: false,
+    message: 'The request could not be completed.',
+  });
 });

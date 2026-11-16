@@ -18,7 +18,7 @@ Use Node 24/npm/CommonJS, Express 5, Mongoose 9 and Atlas. Installed packages in
 - `server.js` loads the environment, initializes Express, and starts `connectDB()` without awaiting it. It mounts middleware/routes and defines `app.listen()`. See [README](../README.md) for runtime verification limits.
 - Use config/routes/controllers/services/models/middleware/utils, plus scripts/tests/postman. See [coding practices](../AGENTS.md#coding-practices) for responsibilities.
 
-Routes import controller functions by name and declare paths, authentication and roles. Controllers call request validators directly and use local input/filter/ID variables, without validation middleware or derived request properties (D-48). Shared body/query rejection functions live in validators/request.js. Authentication/roles remain middleware; provider controllers check eligibility before request validation (D-52), with write services rechecking inside their transactions. Express handles uncaught parser errors by default (D-49).
+Routes import named controller functions and declare authentication, roles, provider approval and request validation. Validation middleware stores allowlisted normalized body/query/params in req.validated. Controllers handle HTTP input/output and forward errors with next(error). Provider write services retain approval checks inside transactions. A final JSON error handler handles expected AppError failures, parser errors and unexpected failures with safe messages (D-54).
 
 Routing uses four flat resource files (D-53): auth.js, providers.js, vehicles.js and bookings.js. Auth mounts at /api/v1/auth; the other three mount at /api/v1 and declare their full resource paths. Providers includes public discovery, representative profiles/applications and admin review/lifecycle. Vehicles and bookings each include their public/customer and representative operations. Use router.route() chains to group methods for one path. Scope authentication/roles to individual route chains so mounting several resource routers at the same prefix does not protect public or unrelated paths. URLs and controller contracts are unchanged.
 
@@ -40,7 +40,7 @@ No migration runs at startup or as part of this source change. Keep providerId a
 
 ### Input and responses
 
-Input policy: server.js parses JSON once with app.use(express.json()), using Express's default 100 KB limit (D-46). There is no custom parser-error handler (D-49). Reject unknown body/query fields, wrong scalar/array/operator types and malformed IDs. IDs are 24 hex characters; dates must be real YYYY-MM-DD calendar dates. Normalize only the specified strings; do not turn objects/arrays into strings. `Satang` fields are safe integers.
+Input policy: server.js parses JSON once with app.use(express.json()), using Express's default 100 KB limit (D-46). Parser errors use the shared JSON error handler (D-54). Reject unknown body/query fields, wrong scalar/array/operator types and malformed IDs. IDs are 24 hex characters; dates must be real YYYY-MM-DD calendar dates. Normalize only the specified strings; do not turn objects/arrays into strings. `Satang` fields are safe integers.
 
 Success: `{success:true,data:...}`. Lists also return count (rows on this page) and pagination `{page,limit,total,pages}`.
 
@@ -63,7 +63,7 @@ JSON parsing → authentication → role → provider state → input validation
 
 Repeat transaction-sensitive checks after acquiring guards. A unique-index error at write time still needs a domain error.
 
-Malformed JSON returns 400 and oversized JSON returns 413 before route authentication, including on unknown paths. These use Express default HTML error responses, not the application JSON envelope. Express controls diagnostic detail according to its environment setting. Valid JSON follows route authentication/permission checks, then controller validation in the same order as before.
+Malformed JSON returns 400 and oversized JSON returns 413 before authentication, including on unknown paths. Both use `{success:false,message}` with safe messages. Valid requests follow authentication, roles, provider approval where required, then validation.
 
 | Status | Reason                                                                                                   |
 | ------ | -------------------------------------------------------------------------------------------------------- |
@@ -72,7 +72,7 @@ Malformed JSON returns 400 and oversized JSON returns 413 before route authentic
 | 403    | Authenticated actor lacks permission or provider is not eligible                                         |
 | 404    | Missing or hidden resource, including another owner's private resource                                   |
 | 409    | Duplicate, invalid state, booking limit, unavailable vehicle, overlap, cutoff, window, or write conflict |
-| 413    | JSON body exceeds the parser limit; Express default HTML response                                        |
+| 413    | JSON body exceeds the parser limit; safe JSON response                                                   |
 | 429    | Request limit exceeded                                                                                   |
 | 500    | Unexpected server failure                                                                                |
 
@@ -212,7 +212,7 @@ Use CommonJS named exports. Keep small, single-use feature logic in controllers 
 
 ### Context and shared helpers
 
-Centralized API error abstractions are deferred until the codebase is mature enough to demonstrate their value (D-39). Return `{success:false,message}` with the HTTP status conveying the category (D-41). Services may throw ordinary `Error` objects with an HTTP `status`; controllers map those to responses directly in each catch block and return safe messages, without a sendError helper (D-50).
+Use `AppError(status, message)` for expected failures. Controllers forward errors with `next(error)`. The final JSON error handler returns `{success:false,message}`; unexpected failures return a generic 500 message (D-54). Transaction owners retain domain-specific unique-index conflict mappings.
 
 A provides `middleware/auth.js` with `protect`, `authorize(...roles)` and provider-state checks:
 
@@ -229,7 +229,7 @@ Booking and vehicle services receive explicit actor arguments and an optional `n
 
 #### B00 helper contracts
 
-B's helpers use CommonJS named exports. They do not load the app or database. Invalid input throws an ordinary `Error` with `status: 400` and a safe message.
+B's helpers use CommonJS named exports. They do not load the app or database. Invalid input throws `AppError(400, message)` with a safe message (D-54).
 
 | Module           | Function                                       | Returns                                                                                            |
 | ---------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------- |

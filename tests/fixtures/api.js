@@ -140,6 +140,7 @@ async function apiFixture(t) {
   app.use('/api/v1', require('../../routes/vehicles'));
   app.use('/api/v1', require('../../routes/bookings'));
   app.use((req, res) => res.status(404).json({ success: false, message: 'Not found.' }));
+  app.use(require('../../middleware/errorHandler').errorHandler);
   server = app.listen(0, '127.0.0.1');
   await new Promise((resolve, reject) => {
     server.once('listening', resolve);

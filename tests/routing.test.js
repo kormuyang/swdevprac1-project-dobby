@@ -17,6 +17,19 @@ test('resource routers preserve documented handlers and role access without prot
     req.actor = { role };
     return next();
   });
+  for (const name of [
+    'authValidation',
+    'providersValidation',
+    'vehiclesValidation',
+    'bookingsValidation',
+    'providerLifecycleValidation',
+    'approvedProvider',
+  ]) {
+    const middleware = require(`../middleware/${name}`);
+    for (const handler of Object.keys(middleware)) {
+      t.mock.method(middleware, handler, (req, res, next) => next());
+    }
+  }
   for (const name of ['auth', 'providers', 'vehicles', 'bookings', 'providerLifecycle']) {
     const handlers = require(`../controllers/${name}`);
     for (const handler of Object.keys(handlers)) {

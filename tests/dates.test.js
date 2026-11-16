@@ -1,3 +1,4 @@
+const AppError = require('../utils/AppError');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
@@ -15,7 +16,7 @@ const TODAY = '2030-01-10';
 
 function assertBadInput(work) {
   assert.throws(work, (error) => {
-    assert.equal(error.constructor, Error);
+    assert.ok(error instanceof AppError);
     assert.equal(error.status, 400);
     assert.ok(error.message.length > 0);
     assert.equal(error.code, undefined);

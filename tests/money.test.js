@@ -1,3 +1,4 @@
+const AppError = require('../utils/AppError');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { calculateTotal } = require('../utils/money');
@@ -33,7 +34,7 @@ test('total rejects invalid rates and rental lengths without coercing strings', 
     assert.throws(
       () => calculateTotal(rate, days),
       (error) => {
-        assert.equal(error.constructor, Error);
+        assert.ok(error instanceof AppError);
         assert.equal(error.status, 400);
         assert.ok(error.message.length > 0);
         assert.equal(error.code, undefined);

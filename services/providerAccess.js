@@ -1,3 +1,4 @@
+const AppError = require('../utils/AppError');
 const Provider = require('../models/Provider');
 
 async function requireApprovedProvider(actor, session = null) {
@@ -11,9 +12,7 @@ async function requireApprovedProvider(actor, session = null) {
     }).session(session);
   }
   if (!provider) {
-    const error = new Error('An approved provider account is required.');
-    error.status = 403;
-    throw error;
+    throw new AppError(403, 'An approved provider account is required.');
   }
   return provider;
 }

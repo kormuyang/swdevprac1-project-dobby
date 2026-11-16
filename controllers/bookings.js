@@ -1,23 +1,13 @@
-const { rejectBody, rejectQuery } = require('../validators/request');
-const { objectIdField } = require('../validators/fields');
-const {
-  validateBookingCreate,
-  validateBookingDatesUpdate,
-  validateBookingFilters,
-  validateProviderBookingFilters,
-} = require('../validators/bookings');
+const AppError = require('../utils/AppError');
 const Booking = require('../models/Booking');
 const Vehicle = require('../models/Vehicle');
 const service = require('../services/bookings');
-const { requireApprovedProvider } = require('../services/providerAccess');
 const { todayBangkok } = require('../utils/dates');
 const { serializeBooking } = require('../serializers/bookings');
 
 function bookingScope(actor) {
   if (!actor || !['user', 'admin'].includes(actor.role)) {
-    const error = new Error('This account cannot access customer bookings.');
-    error.status = 403;
-    throw error;
+    throw new AppError(403, 'This account cannot access customer bookings.');
   }
   if (actor.role === 'admin') {
     return {};
@@ -62,11 +52,10 @@ async function bookingPage(filter, filters, today) {
   };
 }
 
-async function listBookings(req, res) {
+async function listBookings(req, res, next) {
   try {
-    rejectBody(req);
     const today = todayBangkok(new Date());
-    const filters = validateBookingFilters(req.query, today, req.actor);
+    const filters = req.validated.query;
     const filter = {
       ...bookingScope(req.actor),
       ...statusFilter(filters.status, today),
@@ -82,103 +71,75 @@ async function listBookings(req, res) {
     const result = await bookingPage(filter, filters, today);
     return res.json(result);
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 
-async function getBooking(req, res) {
+async function getBooking(req, res, next) {
   try {
-    rejectBody(req);
-    rejectQuery(req);
-    const bookingId = objectIdField(req.params.bookingId, 'bookingId');
+    const bookingId = req.validated.params.bookingId;
     const booking = await Booking.findOne({
       _id: bookingId,
       ...bookingScope(req.actor),
     }).populate('userId', 'name email telephone');
     if (!booking) {
-      return res.status(404).json({ success: false, message: 'The booking was not found.' });
+      throw new AppError(404, 'The booking was not found.');
     }
     const today = todayBangkok(new Date());
     const data = serializeBooking(booking, booking.userId, today);
     return res.json({ success: true, data });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 
-async function createBooking(req, res) {
+async function createBooking(req, res, next) {
   try {
-    rejectQuery(req);
-    const input = validateBookingCreate(req.body);
+    const input = req.validated.body;
     const now = new Date();
     const booking = await service.createBooking(input, req.actor, now);
     const data = serializeBooking(booking, booking.userId, todayBangkok(now));
     return res.status(201).json({ success: true, data });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 
-async function updateBookingDates(req, res) {
+async function updateBookingDates(req, res, next) {
   try {
-    rejectQuery(req);
-    const bookingId = objectIdField(req.params.bookingId, 'bookingId');
-    const input = validateBookingDatesUpdate(req.body);
+    const bookingId = req.validated.params.bookingId;
+    const input = req.validated.body;
     const now = new Date();
     const booking = await service.updateBookingDates(bookingId, input, req.actor, now);
     const data = serializeBooking(booking, booking.userId, todayBangkok(now));
     return res.json({ success: true, data });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 
-async function cancelBooking(req, res) {
+async function cancelBooking(req, res, next) {
   try {
-    rejectBody(req);
-    rejectQuery(req);
-    const bookingId = objectIdField(req.params.bookingId, 'bookingId');
+    const bookingId = req.validated.params.bookingId;
     const now = new Date();
     const booking = await service.cancelBooking(bookingId, req.actor, now);
     const data = serializeBooking(booking, booking.userId, todayBangkok(now));
     return res.json({ success: true, data });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 
-async function listProviderBookings(req, res) {
+async function listProviderBookings(req, res, next) {
   try {
-    await requireApprovedProvider(req.actor);
-    rejectBody(req);
-    const filters = validateProviderBookingFilters(req.query);
+    const filters = req.validated.query;
     if (filters.vehicleId) {
       const vehicle = await Vehicle.exists({
         _id: filters.vehicleId,
         providerId: req.actor.providerId,
       });
       if (!vehicle) {
-        return res.status(404).json({ success: false, message: 'The vehicle was not found.' });
+        throw new AppError(404, 'The vehicle was not found.');
       }
     }
     const today = todayBangkok(new Date());
@@ -192,36 +153,25 @@ async function listProviderBookings(req, res) {
     const result = await bookingPage(filter, filters, today);
     return res.json(result);
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 
-async function getProviderBooking(req, res) {
+async function getProviderBooking(req, res, next) {
   try {
-    await requireApprovedProvider(req.actor);
-    rejectBody(req);
-    rejectQuery(req);
-    const bookingId = objectIdField(req.params.bookingId, 'bookingId');
+    const bookingId = req.validated.params.bookingId;
     const booking = await Booking.findOne({
       _id: bookingId,
       providerId: req.actor.providerId,
     }).populate('userId', 'name email telephone');
     if (!booking) {
-      return res.status(404).json({ success: false, message: 'The booking was not found.' });
+      throw new AppError(404, 'The booking was not found.');
     }
     const today = todayBangkok(new Date());
     const data = serializeBooking(booking, booking.userId, today);
     return res.json({ success: true, data });
   } catch (error) {
-    const status = Number.isInteger(error.status) ? error.status : 500;
-    return res.status(status).json({
-      success: false,
-      message: status < 500 ? error.message : 'The request could not be completed.',
-    });
+    return next(error);
   }
 }
 

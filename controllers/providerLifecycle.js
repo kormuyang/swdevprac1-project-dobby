@@ -1,67 +1,33 @@
+const AppError = require('../utils/AppError');
 const mongoose = require('mongoose');
 const Provider = require('../models/Provider');
 const ProviderApplication = require('../models/ProviderApplication');
 const bookingCancellation = require('../services/bookingCancellation');
 const { serializeProvider } = require('../serializers/providers');
 
-function validateRequest(req, field) {
-  if (!req.actor || req.actor.role !== 'admin') {
-    const error = new Error('Administrator access is required.');
-    error.status = 403;
-    throw error;
-  }
-  if (!/^[0-9a-f]{24}$/i.test(req.params.providerId)) {
-    const error = new Error('providerId must be a valid ID.');
-    error.status = 400;
-    throw error;
-  }
-  const body = req.body;
-  if (
-    Object.keys(req.query).length > 0 ||
-    !body ||
-    typeof body !== 'object' ||
-    Array.isArray(body) ||
-    Object.keys(body).some((key) => key !== field) ||
-    typeof body[field] !== 'string' ||
-    body[field].trim().length < 1 ||
-    body[field].trim().length > 1000
-  ) {
-    const error = new Error(`Provide only ${field}, between 1 and 1000 characters.`);
-    error.status = 400;
-    throw error;
-  }
-  return body[field].trim();
-}
-
-async function suspendProvider(req, res) {
+async function suspendProvider(req, res, next) {
   let session;
   try {
-    const reason = validateRequest(req, 'reason');
+    const { reason } = req.validated.body;
     session = await mongoose.startSession();
     let result;
     await session.withTransaction(async () => {
       const provider = await Provider.findByIdAndUpdate(
-        req.params.providerId,
+        req.validated.params.providerId,
         { $inc: { revision: 1 } },
         { returnDocument: 'after', session },
       );
       if (!provider) {
-        const error = new Error('Provider was not found.');
-        error.status = 404;
-        throw error;
+        throw new AppError(404, 'Provider was not found.');
       }
       if (provider.status !== 'approved' || !provider.approvedApplicationId) {
-        const error = new Error('Only an approved provider can be suspended.');
-        error.status = 409;
-        throw error;
+        throw new AppError(409, 'Only an approved provider can be suspended.');
       }
       const application = await ProviderApplication.findById(
         provider.approvedApplicationId,
       ).session(session);
       if (!application || application.status !== 'approved') {
-        const error = new Error('An approved provider profile is required.');
-        error.status = 409;
-        throw error;
+        throw new AppError(409, 'An approved provider profile is required.');
       }
       const now = new Date();
       const today = new Intl.DateTimeFormat('en-CA', {
@@ -86,11 +52,7 @@ async function suspendProvider(req, res) {
     });
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
-    const status = error.status || 500;
-    return res.status(status).json({
-      success: false,
-      message: status >= 500 ? 'The request could not be completed.' : error.message,
-    });
+    return next(error);
   } finally {
     if (session) {
       await session.endSession();
@@ -98,32 +60,29 @@ async function suspendProvider(req, res) {
   }
 }
 
-async function reactivateProvider(req, res) {
+async function reactivateProvider(req, res, next) {
   let session;
   try {
-    const resolutionNote = validateRequest(req, 'resolutionNote');
+    const { resolutionNote } = req.validated.body;
     session = await mongoose.startSession();
     let result;
     await session.withTransaction(async () => {
       const provider = await Provider.findByIdAndUpdate(
-        req.params.providerId,
+        req.validated.params.providerId,
         { $inc: { revision: 1 } },
         { returnDocument: 'after', session },
       );
       if (!provider) {
-        const error = new Error('Provider was not found.');
-        error.status = 404;
-        throw error;
+        throw new AppError(404, 'Provider was not found.');
       }
       const application = provider.approvedApplicationId
         ? await ProviderApplication.findById(provider.approvedApplicationId).session(session)
         : null;
       if (provider.status !== 'suspended' || !application || application.status !== 'approved') {
-        const error = new Error(
+        throw new AppError(
+          409,
           'Reactivation requires a suspended provider with an approved profile.',
         );
-        error.status = 409;
-        throw error;
       }
       provider.status = 'approved';
       provider.reactivationNote = resolutionNote;
@@ -134,11 +93,7 @@ async function reactivateProvider(req, res) {
     });
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
-    const status = error.status || 500;
-    return res.status(status).json({
-      success: false,
-      message: status >= 500 ? 'The request could not be completed.' : error.message,
-    });
+    return next(error);
   } finally {
     if (session) {
       await session.endSession();

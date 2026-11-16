@@ -56,7 +56,7 @@ sequenceDiagram
 
 ## API responsibilities
 
-Routes choose authentication and permission checks and import controller functions by name. Auth controllers validate requests and own persistence, provider-signup transactions, and local error responses using the committed OpenAPI shapes. Models define fields, indexes and password hashing. The user serializer allowlists public account fields.
+Routes choose authentication, permissions and validation middleware and import controller functions by name. Auth controllers consume req.validated, own persistence/provider-signup transactions and forward failures to the shared JSON error handler (D-54). Models define fields, indexes and password hashing. The user serializer allowlists public account fields.
 
 These diagrams describe the A01 implementation scope. They do not establish a live database test result or satisfy the unresolved course-specific UML Profile notation decision (D-07).
 

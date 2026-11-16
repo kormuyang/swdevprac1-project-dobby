@@ -1,3 +1,4 @@
+const AppError = require('../utils/AppError');
 const mongoose = require('mongoose');
 const Provider = require('../models/Provider');
 const ProviderApplication = require('../models/ProviderApplication');
@@ -9,9 +10,7 @@ const { calculateTotal } = require('../utils/money');
 const { serializeVehicleSnapshot } = require('../serializers/vehicles');
 
 function fail(status, message) {
-  const error = new Error(message);
-  error.status = status;
-  throw error;
+  throw new AppError(status, message);
 }
 
 function assertBookingRole(actor) {

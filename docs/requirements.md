@@ -117,7 +117,7 @@ An admin can reactivate after resolving the issue, with a resolution note. Cance
 
 ## Quality and scope
 
-Build REST APIs with Atlas (CON-01, CON-03). Keep account, application and booking data confidential (NFR-02). Check permissions on lists and individual records, validate input, derive ownership/prices server-side and return safe, consistent application errors. Framework JSON parsing failures use Express default error responses (D-49).
+Build REST APIs with Atlas (CON-01, CON-03). Keep account, application and booking data confidential (NFR-02). Check permissions on lists and individual records, validate input, derive ownership/prices server-side and return safe, consistent application errors. Parser and framework failures also return safe JSON errors (D-54).
 
 Target responses within three seconds (NFR-03). Check behavior with automated tests and a repeatable Postman Runner/Newman demo (NFR-04). Concurrent requests must still respect the cap, availability and suspension rules.
 
