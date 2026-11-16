@@ -101,6 +101,7 @@ async function runDemo(options = {}) {
 }
 
 if (require.main === module) {
+  require('dotenv').config({ quiet: true, path: process.env.DOTENV_CONFIG_PATH || '.env' });
   runDemo().catch((error) => {
     console.error(error.message);
     process.exitCode = 1;

@@ -1,3 +1,4 @@
+const { objectIdField, requireObject, rejectUnknownFields, stringField } = require('./fields');
 const AppError = require('../utils/AppError');
 const { validateProfile } = require('./auth');
 
@@ -26,13 +27,6 @@ function validateReview(body) {
     return { decision: 'reject', reason };
   }
   throw badRequest('Review must be approve or reject with a reason.');
-}
-
-function validateObjectId(value, name) {
-  if (typeof value !== 'string' || !/^[0-9a-fA-F]{24}$/.test(value)) {
-    throw badRequest(`${name} must be a MongoDB ObjectId.`);
-  }
-  return value;
 }
 
 function validatePage(query, { statuses, allowProviderId = false } = {}) {
@@ -70,7 +64,7 @@ function validatePage(query, { statuses, allowProviderId = false } = {}) {
     result.status = query.status;
   }
   if (query.providerId !== undefined) {
-    result.providerId = validateObjectId(query.providerId, 'providerId');
+    result.providerId = objectIdField(query.providerId, 'providerId');
   }
   return result;
 }
@@ -79,4 +73,22 @@ function validateApplication(body) {
   return validateProfile(body);
 }
 
-module.exports = { validateApplication, validateObjectId, validatePage, validateReview };
+function validatePublicProviderFilters(query) {
+  requireObject(query, 'Query');
+  rejectUnknownFields(query, ['page', 'limit'], 'query');
+  return validatePage(query);
+}
+
+function validateLifecycleInput(body, field) {
+  requireObject(body, 'Request body');
+  rejectUnknownFields(body, [field], 'request');
+  return { [field]: stringField(body[field], field, { min: 1, max: 1000 }) };
+}
+
+module.exports = {
+  validateApplication,
+  validatePage,
+  validateReview,
+  validatePublicProviderFilters,
+  validateLifecycleInput,
+};

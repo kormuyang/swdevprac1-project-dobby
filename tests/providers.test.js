@@ -1,3 +1,4 @@
+const { objectIdField } = require('../validators/fields');
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const {
@@ -6,8 +7,8 @@ const {
   serializeProvider,
 } = require('../serializers/providers');
 const {
+  validateLifecycleInput,
   validateApplication,
-  validateObjectId,
   validatePage,
   validateReview,
 } = require('../validators/providers');
@@ -69,8 +70,9 @@ test('pagination and optional status filters follow the contract allowlist', () 
   assert.throws(() => validatePage({ status: 'suspended' }, { statuses: ['pending'] }), {
     status: 400,
   });
-  assert.equal(validateObjectId('507f1f77bcf86cd799439011', 'id'), '507f1f77bcf86cd799439011');
-  assert.throws(() => validateObjectId('not-an-id', 'id'), { status: 400 });
+  assert.equal(objectIdField('507f1f77bcf86cd799439011', 'id'), '507f1f77bcf86cd799439011');
+  assert.throws(() => objectIdField('not-an-id', 'id'), { status: 400 });
+  assert.equal(objectIdField('507F1F77BCF86CD799439011', 'id'), '507f1f77bcf86cd799439011');
 });
 
 test('serializers expose contract fields only and preserve provider status', () => {
@@ -112,4 +114,22 @@ test('serializers expose contract fields only and preserve provider status', () 
     total: 1,
     pages: 1,
   });
+});
+
+test('lifecycle input is normalized independently of authorization and rejects extra fields', () => {
+  for (const field of ['reason', 'resolutionNote']) {
+    assert.deepEqual(validateLifecycleInput({ [field]: '  Synthetic note  ' }, field), {
+      [field]: 'Synthetic note',
+    });
+    for (const body of [
+      undefined,
+      [],
+      {},
+      { [field]: ' ' },
+      { [field]: 'x'.repeat(1001) },
+      { [field]: 'Note', extra: true },
+    ]) {
+      assert.throws(() => validateLifecycleInput(body, field), { status: 400 });
+    }
+  }
 });

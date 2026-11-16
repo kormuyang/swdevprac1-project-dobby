@@ -1,3 +1,6 @@
+const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const { Script } = require('node:vm');
@@ -63,4 +66,30 @@ test('demo requires locally supplied admin credentials before requests', async (
       process.env.SEED_ADMIN_PASSWORD = previous;
     }
   }
+});
+
+test('demo CLI loads its selected environment file before validating configuration', (t) => {
+  const directory = fs.mkdtempSync(path.join(__dirname, 'fixtures', '.demo-env-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const envFile = path.join(directory, 'synthetic.env');
+  fs.writeFileSync(
+    envFile,
+    'SEED_ADMIN_EMAIL=admin@example.test\nSEED_ADMIN_PASSWORD=synthetic-password\nDEMO_BASE_URL=https://example.test/api/v1\n',
+  );
+  const env = { ...process.env, DOTENV_CONFIG_PATH: envFile };
+  delete env.SEED_ADMIN_EMAIL;
+  delete env.SEED_ADMIN_PASSWORD;
+  delete env.DEMO_BASE_URL;
+  const result = spawnSync(
+    process.execPath,
+    [path.join(__dirname, '..', 'scripts', 'test-demo.js')],
+    {
+      env,
+      encoding: 'utf8',
+      timeout: 10000,
+    },
+  );
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /DEMO_BASE_URL must use a local host/);
+  assert.doesNotMatch(result.stderr, /Set SEED_ADMIN_EMAIL/);
 });

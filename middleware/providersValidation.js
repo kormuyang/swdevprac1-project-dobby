@@ -1,10 +1,34 @@
+const { objectIdField } = require('../validators/fields');
 const { rejectBody, rejectQuery } = require('../validators/request');
 const {
   validateApplication,
-  validateObjectId,
+  validatePublicProviderFilters,
   validatePage,
   validateReview,
 } = require('../validators/providers');
+
+function validateListPublicProviders(req, res, next) {
+  try {
+    rejectBody(req);
+    const filters = validatePublicProviderFilters(req.query);
+    req.validated = { query: filters };
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+}
+
+function validateGetPublicProvider(req, res, next) {
+  try {
+    rejectBody(req);
+    rejectQuery(req);
+    const providerId = objectIdField(req.params.providerId, 'providerId');
+    req.validated = { params: { providerId } };
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+}
 
 function validateGetOwnProvider(req, res, next) {
   try {
@@ -31,7 +55,7 @@ function validateListOwnApplications(req, res, next) {
 function validateGetOwnApplication(req, res, next) {
   try {
     rejectQuery(req);
-    const applicationId = validateObjectId(req.params.applicationId, 'applicationId');
+    const applicationId = objectIdField(req.params.applicationId, 'applicationId');
     rejectBody(req);
     req.validated = { params: { applicationId } };
     return next();
@@ -67,7 +91,7 @@ function validateListAdminProviders(req, res, next) {
 function validateGetAdminProvider(req, res, next) {
   try {
     rejectQuery(req);
-    const providerId = validateObjectId(req.params.providerId, 'providerId');
+    const providerId = objectIdField(req.params.providerId, 'providerId');
     rejectBody(req);
     req.validated = { params: { providerId } };
     return next();
@@ -93,7 +117,7 @@ function validateListAdminApplications(req, res, next) {
 function validateGetAdminApplication(req, res, next) {
   try {
     rejectQuery(req);
-    const applicationId = validateObjectId(req.params.applicationId, 'applicationId');
+    const applicationId = objectIdField(req.params.applicationId, 'applicationId');
     rejectBody(req);
     req.validated = { params: { applicationId } };
     return next();
@@ -105,7 +129,7 @@ function validateGetAdminApplication(req, res, next) {
 function validateReviewApplication(req, res, next) {
   try {
     rejectQuery(req);
-    const applicationId = validateObjectId(req.params.applicationId, 'applicationId');
+    const applicationId = objectIdField(req.params.applicationId, 'applicationId');
     const input = validateReview(req.body);
     req.validated = { body: input, params: { applicationId } };
     return next();
@@ -115,6 +139,8 @@ function validateReviewApplication(req, res, next) {
 }
 
 module.exports = {
+  validateListPublicProviders,
+  validateGetPublicProvider,
   validateGetOwnProvider,
   validateListOwnApplications,
   validateGetOwnApplication,

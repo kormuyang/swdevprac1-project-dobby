@@ -45,7 +45,7 @@ Each file groups methods by path with router.route() chains. Authentication and 
 flowchart LR
     Request --> JSON[Global express.json]
     JSON --> Auth[Authentication and roles]
-    JSON -->|Malformed or oversized| Error[Safe JSON error handler]
+    JSON -->|Invalid, oversized or unsupported encoding| Error[Safe JSON error handler]
     Auth --> Approval[Provider approval where required]
     Approval --> Validation[Request validation middleware]
     Validation --> Controller
@@ -58,7 +58,7 @@ flowchart LR
     Controller --> Output[Allowlisted response]
 ```
 
-Booking list/detail and provider vehicle reads live in controllers. Booking creation/date edits and the separate cancellation flow remain in services with provider → user → vehicle transaction guards. JSON parsing uses the Express default 100 KB limit and runs before route authentication (D-46). The shared JSON error handler returns 400 for malformed JSON, 413 for oversized bodies and a safe generic 500 for unexpected failures (D-54).
+Booking list/detail and provider vehicle reads live in controllers. Booking creation/date edits and the separate cancellation flow remain in services with provider → user → vehicle transaction guards. JSON parsing uses the Express default 100 KB limit and runs before route authentication (D-46). The shared JSON error handler returns 400 for malformed JSON, 413 for oversized bodies, 415 for unsupported charset/encoding and a safe generic 500 for unexpected failures (D-54).
 
 Provider protected reads/writes require a current non-suspended provider. Pending/rejected providers can read history and submit revisions but cannot manage vehicles. Logout permits a suspended account. B owns vehicle/booking operations; pending and rejected providers cannot use them.
 

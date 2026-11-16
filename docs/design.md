@@ -50,7 +50,7 @@ Success: `{success:true,data:...}`. Lists also return count (rows on this page) 
 - Default sort: createdAt descending, then id descending.
 - Application history: version descending. Admin queue: submittedAt ascending, then id ascending.
 
-Application errors: `{success:false,message}`. Framework parser errors are the HTML exception described below. Use HTTP status plus a safe reason in the message; do not return stacks, DB diagnostics, connection strings, raw queries or tokens. Clients cannot choose arbitrary projections or populate fields.
+Application errors: `{success:false,message}`. Known parser failures also use this JSON envelope. Use HTTP status plus a safe reason in the message; do not return stacks, DB diagnostics, connection strings, raw queries or tokens. Clients cannot choose arbitrary projections or populate fields.
 
 ### Validation order
 
@@ -73,6 +73,7 @@ Malformed JSON returns 400 and oversized JSON returns 413 before authentication,
 | 404    | Missing or hidden resource, including another owner's private resource                                   |
 | 409    | Duplicate, invalid state, booking limit, unavailable vehicle, overlap, cutoff, window, or write conflict |
 | 413    | JSON body exceeds the parser limit; safe JSON response                                                   |
+| 415    | Unsupported JSON charset or content encoding                                                             |
 | 429    | Request limit exceeded                                                                                   |
 | 500    | Unexpected server failure                                                                                |
 
@@ -191,7 +192,7 @@ Serialize _id as id; hide __v, revisions, passwordHash, sid and raw claims. Sele
 
 - `validators/vehicles.js`: `validateVehicleCreate(body)`, `validateVehicleUpdate(body)`, `validateAvailabilityUpdate(body)`, `validateActivationUpdate(body)` return allowlisted input matching OpenAPI. Creation permits an omitted end date; availability updates require both fields, with null for no end.
 - `validators/bookings.js`: `validateBookingCreate(body)`, `validateBookingDatesUpdate(body)` validate request shape and calendar ranges. B03 checks the original booking cutoff before applying `validateRentalDates` to proposed dates, preserving the validation order above.
-- `validators/fields.js` holds the existing scalar/object checks shared with auth; moving those checks does not change auth behavior. List/query validation is called directly by the B02/B03 controllers.
+- `validators/fields.js` holds the existing scalar/object checks shared with auth; moving those checks does not change auth behavior. List/query validation runs in route middleware; controllers consume req.validated.
 - `serializers/vehicles.js`: `serializeVehicle(vehicle)`, `serializeVehicleSnapshot(vehicle)`. `serializers/bookings.js`: `serializeBooking(booking, customer, today)` requires explicitly selected current customer contact and one captured Thailand date. These return DTOs, not HTTP envelopes, and never populate database references themselves.
 - Vehicle and Booking enforce field constraints and fixed snapshots on document saves. Booking checks that dates, days and total agree; historical records remain valid. Later services own eligibility, permissions, state transitions and concurrency guards. Query writes must use allowlisted fields and enable update validation; multi-field booking edits use document saves so the consistency checks run.
 - `npm run test:integration` runs both owners' suites. All suites use `MONGO_URI` naming the shared `dobby` database. Files run sequentially to avoid fixture interference; deliberate race requests inside a test remain concurrent. Tests delete only their synthetic fixture IDs (D-55).
@@ -364,3 +365,11 @@ The combined Postman collection extends A05 with vehicle/booking folders and ass
 ### Course alignment for B
 
 Vehicle and booking endpoints retain the course route/controller/model structure. Focused services own the transactions because booking caps, overlap and suspension span multiple records. Dobby adds fixed booking snapshots, integer-satang calculations, Thailand calendar rules, scoped output and real race checks to implement the agreed rental requirements.
+
+## Provider route contexts (D-56)
+
+- `/providers` and `/providers/:providerId`: public directory/detail of approved rental businesses.
+- `/provider/...`: authenticated representative workspace, scoped to the actor's linked Provider. There is no standalone `/provider` endpoint.
+- `/admin/providers`: administrator management of provider records.
+
+Public provider discovery belongs to provider controllers, validation middleware, validators, services and serializers. Vehicle discovery reuses the provider eligibility aggregation stages. All IDs use objectIdField and normalize to lowercase. Lifecycle validators accept plain input; route middleware handles authorization separately. Authentication forwards AppError/unknown errors to the shared JSON handler. The standalone demo loads .env at its CLI entry point like the other tools.

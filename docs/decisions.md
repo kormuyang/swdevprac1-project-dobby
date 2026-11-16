@@ -60,3 +60,7 @@ User, November 16: restore route validation and approved-provider middleware. St
 ## D-55: One shared database
 
 User, November 16: use only MONGO_URI and the same database for the app, integration tests, seed/reset and performance checks. Use the explicit database name dobby for setup/test guards. This replaces A/B/test database isolation. Run integration files sequentially; retain fixture-scoped cleanup and transaction races within individual tests. Performance still requires an empty database; reset deletes the shared database only with ALLOW_TEST_DB_RESET=true. No database is modified by this source change.
+
+## D-56: Consistent feature modules and request handling
+
+User, November 16: fix the seven code consistency findings. Handle known parser failures with safe client statuses, forward authentication failures to the shared error handler, use one normalized ObjectId validator, keep lifecycle input rules pure and authorization in routes, move public provider discovery into provider modules, use the shared Bangkok date helper and remove unused validation time input. CLI tools load .env only in their entry points. Keep current URLs: /providers is public discovery, /provider/... is the authenticated representative workspace, and /admin/providers is admin management. These prefixes describe access contexts, not different business entities.

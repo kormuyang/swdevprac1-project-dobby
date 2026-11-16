@@ -44,7 +44,7 @@ Provider representatives can read their profile and application history and subm
 
 ## Routes
 
-Route files are grouped by resource: `auth.js`, `providers.js`, `vehicles.js` and `bookings.js`. Methods sharing a path use `router.route()` chains. Auth mounts at `/api/v1/auth`; the other resource routers mount at `/api/v1`. Each protected route chain declares its authentication and roles. Endpoint URLs remain unchanged.
+Route files are grouped by resource: `auth.js`, `providers.js`, `vehicles.js` and `bookings.js`. Methods sharing a path use `router.route()` chains. Auth mounts at `/api/v1/auth`; the other resource routers mount at `/api/v1`. Each protected route chain declares its authentication and roles. Endpoint URLs remain unchanged. Public /providers is the approved business directory; /provider/... is the representative workspace scoped to their business; /admin/providers is admin management. There is no standalone /provider endpoint (D-56).
 
 ## Tests
 

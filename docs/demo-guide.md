@@ -1,6 +1,6 @@
 # Demo guide
 
-Run the [combined collection](../postman/dobby.postman_collection.json) through `npm run test:demo` after seeding and starting the local API. Supply the seed administrator credentials locally. The runner uses loopback hosts only, generates synthetic account credentials in memory and prints no tokens or response bodies. Each run creates unique records; repeat with fresh data or use the explicitly guarded test reset.
+Run the [combined collection](../postman/dobby.postman_collection.json) through `npm run test:demo` after seeding and starting the local API. The standalone command loads .env; supply the seed administrator credentials there or through the process environment. The runner uses loopback hosts only, generates synthetic account credentials in memory and prints no tokens or response bodies. Each run creates unique records; repeat with fresh data or use the explicitly guarded test reset.
 
 ## Seven-minute outline
 

@@ -12,6 +12,12 @@ function errorHandler(error, req, res, next) {
   } else if (error.type === 'entity.too.large') {
     status = 413;
     message = 'The request body exceeds the 100 KB limit.';
+  } else if (error.type === 'charset.unsupported' || error.type === 'encoding.unsupported') {
+    status = 415;
+    message = 'The request uses an unsupported charset or content encoding.';
+  } else if (error.type === 'request.aborted' || error.type === 'request.size.invalid') {
+    status = 400;
+    message = 'The request body could not be read.';
   } else if (
     error instanceof AppError &&
     Number.isInteger(error.status) &&

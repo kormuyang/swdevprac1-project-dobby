@@ -1,6 +1,6 @@
 # Implementation plan
 
-Saint = A; Poom = B. The A/B implementation is integrated in main through the linked task PRs. Under D-55, the app and tools share MONGO_URI naming dobby. Atlas acceptance and delivery decisions remain open.
+Saint = A; Poom = B. The A/B implementation is integrated in main through the linked task PRs. Under D-55, the app and tools share MONGO_URI naming dobby. Automated database/Newman and T41 checks passed; human review and course delivery decisions remain open.
 
 ## Who owns what?
 
@@ -86,7 +86,7 @@ npm run reset:test
 npm run test:demo
 ```
 
-Auth integration uses TEST_MONGO_URI with dobby_test_a; B integration uses TEST_MONGO_URI_B with dobby_test_b. Reset uses TEST_MONGO_URI with an explicitly allowed database and also needs an explicit flag. Seed only an explicitly named dev/test database. test:demo runs the committed Newman collection. A04 documents setup in README.
+All database commands use MONGO_URI naming the shared dobby database. Integration files run sequentially. Reset requires its explicit flag and deletes the shared database. Performance requires an empty database. test:demo loads .env and runs the committed Newman collection. See README for setup.
 
 The user authorized implementing B02–B05 sequentially on stacked branches while Saint reviews earlier B PRs. Finish each task with tests, relevant diagrams and a PR before starting the next. D-43 supersedes the earlier Saint-approval prerequisite.
 
@@ -96,7 +96,7 @@ A03 provides the real cancellation helper and provider/user/vehicle guard protoc
 
 Each task PR records its reviewed commit, commands/results and verification limits. Merge review follows D-43; implementation choices follow D-44. Atlas acceptance, D-07/D-10 and Saint’s review of integrated main remain open. Newman dependency remediation is deferred under D-45. Local verification does not close G4 or all T01–T42 acceptance.
 
-## Course readability refactor (D-46)
+## Historical implementation: Course readability refactor (D-46)
 
 The user approved moving simple reads into controllers, explicit actor/time service arguments, expanded handlers, a separate booking cancellation flow and app-level JSON parsing. Keep all existing folders, tests and scripts. Shared server/parser changes touch A-owned setup; booking/vehicle changes touch B-owned features under this request. Coordinate integrated review with Saint; no publishing or merge is implied.
 
@@ -104,7 +104,7 @@ Validate local rules and parser behavior with `npm test`, then run the existing 
 
 Local verification on November 16: `npm exec --yes --package=node@24 -- npm test` passed 41/41 checks under Node 24.22.3, including global-parser HTTP checks. Changed JavaScript syntax, OpenAPI JSON parsing and `git diff --check` passed. Neither dedicated test database connection was available, so Atlas integration/race checks and the added cancellation-after-deactivation case were not run. Dependencies were installed from the existing lockfile without changing versions.
 
-## Controller request validation (D-48)
+## Historical implementation: Controller request validation (D-48)
 
 Routes import named controller functions and retain authentication, roles and provider eligibility. Controllers call the existing validators directly and use local inputs, filters and IDs. Body/query rejection functions are ordinary checks in validators/request.js. Under D-52, the provider controllers now call the eligibility guard directly before validation. The request-validation middleware and route-local validation wrappers are removed. Endpoints, response shapes and transaction guards remain unchanged.
 
@@ -112,23 +112,23 @@ Local HTTP checks exercise invalid requests and permission order with synthetic 
 
 Verification on November 16: Node 24 `npm test` passed 42/42 local tests; `npm run lint`, `npm run format:check` and `git diff --check` passed. The new HTTP test covers request errors, permission ordering and a successful normalized vehicle input passed to a mocked service. It does not prove database transactions or races.
 
-## Express default parser errors (D-49)
+## Historical implementation: Express default parser errors (D-49)
 
 The user requested removing jsonErrors. The server and test apps retain global express.json() and use Express default error handling. Malformed JSON returns 400, oversized JSON returns 413 and uncaught framework errors return HTML. Controller validation/domain errors retain the JSON envelope. Update clients and T38 expectations accordingly; no custom error handler replaces the removed middleware.
 
 Verification: Node 24 local tests passed 42/42, including Express default 400/413/500 HTML behavior. Lint, formatting and diff checks passed. Database integration/race checks remain unrun without the dedicated connections.
 
-## Provider terminology (D-51)
+## Historical implementation: Provider terminology (D-51)
 
 The representative role, signup route, representative route prefix, function/module names, fixtures, docs and Postman now use provider terminology. Provider business records and representative User records remain separate. See the [transition notes](design.md#provider-terminology-transition-d-51) for the stored-role update; no database migration was executed.
 
 Node 24 verification: 44/44 local tests, lint, formatting and diff checks passed. New checks compare model/OpenAPI roles and verify Postman paths and script syntax. Static local imports and OpenAPI references resolve. Neither A nor B test connection was available, so Atlas integration, database races and the full Newman journey remain unrun for this rename.
 
-## Provider eligibility in controllers (D-52)
+## Historical implementation: Provider eligibility in controllers (D-52)
 
 The user requested removing approvedProvider middleware. The six provider vehicle handlers and two provider booking-read handlers check requireApprovedProvider before request validation. Routes retain protect/authorize. Vehicle write services still recheck provider eligibility in their owning transactions. No provider access rule is removed.
 
-## Resource routing (D-53)
+## Historical implementation: Resource routing (D-53)
 
 The user chose resource grouping, unchanged URLs and router.route() chains. Four flat route files replace the mixed access-area files. Server and test hosts mount auth at /api/v1/auth and the other resource routers at /api/v1. The shared API fixture mounts the complete route set without optional extra routers. Controllers, transaction boundaries and OpenAPI paths remain unchanged.
 
@@ -136,13 +136,13 @@ Local routing checks compare every routed OpenAPI operation with its handler and
 
 Verification on November 16: Node 24 local tests passed 45/45, including the full 33-operation routing/access matrix. Lint, format checks, static local imports and git diff checks passed. Neither dedicated test database connection was available, so Atlas integration, database races and the full Newman journey remain unrun.
 
-## Focused middleware restoration (D-54)
+## Historical implementation: Focused middleware restoration (D-54)
 
 Restore feature validation middleware, normalized req.validated input, provider approval middleware, AppError and a shared JSON error handler. Keep in-transaction checks, resource routes, provider naming and the global-only rate limit. This supersedes the earlier controller-validation/parser-error implementation notes above. Validate with the local HTTP regression, full unit suite, lint and formatting; database acceptance remains separate.
 
 Verification: Node 24.22.3 local suite passed 45/45, including request validation/permission order, normalized vehicle input, domain conflict forwarding, parser 400/413 and safe unexpected 500 responses. Lint, formatting and OpenAPI local-reference checks passed. Dedicated integration connections are unavailable; Atlas acceptance and concurrency checks were not run.
 
-## Shared database configuration (D-55)
+## Historical implementation: Shared database configuration (D-55)
 
 Use one MONGO_URI naming dobby for the app, all integration tests, seed/reset and performance checks. Remove the A/B owner reset option. Integration files run sequentially and load .env explicitly through Node; deliberate race scenarios remain concurrent. Performance loads .env and retains its empty-database requirement. Reset still requires the flag and now clearly identifies that it deletes the shared database. Earlier database-isolation notes are historical. No database operation is authorized or performed as part of this configuration change.
 
@@ -154,8 +154,14 @@ After the user configured MONGO_URI with the explicit dobby database, `npm run t
 
 This closes the previously unrun integrated-suite/Newman execution for the current source. It does not establish the separate T41 performance protocol or close instructor/partner delivery decisions under T42. Connection details and tokens are not recorded.
 
-## Performance measurement — November 16
+## Earlier performance measurement — November 16
 
 The Node 24.22.3 Atlas performance run recorded 150 requests across 15 endpoint cases, ten repetitions each, using two providers, ten vehicles and thirty historical bookings. All statuses matched expectations and every measured request met 3000 ms; maximum 566.19 ms (login). API process startup was recorded separately at 1708.81 ms. The runner completed with fixture cleanup and no seed/reset. Timing details are in the ignored reports/response-times.json.
 
 The region setting was invalid, so the region metadata was removed from the generated report. The user subsequently confirmed AWS Singapore (ap-southeast-1); that region is now recorded in the report with its confirmation source. T41 passed for the recorded dataset and conditions; T42 delivery/instructor/partner checks remain open. Region validation now rejects URI/email-shaped values before connecting; a local regression checks rejected values and accepted region names/codes.
+
+## Code consistency cleanup (D-56)
+
+Keep the representative /provider workspace distinct from the public /providers directory, with URLs unchanged. Move public provider discovery to provider modules, share normalized ID/date helpers, extract pure lifecycle input rules, forward auth errors through the shared JSON handler and load the demo CLI environment consistently. Known unsupported JSON charset/encoding failures return safe 415 responses; malformed/incomplete bodies use 400. Update OpenAPI and local regressions before verification.
+
+Verification: Node 24.22.3 passed 48/48 local tests and 12/12 database checks (eight top-level cases plus four nested checks). Newman passed 35 requests and 57 assertions, maximum 718 ms. The repeated Atlas performance measurement on AWS Singapore (ap-southeast-1) passed all 150 requests with expected statuses, maximum 958.38 ms. The latest timing artifact is reports/response-times.json; it replaces the prior generated report. Lint, formatting, 373 OpenAPI references and 251 static local imports passed. No seed, reset, database migration, commit or push ran.

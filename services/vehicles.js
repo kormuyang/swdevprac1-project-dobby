@@ -1,10 +1,11 @@
+const { approvedProfileStages } = require('./providers');
+const { requireApprovedProvider } = require('./providerAccess');
 const AppError = require('../utils/AppError');
 const mongoose = require('mongoose');
 const Provider = require('../models/Provider');
 const Vehicle = require('../models/Vehicle');
 const Booking = require('../models/Booking');
 const { todayBangkok } = require('../utils/dates');
-const { requireApprovedProvider } = require('./providerAccess');
 
 function fail(status, message) {
   throw new AppError(status, message);
@@ -38,56 +39,6 @@ async function aggregatePage(Model, pipeline, filters, sort) {
     },
   ]);
   return pageResult(result.data, result.totals[0]?.count || 0, filters);
-}
-
-function approvedProfileStages() {
-  return [
-    { $match: { status: 'approved', approvedApplicationId: { $ne: null } } },
-    {
-      $lookup: {
-        from: 'providerapplications',
-        let: { applicationId: '$approvedApplicationId', providerId: '$_id' },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ['$_id', '$$applicationId'] },
-                  { $eq: ['$providerId', '$$providerId'] },
-                  { $eq: ['$status', 'approved'] },
-                ],
-              },
-            },
-          },
-          {
-            $project: {
-              'profile.legalName': 1,
-              'profile.registeredAddress': 1,
-              'profile.telephone': 1,
-            },
-          },
-        ],
-        as: 'approvedApplication',
-      },
-    },
-    { $unwind: '$approvedApplication' },
-    { $project: { _id: 1, approvedApplication: 1, createdAt: 1 } },
-  ];
-}
-
-async function listPublicProviders(filters) {
-  return aggregatePage(Provider, approvedProfileStages(), filters, { createdAt: -1, _id: -1 });
-}
-
-async function getPublicProvider(id) {
-  const [provider] = await Provider.aggregate([
-    { $match: { _id: new mongoose.Types.ObjectId(id) } },
-    ...approvedProfileStages(),
-  ]);
-  if (!provider) {
-    fail(404, 'The provider was not found.');
-  }
-  return provider;
 }
 
 function escapeRegex(value) {
@@ -294,8 +245,6 @@ function setVehicleActivation(id, input, actor, now = new Date()) {
 }
 
 module.exports = {
-  listPublicProviders,
-  getPublicProvider,
   listPublicVehicles,
   getPublicVehicle,
   createVehicle,

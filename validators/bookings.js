@@ -19,7 +19,7 @@ function validateBookingCreate(body) {
   };
 }
 
-function validateBookingFilters(query, today, actor) {
+function validateBookingFilters(query, actor) {
   const fields = ['status'];
   if (actor?.role === 'admin') {
     fields.push('providerId', 'userId');

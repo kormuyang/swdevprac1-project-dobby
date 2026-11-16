@@ -6,13 +6,11 @@ const {
   validateBookingFilters,
   validateProviderBookingFilters,
 } = require('../validators/bookings');
-const { todayBangkok } = require('../utils/dates');
 
 function validateListBookings(req, res, next) {
   try {
-    const today = todayBangkok(new Date());
     rejectBody(req);
-    const filters = validateBookingFilters(req.query, today, req.actor);
+    const filters = validateBookingFilters(req.query, req.actor);
     req.validated = { query: filters };
     return next();
   } catch (error) {

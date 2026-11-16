@@ -1,3 +1,4 @@
+const { errorHandler } = require('../middleware/errorHandler');
 const assert = require('node:assert/strict');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -48,7 +49,10 @@ async function runProtect(
   const req = { get: () => `Bearer ${token}` };
   let nextCalled = false;
   try {
-    await protect({ allowSuspended })(req, res, () => {
+    await protect({ allowSuspended })(req, res, (error) => {
+      if (error) {
+        return errorHandler(error, req, res, () => {});
+      }
       nextCalled = true;
     });
     return { ...res, nextCalled, actor: req.actor };

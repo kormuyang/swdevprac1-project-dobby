@@ -129,6 +129,22 @@ test('global JSON parsing uses safe JSON errors before authentication', async (t
     message: 'The request body exceeds the 100 KB limit.',
   });
 
+  for (const invalidHeaders of [
+    { 'content-type': 'application/json; charset=not-a-real-charset' },
+    { ...headers, 'content-encoding': 'not-a-real-encoding' },
+  ]) {
+    const unsupported = await fetch(`${base}/bookings`, {
+      method: 'POST',
+      headers: invalidHeaders,
+      body: '{}',
+    });
+    assert.equal(unsupported.status, 415);
+    assert.deepEqual(await unsupported.json(), {
+      success: false,
+      message: 'The request uses an unsupported charset or content encoding.',
+    });
+  }
+
   const unauthorized = await fetch(`${base}/bookings`, { method: 'POST', headers, body: '{}' });
   assert.equal(unauthorized.status, 401);
   const failure = await fetch(`${base}/failure`);

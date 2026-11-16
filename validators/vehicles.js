@@ -109,10 +109,6 @@ function validateActivationUpdate(body) {
   return { isActive: body.isActive };
 }
 
-function validatePublicProviderFilters(query) {
-  return listPage(query);
-}
-
 function validatePublicVehicleFilters(query, today) {
   const result = listPage(query, [
     'providerId',
@@ -198,7 +194,6 @@ module.exports = {
   validateVehicleUpdate,
   validateAvailabilityUpdate,
   validateActivationUpdate,
-  validatePublicProviderFilters,
   validatePublicVehicleFilters,
   validateOwnVehicleFilters,
 };

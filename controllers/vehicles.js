@@ -3,37 +3,6 @@ const Vehicle = require('../models/Vehicle');
 const service = require('../services/vehicles');
 const { serializeVehicle } = require('../serializers/vehicles');
 
-function serializePublicProvider(provider) {
-  const profile = provider.approvedApplication.profile;
-  return {
-    id: String(provider._id),
-    name: profile.legalName,
-    address: profile.registeredAddress,
-    telephone: profile.telephone,
-  };
-}
-
-async function listPublicProviders(req, res, next) {
-  try {
-    const filters = req.validated.query;
-    const result = await service.listPublicProviders(filters);
-    return res.json({ success: true, ...result, data: result.data.map(serializePublicProvider) });
-  } catch (error) {
-    return next(error);
-  }
-}
-
-async function getPublicProvider(req, res, next) {
-  try {
-    const providerId = req.validated.params.providerId;
-    const provider = await service.getPublicProvider(providerId);
-    const data = serializePublicProvider(provider);
-    return res.json({ success: true, data });
-  } catch (error) {
-    return next(error);
-  }
-}
-
 async function listPublicVehicles(req, res, next) {
   try {
     const filters = req.validated.query;
@@ -149,8 +118,6 @@ async function setVehicleActivation(req, res, next) {
 }
 
 module.exports = {
-  listPublicProviders,
-  getPublicProvider,
   listPublicVehicles,
   getPublicVehicle,
   listOwnVehicles,

@@ -1,8 +1,10 @@
+const service = require('../services/providers');
 const AppError = require('../utils/AppError');
 const mongoose = require('mongoose');
 const Provider = require('../models/Provider');
 const ProviderApplication = require('../models/ProviderApplication');
 const {
+  serializePublicProvider,
   serializeApplication,
   serializePage,
   serializeProvider,
@@ -35,6 +37,27 @@ async function providerForResponse(provider) {
       })
     : null;
   return serializeProvider(provider, approved);
+}
+
+async function listPublicProviders(req, res, next) {
+  try {
+    const filters = req.validated.query;
+    const result = await service.listPublicProviders(filters);
+    return res.json({ success: true, ...result, data: result.data.map(serializePublicProvider) });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function getPublicProvider(req, res, next) {
+  try {
+    const providerId = req.validated.params.providerId;
+    const provider = await service.getPublicProvider(providerId);
+    const data = serializePublicProvider(provider);
+    return res.json({ success: true, data });
+  } catch (error) {
+    return next(error);
+  }
 }
 
 async function getOwnProvider(req, res, next) {
@@ -291,6 +314,8 @@ async function reviewApplication(req, res, next) {
 }
 
 module.exports = {
+  listPublicProviders,
+  getPublicProvider,
   getAdminApplication,
   getAdminProvider,
   getOwnApplication,

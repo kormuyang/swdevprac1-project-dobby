@@ -1,3 +1,4 @@
+const { todayBangkok } = require('../utils/dates');
 const AppError = require('../utils/AppError');
 const mongoose = require('mongoose');
 const Provider = require('../models/Provider');
@@ -30,12 +31,7 @@ async function suspendProvider(req, res, next) {
         throw new AppError(409, 'An approved provider profile is required.');
       }
       const now = new Date();
-      const today = new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Asia/Bangkok',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      }).format(now);
+      const today = todayBangkok(now);
       provider.status = 'suspended';
       provider.suspensionReason = reason;
       provider.suspendedAt = now;

@@ -80,6 +80,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         }
       }
@@ -121,6 +124,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "requestBody": {
@@ -172,6 +178,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "requestBody": {
@@ -229,6 +238,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "requestBody": {
@@ -290,6 +302,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         }
       }
@@ -341,6 +356,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         }
       }
@@ -379,6 +397,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -441,6 +462,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -492,6 +516,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -676,6 +703,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -740,6 +770,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         }
       }
@@ -791,6 +824,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -864,6 +900,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "requestBody": {
@@ -925,6 +964,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -989,6 +1031,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -1071,6 +1116,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "requestBody": {
@@ -1132,6 +1180,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -1194,6 +1245,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -1268,6 +1322,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -1342,6 +1399,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -1416,6 +1476,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -1521,6 +1584,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "requestBody": {
@@ -1582,6 +1648,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -1644,6 +1713,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -1716,6 +1788,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -1780,6 +1855,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -1876,6 +1954,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -1940,6 +2021,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -2025,6 +2109,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -2089,6 +2176,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -2185,6 +2275,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -2249,6 +2342,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -2323,6 +2419,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -2397,6 +2496,9 @@
           },
           "413": {
             "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
           }
         },
         "parameters": [
@@ -3787,6 +3889,16 @@
       },
       "413": {
         "description": "JSON request body exceeds the 100 KB limit; rejected before authentication.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "415": {
+        "description": "Unsupported JSON charset or content encoding. Rejected before route authentication.",
         "content": {
           "application/json": {
             "schema": {

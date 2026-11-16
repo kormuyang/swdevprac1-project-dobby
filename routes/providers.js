@@ -1,8 +1,6 @@
 const {
   validateListPublicProviders,
   validateGetPublicProvider,
-} = require('../middleware/vehiclesValidation');
-const {
   validateGetOwnProvider,
   validateListOwnApplications,
   validateGetOwnApplication,
@@ -19,8 +17,9 @@ const {
 } = require('../middleware/providerLifecycleValidation');
 const express = require('express');
 const { protect, authorize } = require('../middleware/auth');
-const { listPublicProviders, getPublicProvider } = require('../controllers/vehicles');
 const {
+  listPublicProviders,
+  getPublicProvider,
   getOwnProvider,
   listOwnApplications,
   submitApplication,

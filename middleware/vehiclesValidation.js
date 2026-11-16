@@ -2,7 +2,6 @@ const { rejectBody, rejectQuery } = require('../validators/request');
 const { todayBangkok } = require('../utils/dates');
 const { objectIdField } = require('../validators/fields');
 const {
-  validatePublicProviderFilters,
   validatePublicVehicleFilters,
   validateOwnVehicleFilters,
   validateVehicleCreate,
@@ -10,29 +9,6 @@ const {
   validateAvailabilityUpdate,
   validateActivationUpdate,
 } = require('../validators/vehicles');
-
-function validateListPublicProviders(req, res, next) {
-  try {
-    rejectBody(req);
-    const filters = validatePublicProviderFilters(req.query);
-    req.validated = { query: filters };
-    return next();
-  } catch (error) {
-    return next(error);
-  }
-}
-
-function validateGetPublicProvider(req, res, next) {
-  try {
-    rejectBody(req);
-    rejectQuery(req);
-    const providerId = objectIdField(req.params.providerId, 'providerId');
-    req.validated = { params: { providerId } };
-    return next();
-  } catch (error) {
-    return next(error);
-  }
-}
 
 function validateListPublicVehicles(req, res, next) {
   try {
@@ -128,8 +104,6 @@ function validateSetVehicleActivation(req, res, next) {
 }
 
 module.exports = {
-  validateListPublicProviders,
-  validateGetPublicProvider,
   validateListPublicVehicles,
   validateGetPublicVehicle,
   validateListOwnVehicles,
