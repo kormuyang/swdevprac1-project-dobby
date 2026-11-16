@@ -13,7 +13,7 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "test:integration": "node --env-file-if-exists=.env --test --test-concurrency=1 tests/auth.integration.test.js tests/providers.integration.test.js tests/rentals.integration.test.js tests/lifecycle.integration.test.js tests/vehicles.api.integration.test.js tests/bookings.api.integration.test.js tests/booking-lifecycle.api.integration.test.js tests/demo.integration.test.js",
-    "seed": "node scripts/seed.js",
+    "seed-admin": "node scripts/seed.js",
     "reset:test": "node scripts/reset-test-db.js",
     "test:demo": "node scripts/test-demo.js",
     "test:performance": "node scripts/measure-response-times.js",

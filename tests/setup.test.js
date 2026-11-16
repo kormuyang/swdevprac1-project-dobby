@@ -15,7 +15,6 @@ function runScript(script, values = {}, args = []) {
     ALLOW_TEST_DB_RESET: '',
     SEED_ADMIN_EMAIL: '',
     SEED_ADMIN_PASSWORD: '',
-    SEED_FIXTURE_PASSWORD: '',
     ...values,
   };
   return spawnSync(process.execPath, [script, ...args], {
@@ -35,7 +34,6 @@ test('seed refuses missing or non-allowlisted database before connecting', () =>
     MONGO_URI: 'mongodb://127.0.0.1:27017/dobby_shared',
     SEED_ADMIN_EMAIL: 'admin@example.test',
     SEED_ADMIN_PASSWORD: 'synthetic-password',
-    SEED_FIXTURE_PASSWORD: 'synthetic-password',
   });
   assert.equal(wrongDatabase.status, 1);
   assert.match(wrongDatabase.stderr, /MONGO_URI must explicitly name/);
@@ -45,6 +43,50 @@ test('seed requires locally supplied credentials before connecting', () => {
   const result = runScript(seedScript, { MONGO_URI: 'mongodb://127.0.0.1:27017/dobby' });
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Set SEED_ADMIN_EMAIL/);
+});
+
+test('admin setup creates only a missing admin and preserves existing accounts', () => {
+  const result = runScript(
+    '-e',
+    {
+      MONGO_URI: 'mongodb://127.0.0.1:27017/dobby',
+      SEED_ADMIN_EMAIL: 'admin@example.test',
+      SEED_ADMIN_PASSWORD: 'synthetic-password',
+    },
+    [
+      `
+    const assert = require('node:assert/strict');
+    const { seed } = require('./scripts/seed');
+    const mongoose = require('mongoose');
+    const User = require('./models/User');
+    let existing = null;
+    const created = [];
+    let disconnected = 0;
+    mongoose.connect = async () => {};
+    mongoose.disconnect = async () => { disconnected++; };
+    User.createIndexes = async () => {};
+    User.findOne = async () => existing;
+    User.create = async (data) => { created.push(data); };
+    (async () => {
+      assert.equal(await seed(), true);
+      assert.equal(created.length, 1);
+      assert.equal(created[0].role, 'admin');
+      assert.equal(created[0].email, 'admin@example.test');
+      assert.deepEqual(mongoose.modelNames(), ['User']);
+      existing = { role: 'admin' };
+      assert.equal(await seed(), false);
+      assert.equal(created.length, 1);
+      for (const role of ['user', 'provider']) {
+        existing = { role };
+        await assert.rejects(seed(), /non-admin account/);
+      }
+      assert.equal(created.length, 1);
+      assert.equal(disconnected, 4);
+    })().catch(() => { process.exitCode = 1; });
+  `,
+    ],
+  );
+  assert.equal(result.status, 0, result.stderr);
 });
 
 test('reset requires the shared database name and explicit reset flag before connecting', () => {
@@ -71,7 +113,6 @@ test('seed rejects an unusable admin email before connecting', () => {
     MONGO_URI: 'mongodb://127.0.0.1:27017/dobby',
     SEED_ADMIN_EMAIL: 'invalid-email',
     SEED_ADMIN_PASSWORD: 'synthetic-password',
-    SEED_FIXTURE_PASSWORD: 'synthetic-password',
   });
   assert.equal(result.status, 1);
   assert.match(result.stderr, /SEED_ADMIN_EMAIL must be a valid login email/);
