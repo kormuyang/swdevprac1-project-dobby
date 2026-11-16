@@ -81,12 +81,12 @@ README documents setup and execution:
 
 ```text
 npm run test:integration
-npm run seed
+npm run seed-admin
 npm run reset:test
 npm run test:demo
 ```
 
-All database commands use MONGO_URI naming the shared dobby database. Integration files run sequentially. Reset requires its explicit flag and deletes the shared database. Performance requires an empty database. test:demo loads .env and runs the committed Newman collection. See README for setup.
+All database commands use MONGO_URI naming the shared dobby database. Integration files run sequentially. Reset requires its explicit flag and deletes the shared database. test:demo loads .env and runs the committed Newman collection. See README for setup.
 
 The user authorized implementing B02–B05 sequentially on stacked branches while Saint reviews earlier B PRs. Finish each task with tests, relevant diagrams and a PR before starting the next. D-43 supersedes the earlier Saint-approval prerequisite.
 
@@ -183,3 +183,25 @@ Verification: Node 24.22.3 passed 48/48 local tests and 12/12 database checks, i
 Provide three Markdown pages with paired Mermaid and SVG assets: actor use cases, REST UML profile and request sequences. Follow the user-supplied Tutor Matcher examples and Chapter 6 slides 32–33. Cover all registered API operations, split features for readability and preserve actual middleware/service/transaction ownership. Validate rendering, source/export pairs, links, API coverage and visual layout. This documentation task changes no runtime behavior or database state.
 
 Verification: 27 Mermaid/SVG pairs rendered with Mermaid 11.17.2 through CLI 11.12.0: four use case views, eleven REST profile views and twelve sequence views. Structural checks found all 34 OpenAPI operations exactly once in the REST views, matching request schemas and success statuses; all three pages’ local links and SVG XML passed. Chromium previews covered every view; representative use case, REST and sequence SVGs also rendered in ImageMagick with readable text. Lint, formatting and diff checks passed. No runtime code/dependency changes, database operations, commits or pushes; application tests were not rerun for this documentation-only change.
+
+## Postman Runner import and demo sequence
+
+Make the existing v2.1 collection importable directly into Postman Runner without the Node wrapper. Add a blank three-input environment, local-target checks and first-request setup for unique synthetic data and Thailand dates. Keep generated credentials, captured tokens and IDs in run-local variables. Preserve the Newman environment overrides. Add public provider details, customer/admin booking lists and an admin date edit to the existing journey: 39 requests and 65 assertions on expected branches. Document the exact run order and database effects. Preserve the pending diagram work.
+
+Verification: 52/52 local tests passed, including eight focused demo tests for scripts/routes, Bangkok date-boundary setup, blank credential inputs, target/input guards and a three-request Newman run against a synthetic local HTTP fixture proving run-local token chaining. Lint, formatting and diff checks passed. This fixture is not the real application or database. The expanded 39-request journey has not been rerun against Atlas; the earlier 35-request/57-assertion receipts above remain historical evidence. No database writes, seed/reset, dependency changes, commits or pushes ran for this collection change.
+
+## Admin-only setup (D-60)
+
+`npm run seed-admin` now creates only a missing admin, leaves an existing admin unchanged and refuses an email owned by a non-admin. Removed sample account/rental creation and SEED_FIXTURE_PASSWORD. The Postman Runner supplies its own demo data; existing database fixtures are not removed.
+
+Verification: Node 24.22.1 passed all seven setup tests, including mocked database checks for creation, rerun behavior and role conflicts. Focused lint, formatting and diff checks passed. No real environment file was read, database connection or seed command run, commit or push made. Live database execution remains unverified for this change.
+
+## Remove dedicated performance tooling (D-61)
+
+Removed the dedicated response-time script, local tests, npm command and PERF_DB_REGION example setting. Use Postman Runner response times for the three-second requirement. Earlier measurement receipts remain historical. Rename the admin setup command to `npm run seed-admin`; it still runs scripts/seed.js and creates only the admin. No database operation is part of this change.
+
+## Required Postman sequence (D-62)
+
+The single collection now runs twelve required user/admin sections before four sections for Dobby additions. It contains 36 requests and 57 assertions. Registration includes a rejected password. Booking creation includes two non-overlapping bookings and a rejected overlap. User and admin actions use separate bookings. The first section prepares run-local values. The Postman environment contains example admin credentials. An approved provider and available vehicle must exist before the run.
+
+Verification: all 52 local tests passed on Node 24.22.1, including nine focused demo tests. Focused lint, formatting and diff checks passed. The complete collection passed 36 requests and 57 assertions against a synthetic local HTTP fixture. This verifies script execution, saved-value chaining and request order. It does not verify real API or database behavior. The database integration test now prepares its own prerequisite vehicle and checks both required bookings and the extra-credit cancellation. No real environment file was read, database operation run, commit or push made. Earlier 39-request results describe the previous collection.

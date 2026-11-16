@@ -73,13 +73,9 @@ Fix Thailand today to 2030-01-10 in unit tests. Integration/demo dates can be re
 | T41 | Measure successful and denied endpoints against three seconds. Record conditions and failures, not just averages.                     | A+B   | NFR-03                    |
 | T42 | The API, use cases, sequence/API diagrams, contributions and demo of at most seven minutes match the implementation.                  | A+B   | Course documentation/demo |
 
-## Measurement protocol for T41
+## Response times for T41
 
-Use one local Node process and a warmed Atlas connection, with two providers, ten vehicles and thirty historical bookings. Send representative requests sequentially, ten times per endpoint. Each measured request must finish within 3000 ms.
-
-Record machine/runtime, DB region, dataset, endpoint, status, each elapsed time and the maximum. Identify the test cluster without credentials. Measure cold-start separately.
-
-Note: this checks the stated dataset and conditions, not production load. Run the T22/T23/T35 races separately.
+Use the Postman Runner's displayed response times for successful and denied requests. Record the request, status, duration and environment, and compare each duration with the three-second requirement. The dedicated measurement script and prescribed measurement dataset were removed under D-61. These observations do not establish production load capacity. Run the T22/T23/T35 races separately.
 
 ## Recording results
 
@@ -94,7 +90,7 @@ For each PR, list test IDs, command, test environment/database, pass/fail counts
 - Booking scope, prices, cutoffs and cap/overlap races: [booking HTTP integration](../tests/bookings.api.integration.test.js).
 - Provider views, suspension races, rollback and no restoration: [combined lifecycle integration](../tests/booking-lifecycle.api.integration.test.js).
 - T40 journey and saved results: [Newman integration](../tests/demo.integration.test.js).
-- T41 runner: [response-time measurement](../scripts/measure-response-times.js). The November 16 Atlas run passed 150 requests across 15 cases (latest maximum 784.64 ms); see the recorded conditions and results in the implementation plan.
+- T41 response times: inspect the [Postman collection](../postman/dobby.postman_collection.json) run results; see the [demo guide](demo-guide.md).
 
 Commands/results and unverified cases are recorded in each PR. D-07 notation now follows the supplied Chapter 6 reference (D-59). D-10 and final instructor/partner acceptance remain open for T42.
 

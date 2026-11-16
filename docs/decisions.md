@@ -76,3 +76,15 @@ User, November 16: move cancelNonCompletedForProvider from bookingCancellation.j
 ## D-59: Submission diagram sources and exports
 
 User, November 16: provide use case, REST UML profile class and sequence diagrams as paired .mmd/.svg files, with three Markdown pages embedding the views. Split features for readability. Follow the supplied Tutor Matcher examples and Chapter 6 slides 32–33: Application, Resource and Representation stereotypes; Path labels on URI connections; request-flow lifelines matching the implementation. This supplies the previously missing D-07 notation reference, without claiming instructor acceptance. Use case flowcharts emulate UML actors, ovals and system boundaries because Mermaid has no native use-case diagram. Keep routes and runtime behavior unchanged.
+
+## D-60: Admin-only setup
+
+User, November 16: keep `npm run seed-admin` only for initial admin creation. Remove sample customer/provider/vehicle/booking creation and SEED_FIXTURE_PASSWORD. Leave an existing admin and its password unchanged; refuse an email owned by a non-admin. Do not delete old fixtures automatically. The Postman Runner creates its own demo accounts and records.
+
+## D-61: Postman response times and explicit admin command
+
+User, November 16: remove dedicated performance testing and use Postman response times. Remove its script, tests, npm command and environment example setting. Keep original non-functional requirements and historical measurement receipts. Rename the admin setup command from seed to seed-admin; the script remains admin-only under D-60.
+
+## D-62: Required Postman order before additions
+
+User, November 16: use one collection. Follow the supplied twelve user/admin steps before any extra-credit requests. Include registration validation and a rejected booking attempt. Create two bookings during step 04 so the user and admin can each edit and cancel one. Require an existing approved provider and available vehicle before the run. Place provider registration/review, own-vehicle management, provider booking reads, and suspension/reactivation after step 12. Prefill the Postman environment with the example admin credentials from .env.example. These examples require an existing matching admin account.

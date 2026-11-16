@@ -360,7 +360,7 @@ Provider booking reads require current approved status, scope by provider before
 
 ### B05 setup and delivery
 
-The combined Postman collection extends A05 with vehicle/booking folders and assertions for suspension cancellation and no restoration. Credentials and generated tokens stay in memory. Seed adds two approved-provider vehicles and a fixed synthetic historical booking; reseeding can replace only identified fixtures and refuses other dependent data. Reset uses MONGO_URI naming dobby and requires the explicit reset flag; it deletes the shared database. Performance checks use the same MONGO_URI, refuse a non-empty database, build the prescribed two-provider/ten-vehicle/thirty-history dataset and report every elapsed time. Local runs do not establish Atlas results.
+The combined Postman collection extends A05 with vehicle/booking folders and assertions for suspension cancellation and no restoration. Credentials and generated tokens stay in memory. Admin setup creates only a missing admin and leaves existing accounts unchanged (D-60). Reset uses MONGO_URI naming dobby and requires the explicit reset flag; it deletes the shared database. Inspect response times in Postman Runner; the dedicated performance tooling has been removed (D-61).
 
 ### Course alignment for B
 

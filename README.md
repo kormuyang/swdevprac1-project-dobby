@@ -66,12 +66,16 @@ All integration tests use `MONGO_URI` naming `dobby`. Files run sequentially, wh
 
 ## Seed and reset
 
-`npm run seed` requires MONGO_URI to name dobby, plus locally supplied SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD and SEED_FIXTURE_PASSWORD. It creates synthetic accounts (two approved providers, pending/rejected/suspended providers and two customers), two vehicles and one historical booking. Repeated seed replaces identified fixtures only; other dependent vehicle/booking data makes it refuse replacement.
+`npm run seed-admin` creates only the administrator needed for the Postman demo. It requires MONGO_URI to name dobby, plus locally supplied SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD. If that email already belongs to an admin, the command leaves the account and password unchanged. It refuses an email belonging to a customer or provider. It does not create sample customers, providers, vehicles or bookings, or delete existing data. The Postman Runner creates its own demo data.
 
 `npm run reset:test` deletes the entire shared dobby database selected by MONGO_URI and requires ALLOW_TEST_DB_RESET=true. It has no A/B owner option. No reset runs during ordinary startup or integration testing.
 
 ## Demo and response times
 
-After seeding and starting the local API, supply the seeded admin credentials locally and run `npm run test:demo`. It generates the other credentials in memory and runs the [combined collection](postman/dobby.postman_collection.json) against loopback hosts only. See the [demo guide](docs/demo-guide.md), [use cases](docs/use-cases.md) and [API map](docs/diagrams/api.md).
+For Postman Runner, import the [collection](postman/dobby.postman_collection.json) and [example environment](postman/dobby-local.postman_environment.json), use the example admin credentials or enter your existing credentials locally, then run the required sections 01–12 before extra-credit sections 13–16 (36 requests total). Follow the [import and run steps](docs/demo-guide.md#postman-runner).
 
-`npm run test:performance` starts its own local API against MONGO_URI, which must name the shared dobby database and must be empty. It loads .env automatically and refuses to run on a non-empty database. Supply PERF_DB_REGION for Atlas. It creates two providers, ten vehicles and thirty historical bookings, records ten sequential measurements per selected endpoint, then removes its own fixtures. The sanitized report is written to reports/response-times.json (ignored by Git); pass another output path after `--` if needed. Local results do not establish Atlas T41 acceptance. D-07/D-10 and Saint’s integrated-main review remain open. Existing Newman development dependency findings are deferred under D-45; run only the trusted project collection against the local API.
+After creating the admin, preparing an available vehicle and starting the local API, supply the seeded admin credentials locally and run `npm run test:demo`. It generates the other credentials in memory and runs the [combined collection](postman/dobby.postman_collection.json) against loopback hosts only. See the [demo guide](docs/demo-guide.md), [use cases](docs/use-cases.md) and [API map](docs/diagrams/api.md).
+
+Use Postman Runner's response times to inspect request duration against the three-second non-functional requirement. Record the request, status and measured time when collecting submission evidence. The dedicated performance runner has been removed (D-61).
+
+The D-07 notation reference is supplied; D-10 and Saint’s integrated-main review remain open. Existing Newman development dependency findings are deferred under D-45; run only the trusted project collection against the local API.
