@@ -8,7 +8,7 @@ const User = require('../models/User');
 const Provider = require('../models/Provider');
 const ProviderApplication = require('../models/ProviderApplication');
 const AuthSession = require('../models/AuthSession');
-const bookingCancellation = require('../services/bookingCancellation');
+const bookingService = require('../services/bookings');
 
 // These native fixtures exercise the agreed B collection/guard contract, not B's unimplemented HTTP APIs.
 test(
@@ -210,9 +210,9 @@ test(
 
     const rollbackId = await booking('confirmed', '2099-12-31');
     const revisionBefore = (await Provider.findById(providerId)).revision;
-    const original = bookingCancellation.cancelNonCompletedForProvider;
+    const original = bookingService.cancelNonCompletedForProvider;
     const failure = t.mock.method(
-      bookingCancellation,
+      bookingService,
       'cancelNonCompletedForProvider',
       async (input) => {
         await original(input);

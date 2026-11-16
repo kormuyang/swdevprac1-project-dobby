@@ -4,7 +4,7 @@ const Booking = require('../models/Booking');
 const Provider = require('../models/Provider');
 const User = require('../models/User');
 const Vehicle = require('../models/Vehicle');
-const cancellation = require('../services/bookingCancellation');
+const bookingService = require('../services/bookings');
 const { apiFixture, addDays } = require('./fixtures/api');
 const { bookingInput } = require('./fixtures/rentals');
 
@@ -259,11 +259,15 @@ test(
     const before = await Provider.findById(f.providerAccount.providerId);
     const userRevisionBefore = (await User.findById(f.customer.user._id)).bookingRevision;
     const vehicleRevisionBefore = (await Vehicle.findById(car.id)).revision;
-    const originalCancel = cancellation.cancelNonCompletedForProvider;
-    const failure = t.mock.method(cancellation, 'cancelNonCompletedForProvider', async (input) => {
-      await originalCancel(input);
-      throw new Error('Synthetic failure after real cancellation writes');
-    });
+    const originalCancel = bookingService.cancelNonCompletedForProvider;
+    const failure = t.mock.method(
+      bookingService,
+      'cancelNonCompletedForProvider',
+      async (input) => {
+        await originalCancel(input);
+        throw new Error('Synthetic failure after real cancellation writes');
+      },
+    );
     try {
       const failed = await lifecycle('suspend', { reason: 'Synthetic rollback test' });
       assert.equal(failed.status, 500);

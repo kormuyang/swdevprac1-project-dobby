@@ -3,7 +3,7 @@ const AppError = require('../utils/AppError');
 const mongoose = require('mongoose');
 const Provider = require('../models/Provider');
 const ProviderApplication = require('../models/ProviderApplication');
-const bookingCancellation = require('../services/bookingCancellation');
+const bookingService = require('../services/bookings');
 const { serializeProvider } = require('../serializers/providers');
 
 async function suspendProvider(req, res, next) {
@@ -37,7 +37,7 @@ async function suspendProvider(req, res, next) {
       provider.suspendedAt = now;
       provider.suspendedBy = req.actor.userId;
       await provider.save({ session });
-      const cancellation = await bookingCancellation.cancelNonCompletedForProvider({
+      const cancellation = await bookingService.cancelNonCompletedForProvider({
         providerId: provider.id,
         actorId: req.actor.userId,
         today,

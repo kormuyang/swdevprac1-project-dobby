@@ -1,5 +1,4 @@
-const { approvedProfileStages } = require('./providers');
-const { requireApprovedProvider } = require('./providerAccess');
+const { approvedProfileStages, requireApprovedProvider } = require('./providers');
 const AppError = require('../utils/AppError');
 const mongoose = require('mongoose');
 const Provider = require('../models/Provider');

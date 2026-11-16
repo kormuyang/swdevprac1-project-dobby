@@ -1,4 +1,4 @@
-const { requireApprovedProvider } = require('../services/providerAccess');
+const { requireApprovedProvider } = require('../services/providers');
 
 async function approvedProvider(req, res, next) {
   try {

@@ -244,7 +244,7 @@ B's helpers use CommonJS named exports. They do not load the app or database. In
 
 Keep calendar calculations separate from new-rental validation: historical bookings still need a status, and offering periods may exceed 30 days. Later feature validators apply these helpers in the HTTP validation order; serializers return date strings, integer satang and derived status.
 
-A's provider service can import B's bookingCancellation. Keep feature services independent to avoid circular imports; transaction and guard code stays with the feature that owns it.
+The provider lifecycle controller calls B's cancelNonCompletedForProvider from services/bookings.js. services/providers.js owns requireApprovedProvider, reused by approval middleware and transactional vehicle writes. Keep service dependencies acyclic; transaction and guard code stays with the owning feature (D-58).
 
 ### Service functions
 
@@ -287,7 +287,7 @@ DELETE means cancellation. Repeating an authorized cancellation returns 200 with
 
 ### Suspension — A and B
 
-B exports from services/bookingCancellation.js:
+B exports from services/bookings.js:
 
 ```js
 cancelNonCompletedForProvider({ providerId, actorId, today, now, session });

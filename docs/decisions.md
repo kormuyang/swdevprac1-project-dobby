@@ -68,3 +68,7 @@ User, November 16: fix the seven code consistency findings. Handle known parser 
 ## D-57: First-level route mounts in server.js
 
 User, November 16: expose the first API path segment in server.js instead of mounting resource routers at /api/v1. Use six flat routers: auth, providers, vehicles, bookings, provider and admin. Each router declares paths relative to its mount; representative and admin routers collect their respective workspace operations. Keep existing endpoint URLs, named controller imports, router.route() chains and route-scoped middleware. This replaces the four-file mount structure of D-53 without changing the OpenAPI interface.
+
+## D-58: Consolidate feature services
+
+User, November 16: move cancelNonCompletedForProvider from bookingCancellation.js into services/bookings.js, and requireApprovedProvider from providerAccess.js into services/providers.js. Remove the two single-function files and update callers/tests. Keep bulk provider cancellation distinct from customer/admin cancellation, including its caller-owned transaction, same-session writes and provider → sorted users → sorted vehicles guard order. Keep the approval guard reusable from middleware and in-transaction vehicle writes.
