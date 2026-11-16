@@ -98,11 +98,11 @@ async function measureResponseTimes(outputPath = 'reports/response-times.json') 
     const customer = await account('user');
     const outsider = await account('user');
     const admin = await account('admin');
-    const companies = [];
+    const providerAccounts = [];
     for (let index = 0; index < 2; index++) {
       const providerId = newId('providers');
       const applicationId = newId('applications');
-      const company = await account('company', providerId);
+      const providerAccount = await account('provider', providerId);
       const registration = randomUUID();
       await ProviderApplication.create({
         _id: applicationId,
@@ -120,13 +120,13 @@ async function measureResponseTimes(outputPath = 'reports/response-times.json') 
       });
       await Provider.create({
         _id: providerId,
-        representativeId: company.id,
+        representativeId: providerAccount.id,
         businessRegistrationNumber: registration,
         status: 'approved',
         latestApplicationId: applicationId,
         approvedApplicationId: applicationId,
       });
-      companies.push(company);
+      providerAccounts.push(providerAccount);
     }
     const vehicles = [];
     for (let index = 0; index < 10; index++) {
@@ -232,10 +232,10 @@ async function measureResponseTimes(outputPath = 'reports/response-times.json') 
       ['vehicle detail', `/vehicles/${vehicles[0].id}`, 200],
       ['customer booking history', '/bookings', 200, customer],
       ['admin booking history', '/bookings', 200, admin],
-      ['company booking history', '/company/bookings', 200, companies[0]],
-      ['company vehicles', '/company/vehicles', 200, companies[0]],
+      ['provider booking history', '/provider/bookings', 200, providerAccounts[0]],
+      ['provider vehicles', '/provider/vehicles', 200, providerAccounts[0]],
       ['hidden booking', `/bookings/${ids.bookings[0]}`, 404, outsider],
-      ['wrong-role company read', '/company/vehicles', 403, customer],
+      ['wrong-role provider read', '/provider/vehicles', 403, customer],
       ['invalid vehicle filter', '/vehicles?minSeats=invalid', 400],
     ];
     for (const [label, route, status, actor] of cases) {
@@ -244,7 +244,6 @@ async function measureResponseTimes(outputPath = 'reports/response-times.json') 
         await measure(label, 'GET', route, status, actor);
       }
     }
-    // Keep auth writes within the existing 20-request rate limit.
     for (let index = 0; index < 10; index++) {
       await measure('login', 'POST', '/auth/login', 200, null, {
         email: customer.email,

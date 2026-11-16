@@ -75,7 +75,7 @@ function validateProfile(value) {
   return profile;
 }
 
-function validateCompanyRegistration(body) {
+function validateProviderRegistration(body) {
   requireObject(body, 'Request body');
   rejectUnknownFields(
     body,
@@ -100,7 +100,7 @@ function validateCompanyRegistration(body) {
 }
 
 module.exports = {
-  validateCompanyRegistration,
+  validateProviderRegistration,
   validateLogin,
   validateProfile,
   validateRegistration,

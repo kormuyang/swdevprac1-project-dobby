@@ -3,7 +3,7 @@ const Provider = require('../models/Provider');
 const Vehicle = require('../models/Vehicle');
 const Booking = require('../models/Booking');
 const { todayBangkok } = require('../utils/dates');
-const { requireApprovedCompany } = require('./companyAccess');
+const { requireApprovedProvider } = require('./providerAccess');
 
 function fail(status, message) {
   const error = new Error(message);
@@ -177,8 +177,8 @@ function publicVehicleStages(filters, today) {
   return pipeline;
 }
 
-async function listPublicVehicles(filters, ctx = {}) {
-  const today = todayBangkok(ctx.clock ? ctx.clock.now() : new Date());
+async function listPublicVehicles(filters, now = new Date()) {
+  const today = todayBangkok(now);
   const field = filters.sort.replace(/^-/, '');
   const direction = filters.sort.startsWith('-') ? -1 : 1;
   return aggregatePage(Vehicle, publicVehicleStages(filters, today), filters, {
@@ -187,8 +187,8 @@ async function listPublicVehicles(filters, ctx = {}) {
   });
 }
 
-async function getPublicVehicle(id, ctx = {}) {
-  const today = todayBangkok(ctx.clock ? ctx.clock.now() : new Date());
+async function getPublicVehicle(id, now = new Date()) {
+  const today = todayBangkok(now);
   const [vehicle] = await Vehicle.aggregate([
     { $match: { _id: new mongoose.Types.ObjectId(id) } },
     ...publicVehicleStages({}, today),
@@ -199,50 +199,27 @@ async function getPublicVehicle(id, ctx = {}) {
   return vehicle;
 }
 
-async function listOwnVehicles(filters, ctx) {
-  await requireApprovedCompany(ctx.actor);
-  const filter = { providerId: ctx.actor.providerId };
-  if (filters.isActive !== undefined) {
-    filter.isActive = filters.isActive;
-  }
-  const total = await Vehicle.countDocuments(filter);
-  const data = await Vehicle.find(filter)
-    .sort({ createdAt: -1, _id: -1 })
-    .skip((filters.page - 1) * filters.limit)
-    .limit(filters.limit);
-  return pageResult(data, total, filters);
-}
-
-async function getOwnVehicle(id, ctx) {
-  await requireApprovedCompany(ctx.actor);
-  const vehicle = await Vehicle.findOne({ _id: id, providerId: ctx.actor.providerId });
-  if (!vehicle) {
-    fail(404, 'The vehicle was not found.');
-  }
-  return vehicle;
-}
-
-async function writeVehicle(id, input, ctx, operation) {
+async function writeVehicle(id, input, actor, now, operation) {
   const session = await mongoose.startSession();
   let result;
   try {
     await session.withTransaction(
       async () => {
-        if (ctx.actor?.role !== 'company' || !ctx.actor.providerId) {
-          fail(403, 'An approved company account is required.');
+        if (actor?.role !== 'provider' || !actor.providerId) {
+          fail(403, 'An approved provider account is required.');
         }
         // A03 takes this same provider guard before suspension and cancellation.
         await Provider.updateOne(
-          { _id: ctx.actor.providerId, representativeId: ctx.actor.userId },
+          { _id: actor.providerId, representativeId: actor.userId },
           { $inc: { revision: 1 } },
           { session },
         );
-        await requireApprovedCompany(ctx.actor, session);
-        const today = todayBangkok(ctx.clock ? ctx.clock.now() : new Date());
+        await requireApprovedProvider(actor, session);
+        const today = todayBangkok(now);
         let vehicle;
         if (id) {
           vehicle = await Vehicle.findOneAndUpdate(
-            { _id: id, providerId: ctx.actor.providerId },
+            { _id: id, providerId: actor.providerId },
             { $inc: { revision: 1 } },
             { session, returnDocument: 'after' },
           );
@@ -250,7 +227,7 @@ async function writeVehicle(id, input, ctx, operation) {
             fail(404, 'The vehicle was not found.');
           }
         } else {
-          vehicle = new Vehicle({ ...input, providerId: ctx.actor.providerId });
+          vehicle = new Vehicle({ ...input, providerId: actor.providerId });
         }
         if (operation === 'details') {
           if (input.pickupBranch !== undefined) {
@@ -304,17 +281,17 @@ async function writeVehicle(id, input, ctx, operation) {
   }
 }
 
-function createVehicle(input, ctx) {
-  return writeVehicle(null, input, ctx, 'create');
+function createVehicle(input, actor, now = new Date()) {
+  return writeVehicle(null, input, actor, now, 'create');
 }
-function updateVehicle(id, input, ctx) {
-  return writeVehicle(id, input, ctx, 'details');
+function updateVehicle(id, input, actor, now = new Date()) {
+  return writeVehicle(id, input, actor, now, 'details');
 }
-function updateAvailability(id, input, ctx) {
-  return writeVehicle(id, input, ctx, 'availability');
+function updateAvailability(id, input, actor, now = new Date()) {
+  return writeVehicle(id, input, actor, now, 'availability');
 }
-function setVehicleActivation(id, input, ctx) {
-  return writeVehicle(id, input, ctx, 'activation');
+function setVehicleActivation(id, input, actor, now = new Date()) {
+  return writeVehicle(id, input, actor, now, 'activation');
 }
 
 module.exports = {
@@ -322,8 +299,6 @@ module.exports = {
   getPublicProvider,
   listPublicVehicles,
   getPublicVehicle,
-  listOwnVehicles,
-  getOwnVehicle,
   createVehicle,
   updateVehicle,
   updateAvailability,

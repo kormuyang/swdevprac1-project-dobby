@@ -60,12 +60,13 @@ test('auth API persists signup/session, supports login and revokes only the logg
     [User, Provider, ProviderApplication, AuthSession].map((Model) => Model.createIndexes()),
   );
   const app = express();
+  app.use(express.json());
   app.use('/api/v1/auth', authRouter);
   server = http.createServer(app);
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}/api/v1/auth`;
 
-  const companyResponse = await fetch(`${baseUrl}/register-company`, {
+  const providerResponse = await fetch(`${baseUrl}/register-provider`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
@@ -83,20 +84,20 @@ test('auth API persists signup/session, supports login and revokes only the logg
       },
     }),
   });
-  assert.equal(companyResponse.status, 201);
-  const company = await companyResponse.json();
-  assert.equal(company.success, true);
-  assert.equal(company.data.user.role, 'company');
-  const provider = await Provider.findById(company.data.user.providerId);
+  assert.equal(providerResponse.status, 201);
+  const providerAccount = await providerResponse.json();
+  assert.equal(providerAccount.success, true);
+  assert.equal(providerAccount.data.user.role, 'provider');
+  const provider = await Provider.findById(providerAccount.data.user.providerId);
   const application = await ProviderApplication.findById(provider.latestApplicationId);
-  assert.equal(provider.representativeId.toString(), company.data.user.id);
+  assert.equal(provider.representativeId.toString(), providerAccount.data.user.id);
   assert.equal(application.providerId.toString(), provider.id);
   assert.equal(application.version, 1);
   assert.equal(application.status, 'pending');
-  assert.equal(await AuthSession.countDocuments({ userId: company.data.user.id }), 1);
+  assert.equal(await AuthSession.countDocuments({ userId: providerAccount.data.user.id }), 1);
 
   const duplicateEmail = `duplicate-${suffix}@example.test`;
-  const duplicateResponse = await fetch(`${baseUrl}/register-company`, {
+  const duplicateResponse = await fetch(`${baseUrl}/register-provider`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
@@ -133,7 +134,7 @@ test('auth API persists signup/session, supports login and revokes only the logg
   });
   assert.equal(beforeLogout.status, 200);
   const firstSessionBefore = await fetch(`${baseUrl}/me`, {
-    headers: { authorization: `Bearer ${company.data.token}` },
+    headers: { authorization: `Bearer ${providerAccount.data.token}` },
   });
   assert.equal(firstSessionBefore.status, 200);
   const logoutResponse = await fetch(`${baseUrl}/logout`, {
@@ -146,7 +147,7 @@ test('auth API persists signup/session, supports login and revokes only the logg
   });
   assert.equal(afterLogout.status, 401);
   const firstSessionAfter = await fetch(`${baseUrl}/me`, {
-    headers: { authorization: `Bearer ${company.data.token}` },
+    headers: { authorization: `Bearer ${providerAccount.data.token}` },
   });
   assert.equal(firstSessionAfter.status, 200);
 });

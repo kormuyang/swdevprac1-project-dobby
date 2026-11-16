@@ -9,7 +9,7 @@ const AuthSession = require('../models/AuthSession');
 const Provider = require('../models/Provider');
 const ProviderApplication = require('../models/ProviderApplication');
 const User = require('../models/User');
-const companyRoutes = require('../routes/company');
+const providerRoutes = require('../routes/provider');
 const adminRoutes = require('../routes/adminProviders');
 
 const mongoUri = process.env.TEST_MONGO_URI;
@@ -21,8 +21,8 @@ test('provider review and profile versioning persist atomically', async (t) => {
     'TEST_MONGO_URI must name dobby_test_a.',
   );
   const suffix = randomUUID();
-  const companyEmail = `provider-${suffix}@example.test`;
-  const otherCompanyEmail = `other-provider-${suffix}@example.test`;
+  const providerEmail = `provider-${suffix}@example.test`;
+  const otherProviderEmail = `other-provider-${suffix}@example.test`;
   const adminEmail = `admin-${suffix}@example.test`;
   const secret = randomUUID();
   const previousSecret = process.env.JWT_SECRET;
@@ -30,10 +30,10 @@ test('provider review and profile versioning persist atomically', async (t) => {
   let providerId;
   let otherProviderId;
   let otherApplicationId;
-  let companyId;
-  let otherCompanyId;
+  let providerUserId;
+  let otherProviderUserId;
   let adminId;
-  let companySid;
+  let providerSid;
   let adminSid;
 
   t.after(async () => {
@@ -47,10 +47,10 @@ test('provider review and profile versioning persist atomically', async (t) => {
           await ProviderApplication.deleteMany({ providerId: otherProviderId });
           await Provider.deleteOne({ _id: otherProviderId });
         }
-        if (companySid || adminSid)
-          await AuthSession.deleteMany({ sid: { $in: [companySid, adminSid].filter(Boolean) } });
+        if (providerSid || adminSid)
+          await AuthSession.deleteMany({ sid: { $in: [providerSid, adminSid].filter(Boolean) } });
         await User.deleteMany({
-          _id: { $in: [companyId, otherCompanyId, adminId].filter(Boolean) },
+          _id: { $in: [providerUserId, otherProviderUserId, adminId].filter(Boolean) },
         });
       }
     } finally {
@@ -67,14 +67,14 @@ test('provider review and profile versioning persist atomically', async (t) => {
     [User, Provider, ProviderApplication, AuthSession].map((Model) => Model.createIndexes()),
   );
 
-  const company = await User.create({
-    name: 'Synthetic Company',
+  const providerAccount = await User.create({
+    name: 'Synthetic Provider',
     telephone: '12345678',
-    email: companyEmail,
+    email: providerEmail,
     passwordHash: 'integration-password',
-    role: 'company',
+    role: 'provider',
   });
-  companyId = company._id;
+  providerUserId = providerAccount._id;
   const admin = await User.create({
     name: 'Synthetic Admin',
     telephone: '12345678',
@@ -83,21 +83,21 @@ test('provider review and profile versioning persist atomically', async (t) => {
     role: 'admin',
   });
   adminId = admin._id;
-  const otherCompany = await User.create({
-    name: 'Other Synthetic Company',
+  const otherProviderAccount = await User.create({
+    name: 'Other Synthetic Provider',
     telephone: '12345678',
-    email: otherCompanyEmail,
+    email: otherProviderEmail,
     passwordHash: 'integration-password',
-    role: 'company',
+    role: 'provider',
   });
-  otherCompanyId = otherCompany._id;
+  otherProviderUserId = otherProviderAccount._id;
   providerId = new mongoose.Types.ObjectId();
-  company.providerId = providerId;
-  await company.save();
+  providerAccount.providerId = providerId;
+  await providerAccount.save();
   const appId = new mongoose.Types.ObjectId();
   const provider = await Provider.create({
     _id: providerId,
-    representativeId: companyId,
+    representativeId: providerUserId,
     businessRegistrationNumber: `REG-${suffix}`,
     status: 'pending',
     latestApplicationId: appId,
@@ -113,11 +113,11 @@ test('provider review and profile versioning persist atomically', async (t) => {
   });
   otherProviderId = new mongoose.Types.ObjectId();
   otherApplicationId = new mongoose.Types.ObjectId();
-  otherCompany.providerId = otherProviderId;
-  await otherCompany.save();
+  otherProviderAccount.providerId = otherProviderId;
+  await otherProviderAccount.save();
   const otherProvider = await Provider.create({
     _id: otherProviderId,
-    representativeId: otherCompanyId,
+    representativeId: otherProviderUserId,
     businessRegistrationNumber: `OTHER-${suffix}`,
     status: 'pending',
     latestApplicationId: otherApplicationId,
@@ -131,22 +131,23 @@ test('provider review and profile versioning persist atomically', async (t) => {
     profile: makeProfile(suffix, 'other'),
     status: 'pending',
   });
-  companySid = randomUUID();
+  providerSid = randomUUID();
   adminSid = randomUUID();
   await AuthSession.create([
-    { sid: companySid, userId: companyId, expiresAt: new Date(Date.now() + 60_000) },
+    { sid: providerSid, userId: providerUserId, expiresAt: new Date(Date.now() + 60_000) },
     { sid: adminSid, userId: adminId, expiresAt: new Date(Date.now() + 60_000) },
   ]);
   const app = express();
-  app.use('/api/v1/company', companyRoutes);
+  app.use(express.json());
+  app.use('/api/v1/provider', providerRoutes);
   app.use('/api/v1/admin', adminRoutes);
   server = http.createServer(app);
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${server.address().port}/api/v1`;
   const token = (userId, sid) =>
     jwt.sign({ sid }, secret, { algorithm: 'HS256', subject: String(userId), expiresIn: '1m' });
-  const companyHeaders = {
-    authorization: `Bearer ${token(companyId, companySid)}`,
+  const providerHeaders = {
+    authorization: `Bearer ${token(providerUserId, providerSid)}`,
     'content-type': 'application/json',
   };
   const adminHeaders = {
@@ -196,33 +197,36 @@ test('provider review and profile versioning persist atomically', async (t) => {
 
   const forbidden = await fetch(`${base}/admin/applications/${appId}/review`, {
     method: 'POST',
-    headers: companyHeaders,
+    headers: providerHeaders,
     body: JSON.stringify({ decision: 'approve' }),
   });
   assert.equal(forbidden.status, 403);
-  const unknownProfileQuery = await fetch(`${base}/company/profile?unexpected=1`, {
-    headers: companyHeaders,
+  const unknownProfileQuery = await fetch(`${base}/provider/profile?unexpected=1`, {
+    headers: providerHeaders,
   });
   assert.equal(unknownProfileQuery.status, 400);
-  const repeatedPageQuery = await fetch(`${base}/company/applications?page=1&page=2`, {
-    headers: companyHeaders,
+  const repeatedPageQuery = await fetch(`${base}/provider/applications?page=1&page=2`, {
+    headers: providerHeaders,
   });
   assert.equal(repeatedPageQuery.status, 400);
-  const unknownSubmitQuery = await fetch(`${base}/company/applications?unexpected=1`, {
+  const unknownSubmitQuery = await fetch(`${base}/provider/applications?unexpected=1`, {
     method: 'POST',
-    headers: companyHeaders,
+    headers: providerHeaders,
     body: JSON.stringify(makeProfile(suffix, 'query')),
   });
   assert.equal(unknownSubmitQuery.status, 400);
-  const history = await fetch(`${base}/company/applications`, { headers: companyHeaders });
+  const history = await fetch(`${base}/provider/applications`, { headers: providerHeaders });
   assert.equal(history.status, 200);
   assert.equal((await history.json()).data[0].version, 1);
-  const ownerCrossCompanyRead = await fetch(`${base}/company/applications/${otherApplicationId}`, {
-    headers: companyHeaders,
-  });
-  assert.equal(ownerCrossCompanyRead.status, 404);
-  const detailWithQuery = await fetch(`${base}/company/applications/${appId}?unexpected=1`, {
-    headers: companyHeaders,
+  const ownerCrossProviderRead = await fetch(
+    `${base}/provider/applications/${otherApplicationId}`,
+    {
+      headers: providerHeaders,
+    },
+  );
+  assert.equal(ownerCrossProviderRead.status, 404);
+  const detailWithQuery = await fetch(`${base}/provider/applications/${appId}?unexpected=1`, {
+    headers: providerHeaders,
   });
   assert.equal(detailWithQuery.status, 400);
   const adminProviderWithQuery = await fetch(`${base}/admin/providers/${providerId}?unexpected=1`, {
@@ -250,9 +254,9 @@ test('provider review and profile versioning persist atomically', async (t) => {
   const revisionBody = JSON.stringify(makeProfile(suffix, 'v2'));
   const submissions = await Promise.all(
     [0, 1].map(() =>
-      fetch(`${base}/company/applications`, {
+      fetch(`${base}/provider/applications`, {
         method: 'POST',
-        headers: companyHeaders,
+        headers: providerHeaders,
         body: revisionBody,
       }),
     ),
@@ -270,20 +274,20 @@ test('provider review and profile versioning persist atomically', async (t) => {
   let persisted = await Provider.findById(providerId);
   assert.equal(String(persisted.approvedApplicationId), secondId);
   assert.equal(persisted.status, 'approved');
-  const companyProfileResponse = await fetch(`${base}/company/profile`, {
-    headers: companyHeaders,
+  const providerProfileResponse = await fetch(`${base}/provider/profile`, {
+    headers: providerHeaders,
   });
-  assert.equal(companyProfileResponse.status, 200);
-  const companyProfile = (await companyProfileResponse.json()).data;
-  assert.equal(companyProfile.approvedProfile.documentUrl, makeProfile(suffix, 'v2').documentUrl);
-  assert.equal(Object.hasOwn(companyProfile, 'revision'), false);
-  const companyApplicationResponse = await fetch(`${base}/company/applications/${secondId}`, {
-    headers: companyHeaders,
+  assert.equal(providerProfileResponse.status, 200);
+  const providerProfile = (await providerProfileResponse.json()).data;
+  assert.equal(providerProfile.approvedProfile.documentUrl, makeProfile(suffix, 'v2').documentUrl);
+  assert.equal(Object.hasOwn(providerProfile, 'revision'), false);
+  const providerApplicationResponse = await fetch(`${base}/provider/applications/${secondId}`, {
+    headers: providerHeaders,
   });
-  assert.equal(companyApplicationResponse.status, 200);
-  const companyApplication = (await companyApplicationResponse.json()).data;
-  assert.equal(companyApplication.profile.documentUrl, makeProfile(suffix, 'v2').documentUrl);
-  assert.equal(Object.hasOwn(companyApplication, 'internal'), false);
+  assert.equal(providerApplicationResponse.status, 200);
+  const providerApplication = (await providerApplicationResponse.json()).data;
+  assert.equal(providerApplication.profile.documentUrl, makeProfile(suffix, 'v2').documentUrl);
+  assert.equal(Object.hasOwn(providerApplication, 'internal'), false);
   const adminProviderResponse = await fetch(`${base}/admin/providers/${providerId}`, {
     headers: adminHeaders,
   });
@@ -299,9 +303,9 @@ test('provider review and profile versioning persist atomically', async (t) => {
   assert.equal(adminApplication.profile.documentUrl, makeProfile(suffix, 'v2').documentUrl);
   assert.equal(Object.hasOwn(adminApplication, 'internal'), false);
 
-  const thirdSubmit = await fetch(`${base}/company/applications`, {
+  const thirdSubmit = await fetch(`${base}/provider/applications`, {
     method: 'POST',
-    headers: companyHeaders,
+    headers: providerHeaders,
     body: JSON.stringify(makeProfile(suffix, 'v3')),
   });
   assert.equal(thirdSubmit.status, 201);

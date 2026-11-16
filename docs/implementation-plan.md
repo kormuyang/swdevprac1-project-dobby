@@ -4,7 +4,7 @@ Saint = A; Poom = B. The A/B implementation is integrated in main through the li
 
 ## Who owns what?
 
-- **A:** package/lockfile, app/server/config, auth middleware, User/Provider/ProviderApplication/AuthSession, company review/suspension and their transaction boundaries, seed/reset and OpenAPI integration.
+- **A:** package/lockfile, app/server/config, auth middleware, User/Provider/ProviderApplication/AuthSession, provider review/suspension and their transaction boundaries, seed/reset and OpenAPI integration.
 - **B:** Vehicle/Booking, dates/money, vehicle/discovery/booking routes/controllers/services/validators/serializers, and bookingCancellation.
 - **Both:** own feature tests, Postman folders, use cases and sequence/API diagrams; review the other person's work.
 
@@ -26,7 +26,7 @@ After G0, continue A01/A02 and B01. B can build reads and validation while waiti
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | A00 | package.json/lock, .nvmrc, server.js, config/db.js, health/docs and dev/start scripts                                                                        | Agreed design                                   | Qualify Node 24 setup, required middleware and startup; Atlas acceptance remains separate |
 | A01 | User/Provider/ProviderApplication/AuthSession models; auth routes/controllers/middleware, validation and serialization; signup/login/logout/me and req.actor | G0: A00+B00                                     | T01–T06, T11; auth parts of T36/T38                                                       |
-| A02 | Company application/profile and admin review; indexes, versions, history and review queue/detail                                                             | A01, B00 dates                                  | T07–T10; concurrent submissions; approval does not clear suspension                       |
+| A02 | Provider application/profile and admin review; indexes, versions, history and review queue/detail                                                            | A01, B00 dates                                  | T07–T10; concurrent submissions; approval does not clear suspension                       |
 | A03 | Provider guards and suspend/reactivate in A's feature services; call B's cancelNonCompletedForProvider                                                       | A01, B00, B01; B03 cancellation for integration | T33–T37 with B; rollback, old-session denial and no restoration                           |
 | A04 | scripts/seed.js/reset-test-db.js, .env.example and setup README; mount all routers in server.js                                                              | A00–A03 and B models/routes                     | Clean setup, safe seed/reset and verified commands; T38 with B                            |
 | A05 | Auth/provider use cases, sequence/API diagrams and Postman folders; review B's changes                                                                       | Related features                                | A's part of T40–T42; check persisted results as well as responses                         |
@@ -39,7 +39,7 @@ After G0, continue A01/A02 and B01. B can build reads and validation while waiti
 | B01 | models/Vehicle.js/Booking.js, validators and serializers matching the design                               | A00 package/config; A01 references for integration | Unique VIN, fixed fields, safe output and indexes                                                                                                                   |
 | B02 | Public provider/vehicle discovery and own-vehicle management, windows and activation                       | A01 auth/provider; A03a guards for writes          | T12–T18, T39; filtered totals and unchanged booked snapshots                                                                                                        |
 | B03 | services/bookings.js, bookingCancellation.js, routes/controllers/serializers; create/read/date-edit/cancel | B00/B01, A01 auth, A03a guards                     | T19–T30; real DB races for T22/T23; cancellation ready for A03b                                                                                                     |
-| B04 | Company/admin booking views and integration/race tests                                                     | B03 + A03 integration                              | T25, T31–T39, especially suspension races and rollback                                                                                                              |
+| B04 | Provider/admin booking views and integration/race tests                                                    | B03 + A03 integration                              | T25, T31–T39, especially suspension races and rollback                                                                                                              |
 | B05 | Vehicle/booking use cases, sequence/API diagrams and Postman folders; review A's changes                   | Related features                                   | B's part of T40–T42; review approval/suspension integration                                                                                                         |
 
 B00 is merged in [PR #9](https://github.com/kormuyang/swdevprac1-project-dobby/pull/9). It is included in the shared local test command; verification evidence is recorded in the task PRs.
@@ -92,6 +92,38 @@ The user authorized implementing B02–B05 sequentially on stacked branches whil
 
 ## Integrated implementation
 
-A03 provides the real cancellation helper and provider/user/vehicle guard protocol. B02–B04 integrate vehicle and booking writers, company views, actual HTTP contention checks and rollback verification. A04/A05 provide guarded setup and the auth/provider delivery material; B05 consolidates the full A+B demo, rental fixtures, explicit B reset and response-time runner.
+A03 provides the real cancellation helper and provider/user/vehicle guard protocol. B02–B04 integrate vehicle and booking writers, provider views, actual HTTP contention checks and rollback verification. A04/A05 provide guarded setup and the auth/provider delivery material; B05 consolidates the full A+B demo, rental fixtures, explicit B reset and response-time runner.
 
 Each task PR records its reviewed commit, commands/results and verification limits. Merge review follows D-43; implementation choices follow D-44. Atlas acceptance, D-07/D-10 and Saint’s review of integrated main remain open. Newman dependency remediation is deferred under D-45. Local verification does not close G4 or all T01–T42 acceptance.
+
+## Course readability refactor (D-46)
+
+The user approved moving simple reads into controllers, explicit actor/time service arguments, expanded handlers, a separate booking cancellation flow and app-level JSON parsing. Keep all existing folders, tests and scripts. Shared server/parser changes touch A-owned setup; booking/vehicle changes touch B-owned features under this request. Coordinate integrated review with Saint; no publishing or merge is implied.
+
+Validate local rules and parser behavior with `npm test`, then run the existing HTTP/database checks with isolated A/B replica-set databases. T22/T23/T35 remain real-database checks; local mocks do not close them.
+
+Local verification on November 16: `npm exec --yes --package=node@24 -- npm test` passed 41/41 checks under Node 24.22.3, including global-parser HTTP checks. Changed JavaScript syntax, OpenAPI JSON parsing and `git diff --check` passed. Neither dedicated test database connection was available, so Atlas integration/race checks and the added cancellation-after-deactivation case were not run. Dependencies were installed from the existing lockfile without changing versions.
+
+## Controller request validation (D-48)
+
+Routes import named controller functions and retain authentication, roles and provider eligibility. Controllers call the existing validators directly and use local inputs, filters and IDs. Body/query rejection functions are ordinary checks in validators/request.js. Under D-52, the provider controllers now call the eligibility guard directly before validation. The request-validation middleware and route-local validation wrappers are removed. Endpoints, response shapes and transaction guards remain unchanged.
+
+Local HTTP checks exercise invalid requests and permission order with synthetic actors. Real database integration/race acceptance remains separate and needs the dedicated A/B connections.
+
+Verification on November 16: Node 24 `npm test` passed 42/42 local tests; `npm run lint`, `npm run format:check` and `git diff --check` passed. The new HTTP test covers request errors, permission ordering and a successful normalized vehicle input passed to a mocked service. It does not prove database transactions or races.
+
+## Express default parser errors (D-49)
+
+The user requested removing jsonErrors. The server and test apps retain global express.json() and use Express default error handling. Malformed JSON returns 400, oversized JSON returns 413 and uncaught framework errors return HTML. Controller validation/domain errors retain the JSON envelope. Update clients and T38 expectations accordingly; no custom error handler replaces the removed middleware.
+
+Verification: Node 24 local tests passed 42/42, including Express default 400/413/500 HTML behavior. Lint, formatting and diff checks passed. Database integration/race checks remain unrun without the dedicated connections.
+
+## Provider terminology (D-51)
+
+The representative role, signup route, representative route prefix, function/module names, fixtures, docs and Postman now use provider terminology. Provider business records and representative User records remain separate. See the [transition notes](design.md#provider-terminology-transition-d-51) for the stored-role update; no database migration was executed.
+
+Node 24 verification: 44/44 local tests, lint, formatting and diff checks passed. New checks compare model/OpenAPI roles and verify Postman paths and script syntax. Static local imports and OpenAPI references resolve. Neither A nor B test connection was available, so Atlas integration, database races and the full Newman journey remain unrun for this rename.
+
+## Provider eligibility in controllers (D-52)
+
+The user requested removing approvedProvider middleware. The six provider vehicle handlers and two provider booking-read handlers check requireApprovedProvider before request validation. Routes retain protect/authorize. Vehicle write services still recheck provider eligibility in their owning transactions. No provider access rule is removed.

@@ -8,7 +8,7 @@ const User = require('../models/User');
 const { protect } = require('../middleware/auth');
 const { serializeUser } = require('../serializers/auth');
 const {
-  validateCompanyRegistration,
+  validateProviderRegistration,
   validateLogin,
   validateRegistration,
 } = require('../validators/auth');
@@ -90,7 +90,7 @@ test('password validation measures UTF-8 bytes and login allowlists fields', () 
   );
 });
 
-test('company registration validates a nested allowlist and HTTPS document link', () => {
+test('provider registration validates a nested allowlist and HTTPS document link', () => {
   const input = {
     ...registration,
     businessRegistrationNumber: ' REG-123 ',
@@ -102,10 +102,10 @@ test('company registration validates a nested allowlist and HTTPS document link'
       documentUrl: 'https://example.com/registration.pdf',
     },
   };
-  assert.equal(validateCompanyRegistration(input).businessRegistrationNumber, 'REG-123');
+  assert.equal(validateProviderRegistration(input).businessRegistrationNumber, 'REG-123');
   assert.throws(
     () =>
-      validateCompanyRegistration({
+      validateProviderRegistration({
         ...input,
         profile: { ...input.profile, documentUrl: 'http://example.com/registration.pdf' },
       }),
@@ -113,7 +113,7 @@ test('company registration validates a nested allowlist and HTTPS document link'
   );
   assert.throws(
     () =>
-      validateCompanyRegistration({
+      validateProviderRegistration({
         ...input,
         profile: { ...input.profile, documentId: 'unexpected' },
       }),
@@ -144,6 +144,23 @@ test('safe user output excludes credential and internal fields', () => {
   ]);
   assert.equal(dto.providerId, null);
   assert.equal('passwordHash' in dto, false);
+});
+
+test('provider representative role matches the model and OpenAPI', async () => {
+  const roles = ['user', 'provider', 'admin'];
+  const schemas = require('../docs/contracts/openapi.json').components.schemas;
+  assert.deepEqual(User.schema.path('role').enumValues, roles);
+  assert.deepEqual(schemas.User.properties.role.enum, roles);
+  const representative = new User({
+    name: 'Synthetic Representative',
+    telephone: '123456789',
+    email: 'representative@example.test',
+    passwordHash: 'synthetic-password',
+    role: 'provider',
+    providerId: '607f1f77bcf86cd799439012',
+  });
+  await representative.validate();
+  assert.equal(representative.role, 'provider');
 });
 
 test('saving a user hashes the password once and preserves it on an unrelated save', async (t) => {
@@ -208,7 +225,7 @@ test('protect loads current actor and rejects missing sessions, suspension and d
   const token = tokenWith({ sid, exp: Math.floor(Date.now() / 1000) + 60 });
   const user = {
     _id: '507f1f77bcf86cd799439011',
-    role: 'company',
+    role: 'provider',
     providerId: '607f1f77bcf86cd799439012',
   };
   const session = { sid };
@@ -217,7 +234,7 @@ test('protect loads current actor and rejects missing sessions, suspension and d
     assert.equal(active.nextCalled, true);
     assert.deepEqual(active.actor, {
       userId: '507f1f77bcf86cd799439011',
-      role: 'company',
+      role: 'provider',
       providerId: '607f1f77bcf86cd799439012',
       sessionId: sid,
     });
@@ -250,7 +267,7 @@ test('OpenAPI password character limits do not exclude valid UTF-8 byte-length p
   const password = 'é'.repeat(4);
   assert.equal(Buffer.byteLength(password, 'utf8'), 8);
   assert.equal(validateRegistration({ ...registration, password }).password, password);
-  for (const name of ['RegistrationInput', 'CompanyRegistrationInput', 'LoginInput']) {
+  for (const name of ['RegistrationInput', 'ProviderRegistrationInput', 'LoginInput']) {
     const constraint = schemas[name].properties.password;
     assert.ok(Array.from(password).length >= constraint.minLength);
     assert.ok(Array.from(password).length <= constraint.maxLength);

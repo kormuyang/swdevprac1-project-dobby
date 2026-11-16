@@ -17,8 +17,8 @@ Prefer the simplest correct implementation and less code. Avoid speculative abst
 
 Keep responsibilities clear:
 
-- Routes: method/path, authentication, roles and validation.
-- Controllers: HTTP input/output and small, single-use feature logic.
+- Routes: method/path, authentication, roles and named controller imports.
+- Controllers: provider eligibility, request validation, HTTP input/output and small, single-use feature logic.
 - Services: reusable or complex business logic that benefits from extraction.
 - Models: fields, validation and indexes.
 - Serializers: fields returned to the client.
@@ -37,4 +37,4 @@ Use short headings, direct sentences and bullets for rules or assumptions. Expla
 
 ## Current state
 
-The development stack includes auth/company review/lifecycle, vehicle/discovery/booking APIs, guarded setup, the combined demo and response-time tooling. See README and the implementation plan for commands, PR dependencies and verification limits. Under D-43, Poom owns the merge decision with Codex-assisted review at each step; Saint reviews integrated main afterward. Atlas acceptance and D-07/D-10 remain open. Keep errors as `{success:false,message}` and transactions in their owning features.
+The development stack includes auth/provider review/lifecycle, vehicle/discovery/booking APIs, guarded setup, the combined demo and response-time tooling. See README and the implementation plan for commands, PR dependencies and verification limits. Under D-43, Poom owns the merge decision with Codex-assisted review at each step; Saint reviews integrated main afterward. Atlas acceptance and D-07/D-10 remain open. Keep application errors as `{success:false,message}` and transactions in their owning features. Under D-49, framework/parser errors use Express default handling.

@@ -1,6 +1,35 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
+const { Script } = require('node:vm');
 const { localBaseUrl, runDemo } = require('../scripts/test-demo');
+
+test('Postman requests match OpenAPI routes and embedded scripts parse', () => {
+  const collection = require('../postman/dobby.postman_collection.json');
+  const { paths } = require('../docs/contracts/openapi.json');
+  let requests = 0;
+  function checkItems(items) {
+    for (const item of items) {
+      if (item.item) {
+        checkItems(item.item);
+      }
+      if (item.request) {
+        const route = item.request.url.replace('{{baseUrl}}', '').split('?')[0];
+        const method = item.request.method.toLowerCase();
+        const matched = Object.entries(paths).some(([path, operations]) => {
+          const pattern = path.replace(/\{[^}]+\}/g, '[^/]+');
+          return operations[method] && new RegExp(`^${pattern}$`).test(route);
+        });
+        assert.ok(matched, `${item.request.method} ${route}`);
+        requests++;
+      }
+      for (const event of item.event || []) {
+        new Script(event.script.exec.join('\n'), { filename: item.name });
+      }
+    }
+  }
+  checkItems(collection.item);
+  assert.ok(requests >= 30);
+});
 
 test('demo refuses remote targets, URL credentials and query parameters', () => {
   const previous = process.env.DEMO_BASE_URL;

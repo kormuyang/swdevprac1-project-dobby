@@ -11,11 +11,7 @@ const { apiFixture } = require('./fixtures/api');
 const { runDemo } = require('../scripts/test-demo');
 
 test('combined Newman demo persists the complete A+B journey', { timeout: 30000 }, async (t) => {
-  const f = await apiFixture(t, [
-    ['/api/v1/bookings', require('../routes/bookings')],
-    ['/api/v1/company/bookings', require('../routes/companyBookings')],
-    ['/api/v1/admin', require('../routes/adminProviders')],
-  ]);
+  const f = await apiFixture(t);
   const previous = {
     DEMO_BASE_URL: process.env.DEMO_BASE_URL,
     SEED_ADMIN_EMAIL: process.env.SEED_ADMIN_EMAIL,
@@ -29,8 +25,8 @@ test('combined Newman demo persists the complete A+B journey', { timeout: 30000 
   try {
     const summary = await runDemo({ runId });
     assert.ok(summary.count >= 30);
-    const company = await User.findOne({ email: emails[1] });
-    const provider = await Provider.findById(company.providerId);
+    const providerAccount = await User.findOne({ email: emails[1] });
+    const provider = await Provider.findById(providerAccount.providerId);
     assert.equal(provider.status, 'approved');
     assert.equal(await ProviderApplication.countDocuments({ providerId: provider._id }), 3);
     const vehicles = await Vehicle.find({ providerId: provider._id });

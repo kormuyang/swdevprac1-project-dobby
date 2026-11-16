@@ -77,12 +77,12 @@ test(
       };
     }
     const admin = await account('admin');
-    const company = await account('company', providerId);
+    const providerAccount = await account('provider', providerId);
     const customer = await account('user');
     const registrationNumber = randomUUID();
     await Provider.create({
       _id: providerId,
-      representativeId: company.user._id,
+      representativeId: providerAccount.user._id,
       businessRegistrationNumber: registrationNumber,
       status: 'approved',
       approvedApplicationId: applicationId,
@@ -132,6 +132,7 @@ test(
     const cancelledId = await booking('cancelled', '2099-12-31');
     const otherId = await booking('confirmed', '2099-12-31', otherProviderId);
     const app = express();
+    app.use(express.json());
     app.use('/api/v1/auth', require('../routes/auth'));
     app.use('/api/v1/admin/providers', require('../routes/providerLifecycle'));
     server = app.listen(0, '127.0.0.1');
@@ -165,7 +166,7 @@ test(
     assert.equal(
       (
         await fetch(`${base}/api/v1/auth/me`, {
-          headers: { authorization: `Bearer ${company.token}` },
+          headers: { authorization: `Bearer ${providerAccount.token}` },
         })
       ).status,
       403,
@@ -175,7 +176,10 @@ test(
         await fetch(`${base}/api/v1/auth/login`, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ email: company.user.email, password: 'test-lifecycle-pass' }),
+          body: JSON.stringify({
+            email: providerAccount.user.email,
+            password: 'test-lifecycle-pass',
+          }),
         })
       ).status,
       403,
@@ -184,7 +188,7 @@ test(
       (
         await fetch(`${base}/api/v1/auth/logout`, {
           method: 'POST',
-          headers: { authorization: `Bearer ${company.token}` },
+          headers: { authorization: `Bearer ${providerAccount.token}` },
         })
       ).status,
       200,
@@ -195,7 +199,7 @@ test(
     assert.equal(
       (
         await fetch(`${base}/api/v1/auth/me`, {
-          headers: { authorization: `Bearer ${company.token}` },
+          headers: { authorization: `Bearer ${providerAccount.token}` },
         })
       ).status,
       401,

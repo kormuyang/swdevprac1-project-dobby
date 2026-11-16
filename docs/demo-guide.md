@@ -7,7 +7,7 @@ Run the [combined collection](../postman/dobby.postman_collection.json) through 
 | Time      | Show                                                   | Purpose                                                                       |
 | --------- | ------------------------------------------------------ | ----------------------------------------------------------------------------- |
 | 0:00–0:30 | Scope and synthetic replica-set setup                  | Explain roles and the test environment.                                       |
-| 0:30–1:30 | Signup, company review and profile versions            | Show approval and preservation of the approved profile during review.         |
+| 0:30–1:30 | Signup, provider review and profile versions           | Show approval and preservation of the approved profile during review.         |
 | 1:30–2:30 | Vehicle creation and date-filtered discovery           | Show approved ownership and availability.                                     |
 | 2:30–4:00 | Booking, listing change and date edit                  | Show server pricing and preserved snapshots/rates.                            |
 | 4:00–4:45 | Customer cancellation and admin emergency cancellation | Show cutoff differences and retained history.                                 |

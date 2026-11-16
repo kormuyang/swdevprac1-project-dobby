@@ -4,9 +4,9 @@ Admin suspension and reactivation implement FR-14. See the [contract](../contrac
 
 ## Use cases
 
-- An admin suspends an approved company with a reason. All its upcoming/ongoing confirmed bookings are cancelled together with the suspension.
+- An admin suspends an approved provider with a reason. All its upcoming/ongoing confirmed bookings are cancelled together with the suspension.
 - A suspended representative is denied protected reads and fresh login. An existing session can still log out.
-- An admin reactivates a suspended company with an approved profile and a resolution note. Cancelled bookings and revoked sessions remain unchanged.
+- An admin reactivates a suspended provider with an approved profile and a resolution note. Cancelled bookings and revoked sessions remain unchanged.
 
 ```mermaid
 sequenceDiagram
@@ -14,7 +14,7 @@ sequenceDiagram
     participant Controller as Lifecycle controller
     participant DB as MongoDB transaction
     participant Cancel as bookingCancellation
-    Admin->>Controller: Suspend company, reason
+    Admin->>Controller: Suspend provider, reason
     Controller->>DB: Lock provider by incrementing revision
     Controller->>DB: Check approved state/profile, set suspended
     Controller->>Cancel: Same session, provider, actor, today

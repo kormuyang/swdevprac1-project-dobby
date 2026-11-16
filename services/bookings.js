@@ -7,7 +7,6 @@ const User = require('../models/User');
 const { todayBangkok, validateRentalDates } = require('../utils/dates');
 const { calculateTotal } = require('../utils/money');
 const { serializeVehicleSnapshot } = require('../serializers/vehicles');
-const { requireApprovedCompany } = require('./companyAccess');
 
 function fail(status, message) {
   const error = new Error(message);
@@ -27,67 +26,6 @@ function bookingScope(actor) {
     return {};
   }
   return { userId: actor.userId };
-}
-
-function statusFilter(status, today) {
-  if (status === 'cancelled') {
-    return { state: 'cancelled' };
-  }
-  if (status === 'completed') {
-    return { state: 'confirmed', dueDate: { $lt: today } };
-  }
-  if (status === 'ongoing') {
-    return { state: 'confirmed', startDate: { $lte: today }, dueDate: { $gte: today } };
-  }
-  if (status === 'upcoming') {
-    return { state: 'confirmed', startDate: { $gt: today } };
-  }
-  return {};
-}
-
-async function listForFilter(filter, filters, today) {
-  const total = await Booking.countDocuments(filter);
-  const data = await Booking.find(filter)
-    .sort({ createdAt: -1, _id: -1 })
-    .skip((filters.page - 1) * filters.limit)
-    .limit(filters.limit)
-    .populate('userId', 'name email telephone');
-  return {
-    data,
-    count: data.length,
-    today,
-    pagination: {
-      page: filters.page,
-      limit: filters.limit,
-      total,
-      pages: Math.ceil(total / filters.limit),
-    },
-  };
-}
-
-async function listBookings(filters, ctx) {
-  const today = todayBangkok(ctx.clock ? ctx.clock.now() : new Date());
-  const filter = { ...bookingScope(ctx.actor), ...statusFilter(filters.status, today) };
-  if (ctx.actor.role === 'admin') {
-    if (filters.userId) {
-      filter.userId = filters.userId;
-    }
-    if (filters.providerId) {
-      filter.providerId = filters.providerId;
-    }
-  }
-  return listForFilter(filter, filters, today);
-}
-
-async function getBooking(id, ctx) {
-  const booking = await Booking.findOne({ _id: id, ...bookingScope(ctx.actor) }).populate(
-    'userId',
-    'name email telephone',
-  );
-  if (!booking) {
-    fail(404, 'The booking was not found.');
-  }
-  return booking;
 }
 
 async function assertEligibility(provider, vehicle, startDate, dueDate, session) {
@@ -136,14 +74,40 @@ async function checkCapAndOverlap(userId, vehicle, startDate, dueDate, today, ex
   }
 }
 
-async function writeBooking(id, input, ctx, operation) {
-  const actor = ctx.actor;
+async function lockBookingTargets(references, session) {
+  // All booking writers take provider, user and vehicle guards in this order.
+  const provider = await Provider.findByIdAndUpdate(
+    references.providerId,
+    { $inc: { revision: 1 } },
+    { session, returnDocument: 'after' },
+  );
+  if (!provider) {
+    fail(404, 'The booking provider was not found.');
+  }
+  // The user guard enforces the cap even across different providers.
+  const user = await User.findOneAndUpdate(
+    { _id: references.userId },
+    { $inc: { bookingRevision: 1 } },
+    { session, returnDocument: 'after' },
+  );
+  const vehicle = await Vehicle.findOneAndUpdate(
+    { _id: references.vehicleId, providerId: provider._id },
+    { $inc: { revision: 1 } },
+    { session, returnDocument: 'after' },
+  );
+  if (!user || !vehicle) {
+    fail(404, 'The booking target was not found.');
+  }
+  return { provider, vehicle };
+}
+
+async function writeBooking(id, input, actor, now) {
   assertBookingRole(actor);
-  if (operation === 'create' && actor.role !== 'user') {
+  if (!id && actor.role !== 'user') {
     fail(403, 'Only customers can create bookings.');
   }
   let references;
-  if (operation === 'create') {
+  if (!id) {
     const selected = await Vehicle.findById(input.vehicleId).select('providerId');
     if (!selected) {
       fail(409, 'This vehicle is not available for booking.');
@@ -162,30 +126,8 @@ async function writeBooking(id, input, ctx, operation) {
   try {
     await session.withTransaction(
       async () => {
-        const now = ctx.clock ? ctx.clock.now() : new Date();
         const today = todayBangkok(now);
-        // The shared user guard enforces the cap even across different providers.
-        const provider = await Provider.findByIdAndUpdate(
-          references.providerId,
-          { $inc: { revision: 1 } },
-          { session, returnDocument: 'after' },
-        );
-        if (!provider) {
-          fail(404, 'The booking provider was not found.');
-        }
-        const user = await User.findOneAndUpdate(
-          { _id: references.userId },
-          { $inc: { bookingRevision: 1 } },
-          { session, returnDocument: 'after' },
-        );
-        const vehicle = await Vehicle.findOneAndUpdate(
-          { _id: references.vehicleId, providerId: provider._id },
-          { $inc: { revision: 1 } },
-          { session, returnDocument: 'after' },
-        );
-        if (!user || !vehicle) {
-          fail(404, 'The booking target was not found.');
-        }
+        const { provider, vehicle } = await lockBookingTargets(references, session);
         let booking;
         if (id) {
           booking = await Booking.findOne({
@@ -199,24 +141,7 @@ async function writeBooking(id, input, ctx, operation) {
             fail(404, 'The booking was not found.');
           }
           if (booking.state === 'cancelled') {
-            if (operation === 'cancel') {
-              result = booking;
-              return;
-            }
             fail(409, 'A cancelled booking cannot be changed.');
-          }
-          if (operation === 'cancel') {
-            if (booking.dueDate < today || (actor.role === 'user' && booking.startDate <= today)) {
-              fail(409, 'This booking can no longer be cancelled by this account.');
-            }
-            booking.state = 'cancelled';
-            booking.cancelledAt = now;
-            booking.cancelledBy = actor.userId;
-            booking.cancellationReason =
-              actor.role === 'admin' ? 'admin_cancelled' : 'customer_cancelled';
-            await booking.save({ session });
-            result = booking;
-            return;
           }
           if (booking.startDate <= today) {
             fail(409, 'Booking dates can only change before the original start.');
@@ -272,49 +197,68 @@ async function writeBooking(id, input, ctx, operation) {
   }
 }
 
-function createBooking(input, ctx) {
-  return writeBooking(null, input, ctx, 'create');
-}
-function updateBookingDates(id, input, ctx) {
-  return writeBooking(id, input, ctx, 'dates');
-}
-function cancelBooking(id, ctx) {
-  return writeBooking(id, null, ctx, 'cancel');
+function createBooking(input, actor, now = new Date()) {
+  return writeBooking(null, input, actor, now);
 }
 
-async function listCompanyBookings(filters, ctx) {
-  await requireApprovedCompany(ctx.actor);
-  if (
-    filters.vehicleId &&
-    !(await Vehicle.exists({ _id: filters.vehicleId, providerId: ctx.actor.providerId }))
-  ) {
-    fail(404, 'The vehicle was not found.');
-  }
-  const today = todayBangkok(ctx.clock ? ctx.clock.now() : new Date());
-  const filter = { providerId: ctx.actor.providerId, ...statusFilter(filters.status, today) };
-  if (filters.vehicleId) {
-    filter.vehicleId = filters.vehicleId;
-  }
-  return listForFilter(filter, filters, today);
+function updateBookingDates(id, input, actor, now = new Date()) {
+  return writeBooking(id, input, actor, now);
 }
 
-async function getCompanyBooking(id, ctx) {
-  await requireApprovedCompany(ctx.actor);
-  const booking = await Booking.findOne({ _id: id, providerId: ctx.actor.providerId }).populate(
-    'userId',
-    'name email telephone',
+async function cancelBooking(id, actor, now = new Date()) {
+  const scope = bookingScope(actor);
+  const references = await Booking.findOne({ _id: id, ...scope }).select(
+    'providerId vehicleId userId',
   );
-  if (!booking) {
+  if (!references) {
     fail(404, 'The booking was not found.');
   }
-  return booking;
+  const session = await mongoose.startSession();
+  let booking;
+  try {
+    await session.withTransaction(
+      async () => {
+        const today = todayBangkok(now);
+        const { provider, vehicle } = await lockBookingTargets(references, session);
+        booking = await Booking.findOne({
+          _id: id,
+          ...scope,
+          userId: references.userId,
+          providerId: provider._id,
+          vehicleId: vehicle._id,
+        }).session(session);
+        if (!booking) {
+          fail(404, 'The booking was not found.');
+        }
+        if (booking.state === 'cancelled') {
+          return;
+        }
+        if (booking.dueDate < today || (actor.role === 'user' && booking.startDate <= today)) {
+          fail(409, 'This booking can no longer be cancelled by this account.');
+        }
+        booking.state = 'cancelled';
+        booking.cancelledAt = now;
+        booking.cancelledBy = actor.userId;
+        booking.cancellationReason =
+          actor.role === 'admin' ? 'admin_cancelled' : 'customer_cancelled';
+        await booking.save({ session });
+      },
+      { readConcern: { level: 'snapshot' }, writeConcern: { w: 'majority' }, timeoutMS: 2500 },
+    );
+    booking.$session(null);
+    await booking.populate('userId', 'name email telephone');
+    return booking;
+  } catch (error) {
+    if (
+      !error.hasErrorLabel?.('UnknownTransactionCommitResult') &&
+      error.hasErrorLabel?.('TransientTransactionError')
+    ) {
+      fail(409, 'The booking changed during this request. Try again.');
+    }
+    throw error;
+  } finally {
+    await session.endSession();
+  }
 }
-module.exports = {
-  createBooking,
-  updateBookingDates,
-  cancelBooking,
-  getBooking,
-  listBookings,
-  listCompanyBookings,
-  getCompanyBooking,
-};
+
+module.exports = { createBooking, updateBookingDates, cancelBooking };

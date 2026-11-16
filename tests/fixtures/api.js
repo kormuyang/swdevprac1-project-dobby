@@ -18,7 +18,7 @@ function addDays(date, days) {
   return instant.toISOString().slice(0, 10);
 }
 
-async function apiFixture(t, extraRoutes = []) {
+async function apiFixture(t) {
   let parsed;
   try {
     parsed = new URL(process.env.TEST_MONGO_URI_B);
@@ -75,7 +75,7 @@ async function apiFixture(t, extraRoutes = []) {
       role,
     };
     let providerId = null;
-    if (role === 'company') {
+    if (role === 'provider') {
       providerId = new mongoose.Types.ObjectId();
       providers.push(providerId);
       input.providerId = providerId;
@@ -129,19 +129,20 @@ async function apiFixture(t, extraRoutes = []) {
   const admin = await account('admin');
   const customer = await account('user');
   const otherCustomer = await account('user');
-  const company = await account('company', 'approved');
-  const otherCompany = await account('company', 'approved');
-  const pending = await account('company', 'pending');
+  const providerAccount = await account('provider', 'approved');
+  const otherProviderAccount = await account('provider', 'approved');
+  const pending = await account('provider', 'pending');
   const app = express();
+  app.use(express.json());
   app.set('query parser', 'extended');
-  app.use('/api/v1', require('../../routes/publicVehicles'));
-  app.use('/api/v1/company/vehicles', require('../../routes/companyVehicles'));
   app.use('/api/v1/auth', require('../../routes/auth'));
+  app.use('/api/v1/bookings', require('../../routes/bookings'));
+  app.use('/api/v1', require('../../routes/publicVehicles'));
+  app.use('/api/v1/provider/vehicles', require('../../routes/providerVehicles'));
+  app.use('/api/v1/provider/bookings', require('../../routes/providerBookings'));
+  app.use('/api/v1/provider', require('../../routes/provider'));
+  app.use('/api/v1/admin', require('../../routes/adminProviders'));
   app.use('/api/v1/admin/providers', require('../../routes/providerLifecycle'));
-  for (const [route, router] of extraRoutes) {
-    app.use(route, router);
-  }
-  app.use('/api/v1/company', require('../../routes/company'));
   app.use((req, res) => res.status(404).json({ success: false, message: 'Not found.' }));
   server = app.listen(0, '127.0.0.1');
   await new Promise((resolve, reject) => {
@@ -165,13 +166,13 @@ async function apiFixture(t, extraRoutes = []) {
     });
     return { status: response.status, body: await response.json() };
   }
-  async function createVehicle(owner = company, changes = {}) {
+  async function createVehicle(owner = providerAccount, changes = {}) {
     const { providerId, ...body } = vehicleInput({
       vin: `V-${randomUUID()}`,
       availableFrom: todayBangkok(new Date()),
       ...changes,
     });
-    const response = await request('/company/vehicles', { method: 'POST', actor: owner, body });
+    const response = await request('/provider/vehicles', { method: 'POST', actor: owner, body });
     assert.equal(response.status, 201, 'Synthetic vehicle creation must succeed.');
     return response.body.data;
   }
@@ -184,8 +185,8 @@ async function apiFixture(t, extraRoutes = []) {
     admin,
     customer,
     otherCustomer,
-    company,
-    otherCompany,
+    providerAccount,
+    otherProviderAccount,
     pending,
     today: todayBangkok(new Date()),
   };

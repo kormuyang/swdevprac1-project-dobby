@@ -25,35 +25,35 @@ const fixtures = [
   },
   {
     key: 'provider-approved',
-    role: 'company',
+    role: 'provider',
     status: 'approved',
     registration: 'DOBBY-SEED-APPROVED-001',
     name: 'Dobby Approved Rental',
   },
   {
     key: 'provider-approved-two',
-    role: 'company',
+    role: 'provider',
     status: 'approved',
     registration: 'DOBBY-SEED-APPROVED-002',
     name: 'Dobby Second Approved Rental',
   },
   {
     key: 'provider-pending',
-    role: 'company',
+    role: 'provider',
     status: 'pending',
     registration: 'DOBBY-SEED-PENDING-001',
     name: 'Dobby Pending Rental',
   },
   {
     key: 'provider-rejected',
-    role: 'company',
+    role: 'provider',
     status: 'rejected',
     registration: 'DOBBY-SEED-REJECTED-001',
     name: 'Dobby Rejected Rental',
   },
   {
     key: 'provider-suspended',
-    role: 'company',
+    role: 'provider',
     status: 'suspended',
     registration: 'DOBBY-SEED-SUSPENDED-001',
     name: 'Dobby Suspended Rental',
@@ -82,7 +82,7 @@ function validateConfiguration() {
     );
   }
   const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
-  if (fixtures.some((fixture) => (fixture.email || companyEmail(fixture.key)) === adminEmail)) {
+  if (fixtures.some((fixture) => (fixture.email || providerEmail(fixture.key)) === adminEmail)) {
     throw new Error('SEED_ADMIN_EMAIL must be different from the reserved fixture emails.');
   }
   if (
@@ -109,7 +109,7 @@ function validateConfiguration() {
 }
 
 async function removeExistingFixtures(session) {
-  const emails = fixtures.map((fixture) => fixture.email || companyEmail(fixture.key));
+  const emails = fixtures.map((fixture) => fixture.email || providerEmail(fixture.key));
   const adminEmail = process.env.SEED_ADMIN_EMAIL.trim().toLowerCase();
   const existingAdmin = await User.findOne({ email: adminEmail })
     .select('_id role name providerId')
@@ -125,7 +125,7 @@ async function removeExistingFixtures(session) {
     .session(session);
   for (const user of users) {
     const fixture = fixtures.find(
-      (entry) => (entry.email || companyEmail(entry.key)) === user.email,
+      (entry) => (entry.email || providerEmail(entry.key)) === user.email,
     );
     if (user.name !== fixture.name || user.role !== fixture.role) {
       throw new Error('Reserved fixture email belongs to a non-seed account.');
@@ -167,7 +167,7 @@ async function removeExistingFixtures(session) {
   await User.deleteMany({ _id: { $in: userIds } }, { session });
 }
 
-function companyEmail(key) {
+function providerEmail(key) {
   return `${key}@dobby.example.test`;
 }
 
@@ -182,16 +182,16 @@ function applicationProfile(fixture) {
 }
 
 async function createFixture(fixture, session) {
-  const isCompany = fixture.role === 'company';
+  const isProvider = fixture.role === 'provider';
   const user = new User({
     name: fixture.name,
     telephone: '+66000000000',
-    email: fixture.email || companyEmail(fixture.key),
+    email: fixture.email || providerEmail(fixture.key),
     passwordHash: process.env.SEED_FIXTURE_PASSWORD,
     role: fixture.role,
   });
 
-  if (!isCompany) {
+  if (!isProvider) {
     await user.save({ session });
     return;
   }

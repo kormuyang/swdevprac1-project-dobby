@@ -4,30 +4,30 @@ The checklist spans implemented and planned features; it has not passed in full.
 
 ## Test data
 
-Fix Thailand today to 2030-01-10 in unit tests. Integration/demo dates can be relative to Thailand today. Use two customers (U1/U2), two companies (P1/P2), pending/rejected/suspended accounts, an admin and synthetic HTTPS links. Seed repeatably and record the test database/run.
+Fix Thailand today to 2030-01-10 in unit tests. Integration/demo dates can be relative to Thailand today. Use two customers (U1/U2), two providers (P1/P2), pending/rejected/suspended accounts, an admin and synthetic HTTPS links. Seed repeatably and record the test database/run.
 
-## Accounts and company review
+## Accounts and provider review
 
-| ID  | Check                                                                                                                              | Owner | Requirements  |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------- | ----- | ------------- |
-| T01 | Signup requires name, telephone, email and password. Assign user; reject role/admin/providerId input.                              | A     | FR-01, NFR-01 |
-| T02 | Reject duplicate normalized emails, wrong passwords and missing/expired/revoked tokens.                                            | A     | FR-02, NFR-01 |
-| T03 | Login returns token/expiry. Logout invalidates that session; another active session still works.                                   | A     | FR-02         |
-| T04 | Account/login responses hide hashes and session data. An unrelated save does not rehash the password.                              | A     | NFR-02        |
-| T05 | Company signup creates the account, provider and pending v1 together. A duplicate failure leaves no partial records.               | A     | FR-10         |
-| T06 | Pending/rejected companies can read their applications, but cannot add vehicles or receive bookings. Company accounts cannot book. | A+B   | FR-10, FR-11  |
-| T07 | Only admins review pending applications. Rejection needs a reason.                                                                 | A     | FR-11         |
-| T08 | Resubmission creates an immutable version and keeps history. Concurrent submissions leave at most one pending version.             | A     | FR-10, FR-11  |
-| T09 | Pending/rejected revisions keep the approved public profile. Approval switches it atomically.                                      | A+B   | FR-03, FR-11  |
-| T10 | Approving a revision does not clear suspension.                                                                                    | A     | FR-14         |
-| T11 | Accept one HTTPS document URL without fetching it. Reject missing/invalid URLs; hide documents from public discovery.              | A+B   | FR-10, NFR-02 |
+| ID  | Check                                                                                                                               | Owner | Requirements  |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------- | ----- | ------------- |
+| T01 | Signup requires name, telephone, email and password. Assign user; reject role/admin/providerId input.                               | A     | FR-01, NFR-01 |
+| T02 | Reject duplicate normalized emails, wrong passwords and missing/expired/revoked tokens.                                             | A     | FR-02, NFR-01 |
+| T03 | Login returns token/expiry. Logout invalidates that session; another active session still works.                                    | A     | FR-02         |
+| T04 | Account/login responses hide hashes and session data. An unrelated save does not rehash the password.                               | A     | NFR-02        |
+| T05 | Provider signup creates the account, provider and pending v1 together. A duplicate failure leaves no partial records.               | A     | FR-10         |
+| T06 | Pending/rejected providers can read their applications, but cannot add vehicles or receive bookings. Provider accounts cannot book. | A+B   | FR-10, FR-11  |
+| T07 | Only admins review pending applications. Rejection needs a reason.                                                                  | A     | FR-11         |
+| T08 | Resubmission creates an immutable version and keeps history. Concurrent submissions leave at most one pending version.              | A     | FR-10, FR-11  |
+| T09 | Pending/rejected revisions keep the approved public profile. Approval switches it atomically.                                       | A+B   | FR-03, FR-11  |
+| T10 | Approving a revision does not clear suspension.                                                                                     | A     | FR-14         |
+| T11 | Accept one HTTPS document URL without fetching it. Reject missing/invalid URLs; hide documents from public discovery.               | A+B   | FR-10, NFR-02 |
 
 ## Vehicles
 
 | ID  | Check                                                                                                                                    | Owner | Requirements  |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------------- |
-| T12 | An approved company can create a vehicle with the required fields. Set ownership on the server.                                          | B     | FR-12         |
-| T13 | Reject duplicate normalized VINs across companies, inactive vehicles and concurrent inserts.                                             | B     | FR-12         |
+| T12 | An approved provider can create a vehicle with the required fields. Set ownership on the server.                                         | B     | FR-12         |
+| T13 | Reject duplicate normalized VINs across providers, inactive vehicles and concurrent inserts.                                             | B     | FR-12         |
 | T14 | P2 cannot list/read/change/activate/deactivate P1 vehicles. Private IDs return 404.                                                      | B     | FR-12, NFR-02 |
 | T15 | Allow branch/rate edits only. Reject VIN/model/seats/owner changes.                                                                      | B     | FR-12         |
 | T16 | Deactivation stops new bookings and keeps existing ones. Approved owners can reactivate without restoring cancellations.                 | B     | FR-12         |
@@ -51,19 +51,19 @@ Fix Thailand today to 2030-01-10 in unit tests. Integration/demo dates can be re
 | T29 | Admin can cancel ongoing rentals, but cannot create bookings or edit ongoing dates. Completed bookings cannot be cancelled.                      | B     | FR-08, FR-09         |
 | T30 | Later branch/rate changes leave booked snapshots unchanged, including after a date edit.                                                         | B     | FR-03, FR-13         |
 
-## Company views and suspension
+## Provider views and suspension
 
-| ID  | Check                                                                                                                                                                            | Owner | Requirements   |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | -------------- |
-| T31 | Approved P1 sees only own-vehicle bookings across all statuses, with ID, current customer name/email/phone and booked vehicle/branch/dates/total.                                | B     | FR-13          |
-| T32 | P2 cannot read P1 bookings through company routes. Company accounts cannot change bookings.                                                                                      | B     | FR-13, NFR-02  |
-| T33 | Admin suspension needs a reason and cancels upcoming/ongoing bookings atomically. Keep completed/cancelled history and other companies unchanged.                                | A+B   | FR-14          |
-| T34 | If cancellation fails, roll back both suspension and every booking cancellation.                                                                                                 | A+B   | FR-14          |
-| T35 | Race suspension against creation/date edits. Successful suspension leaves no confirmed non-completed booking for that provider.                                                  | A+B   | FR-14          |
-| T36 | While suspended, old sessions and fresh login cannot grant protected reads/writes. Logout works; public discovery leaks no private data.                                         | A+B   | FR-14, NFR-02  |
-| T37 | Reactivation needs admin and a resolution note. Restore eligibility, not bookings; reject repeated invalid transitions.                                                          | A+B   | FR-14          |
-| T38 | Return `{success:false,message}` with appropriate HTTP status for missing/malformed IDs, operator objects, unknown fields, bad pagination, oversized bodies and auth throttling. | A+B   | NFR-01, NFR-02 |
-| T39 | Public provider/vehicle responses never populate private bookings, applications, customer contact or document links.                                                             | B     | NFR-02         |
+| ID  | Check                                                                                                                                                                                                                                                                           | Owner | Requirements   |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | -------------- |
+| T31 | Approved P1 sees only own-vehicle bookings across all statuses, with ID, current customer name/email/phone and booked vehicle/branch/dates/total.                                                                                                                               | B     | FR-13          |
+| T32 | P2 cannot read P1 bookings through provider routes. Provider accounts cannot change bookings.                                                                                                                                                                                   | B     | FR-13, NFR-02  |
+| T33 | Admin suspension needs a reason and cancels upcoming/ongoing bookings atomically. Keep completed/cancelled history and other providers unchanged.                                                                                                                               | A+B   | FR-14          |
+| T34 | If cancellation fails, roll back both suspension and every booking cancellation.                                                                                                                                                                                                | A+B   | FR-14          |
+| T35 | Race suspension against creation/date edits. Successful suspension leaves no confirmed non-completed booking for that provider.                                                                                                                                                 | A+B   | FR-14          |
+| T36 | While suspended, old sessions and fresh login cannot grant protected reads/writes. Logout works; public discovery leaks no private data.                                                                                                                                        | A+B   | FR-14, NFR-02  |
+| T37 | Reactivation needs admin and a resolution note. Restore eligibility, not bookings; reject repeated invalid transitions.                                                                                                                                                         | A+B   | FR-14          |
+| T38 | Return `{success:false,message}` with appropriate HTTP status for missing/malformed IDs, operator objects, unknown fields, bad pagination and global rate limiting. Parser errors use Express defaults under D-49: malformed JSON 400 and oversized JSON 413, with HTML bodies. | A+B   | NFR-01, NFR-02 |
+| T39 | Public provider/vehicle responses never populate private bookings, applications, customer contact or document links.                                                                                                                                                            | B     | NFR-02         |
 
 ## Demo and delivery
 
@@ -87,9 +87,11 @@ For each PR, list test IDs, command, test environment/database, pass/fail counts
 
 ## Implemented check locations
 
+- T38 controller request validation and permission ordering with synthetic actors: [local HTTP checks](../tests/request-validation.test.js). These do not establish database behavior.
+- T38 global JSON parsing, default body limit and Express default errors before authentication: [local setup checks](../tests/setup.test.js).
 - Vehicle ownership, discovery, windows and safe output: [vehicle HTTP integration](../tests/vehicles.api.integration.test.js).
 - Booking scope, prices, cutoffs and cap/overlap races: [booking HTTP integration](../tests/bookings.api.integration.test.js).
-- Company views, suspension races, rollback and no restoration: [combined lifecycle integration](../tests/booking-lifecycle.api.integration.test.js).
+- Provider views, suspension races, rollback and no restoration: [combined lifecycle integration](../tests/booking-lifecycle.api.integration.test.js).
 - T40 journey and saved results: [Newman integration](../tests/demo.integration.test.js).
 - T41 runner: [response-time measurement](../scripts/measure-response-times.js). Atlas execution remains pending; local runs do not close T41.
 

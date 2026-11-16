@@ -33,14 +33,6 @@ function validateRequest(req, field) {
   return body[field].trim();
 }
 
-function sendError(res, error) {
-  const status = error.status || 500;
-  return res.status(status).json({
-    success: false,
-    message: status >= 500 ? 'The request could not be completed.' : error.message,
-  });
-}
-
 async function suspendProvider(req, res) {
   let session;
   try {
@@ -54,12 +46,12 @@ async function suspendProvider(req, res) {
         { returnDocument: 'after', session },
       );
       if (!provider) {
-        const error = new Error('Company was not found.');
+        const error = new Error('Provider was not found.');
         error.status = 404;
         throw error;
       }
       if (provider.status !== 'approved' || !provider.approvedApplicationId) {
-        const error = new Error('Only an approved company can be suspended.');
+        const error = new Error('Only an approved provider can be suspended.');
         error.status = 409;
         throw error;
       }
@@ -67,7 +59,7 @@ async function suspendProvider(req, res) {
         provider.approvedApplicationId,
       ).session(session);
       if (!application || application.status !== 'approved') {
-        const error = new Error('An approved company profile is required.');
+        const error = new Error('An approved provider profile is required.');
         error.status = 409;
         throw error;
       }
@@ -94,7 +86,11 @@ async function suspendProvider(req, res) {
     });
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
-    return sendError(res, error);
+    const status = error.status || 500;
+    return res.status(status).json({
+      success: false,
+      message: status >= 500 ? 'The request could not be completed.' : error.message,
+    });
   } finally {
     if (session) {
       await session.endSession();
@@ -115,7 +111,7 @@ async function reactivateProvider(req, res) {
         { returnDocument: 'after', session },
       );
       if (!provider) {
-        const error = new Error('Company was not found.');
+        const error = new Error('Provider was not found.');
         error.status = 404;
         throw error;
       }
@@ -124,7 +120,7 @@ async function reactivateProvider(req, res) {
         : null;
       if (provider.status !== 'suspended' || !application || application.status !== 'approved') {
         const error = new Error(
-          'Reactivation requires a suspended company with an approved profile.',
+          'Reactivation requires a suspended provider with an approved profile.',
         );
         error.status = 409;
         throw error;
@@ -138,7 +134,11 @@ async function reactivateProvider(req, res) {
     });
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
-    return sendError(res, error);
+    const status = error.status || 500;
+    return res.status(status).json({
+      success: false,
+      message: status >= 500 ? 'The request could not be completed.' : error.message,
+    });
   } finally {
     if (session) {
       await session.endSession();

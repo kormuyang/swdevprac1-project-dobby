@@ -41,7 +41,7 @@ function validateBookingFilters(query, today, actor) {
   return result;
 }
 
-function validateCompanyBookingFilters(query) {
+function validateProviderBookingFilters(query) {
   const result = listPage(query, ['status', 'vehicleId']);
   if (query.status !== undefined) {
     result.status = enumField(query.status, 'status', [
@@ -60,5 +60,5 @@ module.exports = {
   validateBookingCreate,
   validateBookingDatesUpdate,
   validateBookingFilters,
-  validateCompanyBookingFilters,
+  validateProviderBookingFilters,
 };

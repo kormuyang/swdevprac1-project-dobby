@@ -56,12 +56,12 @@ function protect(options = {}) {
         sessionId: authSession.sid,
       };
 
-      if (user.role === 'company' && !options.allowSuspended) {
+      if (user.role === 'provider' && !options.allowSuspended) {
         const provider = await Provider.findById(user.providerId).select('status');
         if (!provider || provider.status === 'suspended') {
           return res
             .status(403)
-            .json({ success: false, message: 'This company account is suspended.' });
+            .json({ success: false, message: 'This provider account is suspended.' });
         }
       }
       return next();

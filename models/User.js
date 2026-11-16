@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema(
       immutable: true,
     },
     passwordHash: { type: String, required: true, select: false },
-    role: { type: String, required: true, enum: ['user', 'company', 'admin'], default: 'user' },
+    role: { type: String, required: true, enum: ['user', 'provider', 'admin'], default: 'user' },
     providerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Provider', default: null },
     bookingRevision: { type: Number, required: true, default: 0, min: 0 },
   },

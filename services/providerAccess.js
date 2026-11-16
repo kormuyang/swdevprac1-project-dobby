@@ -1,8 +1,8 @@
 const Provider = require('../models/Provider');
 
-async function requireApprovedCompany(actor, session = null) {
+async function requireApprovedProvider(actor, session = null) {
   let provider;
-  if (actor?.role === 'company' && actor.providerId) {
+  if (actor?.role === 'provider' && actor.providerId) {
     provider = await Provider.findOne({
       _id: actor.providerId,
       representativeId: actor.userId,
@@ -11,11 +11,11 @@ async function requireApprovedCompany(actor, session = null) {
     }).session(session);
   }
   if (!provider) {
-    const error = new Error('An approved company account is required.');
+    const error = new Error('An approved provider account is required.');
     error.status = 403;
     throw error;
   }
   return provider;
 }
 
-module.exports = { requireApprovedCompany };
+module.exports = { requireApprovedProvider };

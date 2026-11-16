@@ -93,3 +93,50 @@ test('B reset requires its own connection and explicit reset flag', () => {
   assert.equal(noFlag.status, 1);
   assert.match(noFlag.stderr, /ALLOW_TEST_DB_RESET=true/);
 });
+
+test('global JSON parsing uses Express default errors before authentication', async (t) => {
+  const express = require('express');
+  const app = express();
+  app.set('env', 'test');
+  app.use(express.json());
+  app.post('/echo', (req, res) => res.json({ size: req.body.text.length }));
+  app.get('/failure', () => {
+    throw new Error('Synthetic internal diagnostic');
+  });
+  app.use('/bookings', require('../routes/bookings'));
+  const server = app.listen(0, '127.0.0.1');
+  await new Promise((resolve) => server.once('listening', resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const headers = { 'content-type': 'application/json' };
+
+  const accepted = await fetch(`${base}/echo`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ text: 'a'.repeat(20 * 1024) }),
+  });
+  assert.equal(accepted.status, 200);
+  assert.deepEqual(await accepted.json(), { size: 20 * 1024 });
+
+  for (const route of ['/echo', '/bookings', '/unknown']) {
+    const malformed = await fetch(`${base}${route}`, { method: 'POST', headers, body: '{' });
+    assert.equal(malformed.status, 400);
+    assert.match(malformed.headers.get('content-type'), /text\/html/);
+    await malformed.text();
+  }
+  const oversized = await fetch(`${base}/bookings`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ text: 'a'.repeat(100 * 1024) }),
+  });
+  assert.equal(oversized.status, 413);
+  assert.match(oversized.headers.get('content-type'), /text\/html/);
+  await oversized.text();
+
+  const unauthorized = await fetch(`${base}/bookings`, { method: 'POST', headers, body: '{}' });
+  assert.equal(unauthorized.status, 401);
+  const failure = await fetch(`${base}/failure`);
+  assert.equal(failure.status, 500);
+  assert.match(failure.headers.get('content-type'), /text\/html/);
+  await failure.text();
+});

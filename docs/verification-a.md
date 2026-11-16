@@ -10,7 +10,7 @@ Verified on November 13, 2026 using Node 24.22.3 and temporary local MongoDB Com
 - `npm run test:integration`: three suites passed on dedicated `dobby_test_a`. They cover persisted signup, duplicate rollback, independent session logout, application version races, scoped private reads, approval during suspension, atomic suspension/cancellation, rollback after cancellation writes, and provider guard contention observed from a real MongoDB transient transaction error.
 - Seed ran twice on `dobby_dev_a`. Seven users, four providers and four applications, references, bcrypt hashes and indexes were checked. Reseeding with dependent booking data was refused without deleting accounts.
 - An explicit-flag reset emptied only local `dobby_test_a`, preserving the separate development fixtures. Missing-name/flag checks fail before connecting.
-- Newman: 21 requests and 33 assertions passed against the integrated local A server. The latest run's maximum response time was 117 ms. The baseline seed contains seven accounts and four providers; the journey adds a customer, a company and three application versions. No B vehicle/booking HTTP APIs were present.
+- Newman: 21 requests and 33 assertions passed against the integrated local A server. The latest run's maximum response time was 117 ms. The baseline seed contains seven accounts and four providers; the journey adds a customer, a provider and three application versions. No B vehicle/booking HTTP APIs were present.
 - A00 startup/health passed on the local replica set. A rejected connection exited 1 with a generic message.
 
 ## Limits

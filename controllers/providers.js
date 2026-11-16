@@ -1,3 +1,4 @@
+const { rejectBody, rejectQuery } = require('../validators/request');
 const mongoose = require('mongoose');
 const Provider = require('../models/Provider');
 const ProviderApplication = require('../models/ProviderApplication');
@@ -6,13 +7,12 @@ const {
   serializePage,
   serializeProvider,
 } = require('../serializers/providers');
-const { validateApplication } = require('../validators/providers');
-
-function sendError(res, error) {
-  const status = Number.isInteger(error.status) ? error.status : 500;
-  const message = status >= 500 ? 'The request could not be completed.' : error.message;
-  return res.status(status).json({ success: false, message });
-}
+const {
+  validateApplication,
+  validateObjectId,
+  validatePage,
+  validateReview,
+} = require('../validators/providers');
 
 function notFound() {
   const error = new Error('The requested resource was not found.');
@@ -32,7 +32,7 @@ function mapDuplicate(error) {
     Object.keys(error.keyPattern || {}).length === 1 &&
     error.keyPattern.providerId
   ) {
-    return conflict('This company already has a pending application.');
+    return conflict('This provider already has a pending application.');
   }
   return error;
 }
@@ -49,6 +49,8 @@ async function providerForResponse(provider) {
 
 async function getOwnProvider(req, res) {
   try {
+    rejectQuery(req);
+    rejectBody(req);
     const provider = await Provider.findOne({
       _id: req.actor.providerId,
       representativeId: req.actor.userId,
@@ -58,13 +60,16 @@ async function getOwnProvider(req, res) {
     }
     return res.status(200).json({ success: true, data: await providerForResponse(provider) });
   } catch (error) {
-    return sendError(res, error);
+    const status = Number.isInteger(error.status) ? error.status : 500;
+    const message = status >= 500 ? 'The request could not be completed.' : error.message;
+    return res.status(status).json({ success: false, message });
   }
 }
 
 async function listOwnApplications(req, res) {
   try {
-    const page = req.page;
+    const page = validatePage(req.query);
+    rejectBody(req);
     const filter = { providerId: req.actor.providerId };
     const [applications, total] = await Promise.all([
       ProviderApplication.find(filter)
@@ -77,14 +82,19 @@ async function listOwnApplications(req, res) {
       .status(200)
       .json(serializePage(applications.map(serializeApplication), total, page.page, page.limit));
   } catch (error) {
-    return sendError(res, error);
+    const status = Number.isInteger(error.status) ? error.status : 500;
+    const message = status >= 500 ? 'The request could not be completed.' : error.message;
+    return res.status(status).json({ success: false, message });
   }
 }
 
 async function getOwnApplication(req, res) {
   try {
+    rejectQuery(req);
+    const applicationId = validateObjectId(req.params.applicationId, 'applicationId');
+    rejectBody(req);
     const application = await ProviderApplication.findOne({
-      _id: req.params.applicationId,
+      _id: applicationId,
       providerId: req.actor.providerId,
     });
     if (!application) {
@@ -92,13 +102,16 @@ async function getOwnApplication(req, res) {
     }
     return res.status(200).json({ success: true, data: serializeApplication(application) });
   } catch (error) {
-    return sendError(res, error);
+    const status = Number.isInteger(error.status) ? error.status : 500;
+    const message = status >= 500 ? 'The request could not be completed.' : error.message;
+    return res.status(status).json({ success: false, message });
   }
 }
 
 async function submitApplication(req, res) {
   let session;
   try {
+    rejectQuery(req);
     const profile = validateApplication(req.body);
     session = await mongoose.startSession();
     let submitted;
@@ -120,7 +133,7 @@ async function submitApplication(req, res) {
         if (!exists) {
           throw notFound();
         }
-        const suspended = new Error('This company account is suspended.');
+        const suspended = new Error('This provider account is suspended.');
         suspended.status = 403;
         throw suspended;
       }
@@ -129,7 +142,7 @@ async function submitApplication(req, res) {
         status: 'pending',
       }).session(session);
       if (pending) {
-        throw conflict('This company already has a pending application.');
+        throw conflict('This provider already has a pending application.');
       }
       const applicationId = new mongoose.Types.ObjectId();
       const application = new ProviderApplication({
@@ -156,7 +169,10 @@ async function submitApplication(req, res) {
     });
     return res.status(201).json({ success: true, data: serializeApplication(submitted) });
   } catch (error) {
-    return sendError(res, mapDuplicate(error));
+    const responseError = mapDuplicate(error);
+    const status = Number.isInteger(responseError.status) ? responseError.status : 500;
+    const message = status >= 500 ? 'The request could not be completed.' : responseError.message;
+    return res.status(status).json({ success: false, message });
   } finally {
     if (session) {
       await session.endSession();
@@ -166,7 +182,10 @@ async function submitApplication(req, res) {
 
 async function listAdminProviders(req, res) {
   try {
-    const page = req.page;
+    const page = validatePage(req.query, {
+      statuses: ['pending', 'rejected', 'approved', 'suspended'],
+    });
+    rejectBody(req);
     const filter = page.status ? { status: { $eq: String(page.status) } } : {};
     const [providers, total] = await Promise.all([
       Provider.find(filter)
@@ -181,25 +200,36 @@ async function listAdminProviders(req, res) {
     }
     return res.status(200).json(serializePage(data, total, page.page, page.limit));
   } catch (error) {
-    return sendError(res, error);
+    const status = Number.isInteger(error.status) ? error.status : 500;
+    const message = status >= 500 ? 'The request could not be completed.' : error.message;
+    return res.status(status).json({ success: false, message });
   }
 }
 
 async function getAdminProvider(req, res) {
   try {
-    const provider = await Provider.findById(req.params.providerId);
+    rejectQuery(req);
+    const providerId = validateObjectId(req.params.providerId, 'providerId');
+    rejectBody(req);
+    const provider = await Provider.findById(providerId);
     if (!provider) {
       throw notFound();
     }
     return res.status(200).json({ success: true, data: await providerForResponse(provider) });
   } catch (error) {
-    return sendError(res, error);
+    const status = Number.isInteger(error.status) ? error.status : 500;
+    const message = status >= 500 ? 'The request could not be completed.' : error.message;
+    return res.status(status).json({ success: false, message });
   }
 }
 
 async function listAdminApplications(req, res) {
   try {
-    const page = req.page;
+    const page = validatePage(req.query, {
+      statuses: ['pending', 'approved', 'rejected'],
+      allowProviderId: true,
+    });
+    rejectBody(req);
     const filter = {};
     if (page.status) {
       filter.status = { $eq: String(page.status) };
@@ -218,27 +248,35 @@ async function listAdminApplications(req, res) {
       .status(200)
       .json(serializePage(applications.map(serializeApplication), total, page.page, page.limit));
   } catch (error) {
-    return sendError(res, error);
+    const status = Number.isInteger(error.status) ? error.status : 500;
+    const message = status >= 500 ? 'The request could not be completed.' : error.message;
+    return res.status(status).json({ success: false, message });
   }
 }
 
 async function getAdminApplication(req, res) {
   try {
-    const application = await ProviderApplication.findById(req.params.applicationId);
+    rejectQuery(req);
+    const applicationId = validateObjectId(req.params.applicationId, 'applicationId');
+    rejectBody(req);
+    const application = await ProviderApplication.findById(applicationId);
     if (!application) {
       throw notFound();
     }
     return res.status(200).json({ success: true, data: serializeApplication(application) });
   } catch (error) {
-    return sendError(res, error);
+    const status = Number.isInteger(error.status) ? error.status : 500;
+    const message = status >= 500 ? 'The request could not be completed.' : error.message;
+    return res.status(status).json({ success: false, message });
   }
 }
 
 async function reviewApplication(req, res) {
   let session;
   try {
-    const applicationId = req.params.applicationId;
-    const input = req.review;
+    rejectQuery(req);
+    const applicationId = validateObjectId(req.params.applicationId, 'applicationId');
+    const input = validateReview(req.body);
     const preliminary = await ProviderApplication.findById(applicationId).select('providerId');
     if (!preliminary) {
       throw notFound();
@@ -291,7 +329,9 @@ async function reviewApplication(req, res) {
     });
     return res.status(200).json({ success: true, data: serializeApplication(reviewed) });
   } catch (error) {
-    return sendError(res, error);
+    const status = Number.isInteger(error.status) ? error.status : 500;
+    const message = status >= 500 ? 'The request could not be completed.' : error.message;
+    return res.status(status).json({ success: false, message });
   } finally {
     if (session) {
       await session.endSession();

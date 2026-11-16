@@ -10,7 +10,7 @@ test(
   'booking API enforces ownership, snapshots, cutoffs and real concurrent limits',
   { timeout: 30000 },
   async (t) => {
-    const f = await apiFixture(t, [['/api/v1/bookings', require('../routes/bookings')]]);
+    const f = await apiFixture(t);
     const car = await f.createVehicle();
     const future = {
       vehicleId: car.id,
@@ -25,7 +25,7 @@ test(
     assert.equal(first.body.data.rentalDays, 3);
     assert.equal(first.body.data.totalPriceSatang, 300_000);
     assert.equal(first.body.data.status, 'upcoming');
-    assert.equal((await book(future, f.company)).status, 403);
+    assert.equal((await book(future, f.providerAccount)).status, 403);
     assert.equal((await book(future, f.admin)).status, 403);
     assert.equal((await book({ ...future, ratePerDaySatang: 1 })).status, 400);
     assert.equal((await f.request(`/bookings/${id}`, { actor: f.otherCustomer })).status, 404);
@@ -50,9 +50,9 @@ test(
     );
     assert.equal((await book(future, f.otherCustomer)).status, 409);
 
-    await f.request(`/company/vehicles/${car.id}`, {
+    await f.request(`/provider/vehicles/${car.id}`, {
       method: 'PATCH',
-      actor: f.company,
+      actor: f.providerAccount,
       body: {
         pickupBranch: { name: 'New Branch', address: 'New Road' },
         ratePerDaySatang: 120_000,
@@ -75,6 +75,13 @@ test(
     assert.equal(adminEdit.status, 200);
     assert.equal(adminEdit.body.data.userId, f.customer.user.id);
     assert.equal(adminEdit.body.data.ratePerDaySatang, 100_000);
+    const deactivated = await f.request(`/provider/vehicles/${car.id}/activation`, {
+      method: 'PATCH',
+      actor: f.providerAccount,
+      body: { isActive: false },
+    });
+    assert.equal(deactivated.status, 200);
+    // Cancellation must still work when the vehicle no longer accepts new bookings.
     const cancelled = await f.request(`/bookings/${id}`, { method: 'DELETE', actor: f.customer });
     assert.equal(cancelled.status, 200);
     const again = await f.request(`/bookings/${id}`, { method: 'DELETE', actor: f.customer });
@@ -84,7 +91,7 @@ test(
 
     const cars = [];
     for (let index = 0; index < 4; index++) {
-      cars.push(await f.createVehicle(index === 3 ? f.otherCompany : f.company));
+      cars.push(await f.createVehicle(index === 3 ? f.otherProviderAccount : f.providerAccount));
     }
     const dates = { startDate: addDays(f.today, 10), dueDate: addDays(f.today, 10) };
     const capIds = [];
@@ -165,7 +172,7 @@ test(
 
     const historical = bookingInput({
       userId: f.customer.user._id,
-      providerId: f.company.providerId,
+      providerId: f.providerAccount.providerId,
       vehicleId: sameDayCar.id,
       startDate: addDays(f.today, -1),
       dueDate: addDays(f.today, -1),

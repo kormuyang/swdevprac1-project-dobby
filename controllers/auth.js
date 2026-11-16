@@ -1,3 +1,4 @@
+const { rejectBody, rejectQuery } = require('../validators/request');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
@@ -8,18 +9,12 @@ const ProviderApplication = require('../models/ProviderApplication');
 const User = require('../models/User');
 const { serializeUser } = require('../serializers/auth');
 const {
-  validateCompanyRegistration,
+  validateProviderRegistration,
   validateLogin,
   validateRegistration,
 } = require('../validators/auth');
 
 const SESSION_LENGTH_MS = 24 * 60 * 60 * 1000;
-
-function sendError(res, error) {
-  const status = Number.isInteger(error.status) ? error.status : 500;
-  const message = status >= 500 ? 'The request could not be completed.' : error.message;
-  return res.status(status).json({ success: false, message });
-}
 
 function requireJwtSecret() {
   if (!process.env.JWT_SECRET) {
@@ -63,7 +58,7 @@ function mapDuplicate(error) {
   if (key === 'email') {
     message = 'An account with this email already exists.';
   } else if (key === 'businessRegistrationNumber') {
-    message = 'A company with this registration number already exists.';
+    message = 'A provider with this registration number already exists.';
   }
   const duplicate = new Error(message);
   duplicate.status = 409;
@@ -72,6 +67,7 @@ function mapDuplicate(error) {
 
 async function registerCustomer(req, res) {
   try {
+    rejectQuery(req);
     requireJwtSecret();
     const input = validateRegistration(req.body);
     const session = await mongoose.startSession();
@@ -101,14 +97,17 @@ async function registerCustomer(req, res) {
     }
     return res.status(201).json({ success: true, data: result });
   } catch (error) {
-    return sendError(res, error);
+    const status = Number.isInteger(error.status) ? error.status : 500;
+    const message = status >= 500 ? 'The request could not be completed.' : error.message;
+    return res.status(status).json({ success: false, message });
   }
 }
 
-async function registerCompany(req, res) {
+async function registerProvider(req, res) {
   try {
+    rejectQuery(req);
     requireJwtSecret();
-    const input = validateCompanyRegistration(req.body);
+    const input = validateProviderRegistration(req.body);
     const session = await mongoose.startSession();
     let result;
     try {
@@ -123,7 +122,7 @@ async function registerCompany(req, res) {
               telephone: input.telephone,
               email: input.email,
               passwordHash: input.password,
-              role: 'company',
+              role: 'provider',
               providerId,
             },
           ],
@@ -165,12 +164,15 @@ async function registerCompany(req, res) {
     }
     return res.status(201).json({ success: true, data: result });
   } catch (error) {
-    return sendError(res, error);
+    const status = Number.isInteger(error.status) ? error.status : 500;
+    const message = status >= 500 ? 'The request could not be completed.' : error.message;
+    return res.status(status).json({ success: false, message });
   }
 }
 
 async function login(req, res) {
   try {
+    rejectQuery(req);
     requireJwtSecret();
     const input = validateLogin(req.body);
     const user = await User.findOne({ email: input.email }).select('+passwordHash');
@@ -179,10 +181,10 @@ async function login(req, res) {
       error.status = 401;
       throw error;
     }
-    if (user.role === 'company') {
+    if (user.role === 'provider') {
       const provider = await Provider.findById(user.providerId).select('status');
       if (!provider || provider.status === 'suspended') {
-        const error = new Error('This company account is suspended.');
+        const error = new Error('This provider account is suspended.');
         error.status = 403;
         throw error;
       }
@@ -190,12 +192,16 @@ async function login(req, res) {
     const result = await saveSession(user, new Date());
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
-    return sendError(res, error);
+    const status = Number.isInteger(error.status) ? error.status : 500;
+    const message = status >= 500 ? 'The request could not be completed.' : error.message;
+    return res.status(status).json({ success: false, message });
   }
 }
 
 async function logout(req, res) {
   try {
+    rejectQuery(req);
+    rejectBody(req);
     const now = new Date();
     const updated = await AuthSession.findOneAndUpdate(
       {
@@ -215,12 +221,16 @@ async function logout(req, res) {
     const result = { message: 'Logged out successfully.' };
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
-    return sendError(res, error);
+    const status = Number.isInteger(error.status) ? error.status : 500;
+    const message = status >= 500 ? 'The request could not be completed.' : error.message;
+    return res.status(status).json({ success: false, message });
   }
 }
 
 async function getMe(req, res) {
   try {
+    rejectQuery(req);
+    rejectBody(req);
     const user = await User.findById(req.actor.userId);
     if (!user) {
       const error = new Error('Authentication is required.');
@@ -230,8 +240,10 @@ async function getMe(req, res) {
     const result = serializeUser(user);
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
-    return sendError(res, error);
+    const status = Number.isInteger(error.status) ? error.status : 500;
+    const message = status >= 500 ? 'The request could not be completed.' : error.message;
+    return res.status(status).json({ success: false, message });
   }
 }
 
-module.exports = { getMe, login, logout, registerCompany, registerCustomer };
+module.exports = { getMe, login, logout, registerProvider, registerCustomer };

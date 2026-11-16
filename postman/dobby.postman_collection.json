@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Dobby complete rental journey",
-    "description": "Synthetic local A+B journey: authentication, company review, vehicles, booking changes, emergency cancellation, suspension and reactivation. Runtime credentials and tokens must not be exported.",
+    "description": "Synthetic local A+B journey: authentication, provider review, vehicles, booking changes, emergency cancellation, suspension and reactivation. Runtime credentials and tokens must not be exported.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -102,7 +102,7 @@
           ]
         },
         {
-          "name": "Register synthetic company and pending application v1",
+          "name": "Register synthetic provider and pending application v1",
           "request": {
             "method": "POST",
             "header": [
@@ -113,14 +113,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"{{legalNameV1}}\",\n  \"telephone\": \"+66000000000\",\n  \"email\": \"{{companyEmail}}\",\n  \"password\": \"{{companyPassword}}\",\n  \"businessRegistrationNumber\": \"{{registrationNumber}}\",\n  \"profile\": {\n    \"legalName\": \"{{legalNameV1}}\",\n    \"registeredAddress\": \"1 Synthetic Demo Road, Bangkok\",\n    \"telephone\": \"+66000000000\",\n    \"contactEmail\": \"{{contactEmail}}\",\n    \"documentUrl\": \"https://example.test/demo-registration.pdf\"\n  }\n}",
+              "raw": "{\n  \"name\": \"{{legalNameV1}}\",\n  \"telephone\": \"+66000000000\",\n  \"email\": \"{{providerEmail}}\",\n  \"password\": \"{{providerPassword}}\",\n  \"businessRegistrationNumber\": \"{{registrationNumber}}\",\n  \"profile\": {\n    \"legalName\": \"{{legalNameV1}}\",\n    \"registeredAddress\": \"1 Synthetic Demo Road, Bangkok\",\n    \"telephone\": \"+66000000000\",\n    \"contactEmail\": \"{{contactEmail}}\",\n    \"documentUrl\": \"https://example.test/demo-registration.pdf\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": "{{baseUrl}}/auth/register-company"
+            "url": "{{baseUrl}}/auth/register-provider"
           },
           "event": [
             {
@@ -128,11 +128,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('company signup returns 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('provider signup returns 201', function () { pm.response.to.have.status(201); });",
                   "if (pm.response.code === 201) {",
                   "  const body = pm.response.json().data;",
-                  "  pm.test('signup creates a company account', function () { pm.expect(body.user.role).to.eql('company'); });",
-                  "  pm.environment.set('companyToken', body.token);",
+                  "  pm.test('signup creates a provider account', function () { pm.expect(body.user.role).to.eql('provider'); });",
+                  "  pm.environment.set('providerToken', body.token);",
                   "  pm.environment.set('providerId', body.user.providerId);",
                   "}"
                 ]
@@ -141,16 +141,16 @@
           ]
         },
         {
-          "name": "Company reads application v1",
+          "name": "Provider reads application v1",
           "request": {
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{companyToken}}"
+                "value": "Bearer {{providerToken}}"
               }
             ],
-            "url": "{{baseUrl}}/company/applications"
+            "url": "{{baseUrl}}/provider/applications"
           },
           "event": [
             {
@@ -158,7 +158,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('company can read own application history', function () { pm.response.to.have.status(200); });",
+                  "pm.test('provider can read own application history', function () { pm.response.to.have.status(200); });",
                   "if (pm.response.code === 200) {",
                   "  const applications = pm.response.json().data;",
                   "  const versionOne = applications.find((application) => application.version === 1);",
@@ -173,7 +173,7 @@
       ]
     },
     {
-      "name": "02 Company review and versions",
+      "name": "02 Provider review and versions",
       "item": [
         {
           "name": "Admin approves application v1",
@@ -214,13 +214,13 @@
           ]
         },
         {
-          "name": "Company submits profile revision v2",
+          "name": "Provider submits profile revision v2",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{companyToken}}"
+                "value": "Bearer {{providerToken}}"
               },
               {
                 "key": "Content-Type",
@@ -236,7 +236,7 @@
                 }
               }
             },
-            "url": "{{baseUrl}}/company/applications"
+            "url": "{{baseUrl}}/provider/applications"
           },
           "event": [
             {
@@ -244,7 +244,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('company submits version two', function () { pm.response.to.have.status(201); });",
+                  "pm.test('provider submits version two', function () { pm.response.to.have.status(201); });",
                   "if (pm.response.code === 201) { pm.environment.set('applicationV2Id', pm.response.json().data.id); }"
                 ]
               }
@@ -258,10 +258,10 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{companyToken}}"
+                "value": "Bearer {{providerToken}}"
               }
             ],
-            "url": "{{baseUrl}}/company/profile"
+            "url": "{{baseUrl}}/provider/profile"
           },
           "event": [
             {
@@ -269,7 +269,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('company profile remains readable', function () { pm.response.to.have.status(200); });",
+                  "pm.test('provider profile remains readable', function () { pm.response.to.have.status(200); });",
                   "if (pm.response.code === 200) {",
                   "  const provider = pm.response.json().data;",
                   "  pm.test('approved profile is unchanged during review', function () { pm.expect(provider.approvedProfile.legalName).to.eql(pm.environment.get('legalNameV1')); });",
@@ -321,16 +321,16 @@
           ]
         },
         {
-          "name": "Company reads both immutable application versions",
+          "name": "Provider reads both immutable application versions",
           "request": {
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{companyToken}}"
+                "value": "Bearer {{providerToken}}"
               }
             ],
-            "url": "{{baseUrl}}/company/applications"
+            "url": "{{baseUrl}}/provider/applications"
           },
           "event": [
             {
@@ -338,7 +338,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('company can read version history', function () { pm.response.to.have.status(200); });",
+                  "pm.test('provider can read version history', function () { pm.response.to.have.status(200); });",
                   "if (pm.response.code === 200) {",
                   "  const applications = pm.response.json().data;",
                   "  const versionOne = applications.find((application) => application.version === 1);",
@@ -355,13 +355,13 @@
           ]
         },
         {
-          "name": "Company resubmits corrected profile v3",
+          "name": "Provider resubmits corrected profile v3",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{companyToken}}"
+                "value": "Bearer {{providerToken}}"
               },
               {
                 "key": "Content-Type",
@@ -377,7 +377,7 @@
                 }
               }
             },
-            "url": "{{baseUrl}}/company/applications"
+            "url": "{{baseUrl}}/provider/applications"
           },
           "event": [
             {
@@ -385,7 +385,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('company resubmits as version three', function () { pm.response.to.have.status(201); });",
+                  "pm.test('provider resubmits as version three', function () { pm.response.to.have.status(201); });",
                   "if (pm.response.code === 201) { pm.environment.set('applicationV3Id', pm.response.json().data.id); }"
                 ]
               }
@@ -436,7 +436,7 @@
       "name": "03 Vehicles and bookings",
       "item": [
         {
-          "name": "Create company vehicle",
+          "name": "Create provider vehicle",
           "request": {
             "method": "POST",
             "header": [
@@ -445,13 +445,13 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/company/vehicles",
+            "url": "{{baseUrl}}/provider/vehicles",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{companyToken}}",
+                  "value": "{{providerToken}}",
                   "type": "string"
                 }
               ]
@@ -472,7 +472,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Create company vehicle: HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Create provider vehicle: HTTP 201', function () { pm.response.to.have.status(201); });",
                   "if (pm.response.code === 201) {",
                   "  const data = pm.response.json().data;",
                   "  pm.environment.set('vehicleId', data.id);",
@@ -554,17 +554,17 @@
           ]
         },
         {
-          "name": "Company reads current customer and booked details",
+          "name": "Provider reads current customer and booked details",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/company/bookings/{{bookingId}}",
+            "url": "{{baseUrl}}/provider/bookings/{{bookingId}}",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{companyToken}}",
+                  "value": "{{providerToken}}",
                   "type": "string"
                 }
               ]
@@ -576,7 +576,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Company reads current customer and booked details: HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Provider reads current customer and booked details: HTTP 200', function () { pm.response.to.have.status(200); });",
                   "if (pm.response.code === 200) {",
                   "  const data = pm.response.json().data;",
                   "pm.test('contact is current and safe', function () { pm.expect(data.customer.email).to.eql(pm.environment.get('customerEmail')); pm.expect(data.customer).not.to.have.property('passwordHash'); });",
@@ -596,13 +596,13 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/company/vehicles/{{vehicleId}}",
+            "url": "{{baseUrl}}/provider/vehicles/{{vehicleId}}",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{companyToken}}",
+                  "value": "{{providerToken}}",
                   "type": "string"
                 }
               ]
@@ -967,13 +967,13 @@
           ]
         },
         {
-          "name": "Suspended company cannot read current account",
+          "name": "Suspended provider cannot read current account",
           "request": {
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{companyToken}}"
+                "value": "Bearer {{providerToken}}"
               }
             ],
             "url": "{{baseUrl}}/auth/me"
@@ -991,7 +991,7 @@
           ]
         },
         {
-          "name": "Suspended company login is denied",
+          "name": "Suspended provider login is denied",
           "request": {
             "method": "POST",
             "header": [
@@ -1002,7 +1002,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{companyEmail}}\",\n  \"password\": \"{{companyPassword}}\"\n}",
+              "raw": "{\n  \"email\": \"{{providerEmail}}\",\n  \"password\": \"{{providerPassword}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1017,20 +1017,20 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('suspended company cannot create a fresh session', function () { pm.response.to.have.status(403); });"
+                  "pm.test('suspended provider cannot create a fresh session', function () { pm.response.to.have.status(403); });"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Suspended company can log out",
+          "name": "Suspended provider can log out",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{companyToken}}"
+                "value": "Bearer {{providerToken}}"
               }
             ],
             "url": "{{baseUrl}}/auth/logout"
@@ -1048,13 +1048,13 @@
           ]
         },
         {
-          "name": "Logged out company token is revoked",
+          "name": "Logged out provider token is revoked",
           "request": {
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{companyToken}}"
+                "value": "Bearer {{providerToken}}"
               }
             ],
             "url": "{{baseUrl}}/auth/me"
@@ -1113,7 +1113,7 @@
           ]
         },
         {
-          "name": "Company logs in after reactivation",
+          "name": "Provider logs in after reactivation",
           "request": {
             "method": "POST",
             "header": [
@@ -1124,7 +1124,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{companyEmail}}\",\n  \"password\": \"{{companyPassword}}\"\n}",
+              "raw": "{\n  \"email\": \"{{providerEmail}}\",\n  \"password\": \"{{providerPassword}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1139,25 +1139,25 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('reactivated company can log in', function () { pm.response.to.have.status(200); });",
-                  "if (pm.response.code === 200) { pm.environment.set('companyToken', pm.response.json().data.token); }"
+                  "pm.test('reactivated provider can log in', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) { pm.environment.set('providerToken', pm.response.json().data.token); }"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Company sees cancelled booking after reactivation",
+          "name": "Provider sees cancelled booking after reactivation",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/company/bookings/{{suspensionBookingId}}",
+            "url": "{{baseUrl}}/provider/bookings/{{suspensionBookingId}}",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{companyToken}}",
+                  "value": "{{providerToken}}",
                   "type": "string"
                 }
               ]
@@ -1169,7 +1169,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Company sees cancelled booking after reactivation: HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Provider sees cancelled booking after reactivation: HTTP 200', function () { pm.response.to.have.status(200); });",
                   "if (pm.response.code === 200) {",
                   "  const data = pm.response.json().data;",
                   "pm.test('reactivation does not restore a booking', function () { pm.expect(data.status).to.eql('cancelled'); });",
@@ -1180,16 +1180,16 @@
           ]
         },
         {
-          "name": "Company confirms approved revision v3",
+          "name": "Provider confirms approved revision v3",
           "request": {
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{companyToken}}"
+                "value": "Bearer {{providerToken}}"
               }
             ],
-            "url": "{{baseUrl}}/company/profile"
+            "url": "{{baseUrl}}/provider/profile"
           },
           "event": [
             {
@@ -1197,7 +1197,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('company can read profile after reactivation', function () { pm.response.to.have.status(200); });",
+                  "pm.test('provider can read profile after reactivation', function () { pm.response.to.have.status(200); });",
                   "if (pm.response.code === 200) {",
                   "  const provider = pm.response.json().data;",
                   "  pm.test('approved revision v3 is current', function () {",
@@ -1205,9 +1205,9 @@
                   "    pm.expect(provider.approvedProfile.legalName).to.eql(pm.environment.get('legalNameV3'));",
                   "  });",
                   "}",
-                  "pm.environment.unset('companyToken');",
+                  "pm.environment.unset('providerToken');",
                   "pm.environment.unset('adminToken');",
-                  "pm.environment.unset('companyPassword');"
+                  "pm.environment.unset('providerPassword');"
                 ]
               }
             }

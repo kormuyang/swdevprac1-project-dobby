@@ -1,47 +1,15 @@
 const express = require('express');
-const controller = require('../controllers/vehicles');
-const { rejectBody, rejectQuery } = require('../middleware/validateRequest');
 const {
-  parseJson,
-  validateQuery,
-  validateId,
-  jsonErrors,
-} = require('../middleware/rentalValidation');
-const {
-  validatePublicProviderFilters,
-  validatePublicVehicleFilters,
-} = require('../validators/vehicles');
+  listPublicProviders,
+  getPublicProvider,
+  listPublicVehicles,
+  getPublicVehicle,
+} = require('../controllers/vehicles');
 
 const router = express.Router();
-router.get(
-  '/providers',
-  parseJson,
-  rejectBody,
-  validateQuery(validatePublicProviderFilters),
-  controller.listPublicProviders,
-);
-router.get(
-  '/providers/:providerId',
-  parseJson,
-  rejectBody,
-  rejectQuery,
-  validateId('providerId'),
-  controller.getPublicProvider,
-);
-router.get(
-  '/vehicles',
-  parseJson,
-  rejectBody,
-  validateQuery(validatePublicVehicleFilters),
-  controller.listPublicVehicles,
-);
-router.get(
-  '/vehicles/:vehicleId',
-  parseJson,
-  rejectBody,
-  rejectQuery,
-  validateId('vehicleId'),
-  controller.getPublicVehicle,
-);
-router.use(jsonErrors);
+router.get('/providers', listPublicProviders);
+router.get('/providers/:providerId', getPublicProvider);
+router.get('/vehicles', listPublicVehicles);
+router.get('/vehicles/:vehicleId', getPublicVehicle);
+
 module.exports = router;

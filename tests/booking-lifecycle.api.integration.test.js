@@ -31,16 +31,12 @@ async function until(promise, message) {
 }
 
 test(
-  'company views and real booking/suspension races preserve privacy and atomicity',
+  'provider views and real booking/suspension races preserve privacy and atomicity',
   { timeout: 30000 },
   async (t) => {
-    const f = await apiFixture(t, [
-      ['/api/v1/bookings', require('../routes/bookings')],
-      ['/api/v1/company/bookings', require('../routes/companyBookings')],
-      ['/api/v1/admin', require('../routes/adminProviders')],
-    ]);
+    const f = await apiFixture(t);
     const car = await f.createVehicle();
-    const otherCar = await f.createVehicle(f.otherCompany);
+    const otherCar = await f.createVehicle(f.otherProviderAccount);
     async function book(vehicle, days = 5, actor = f.customer) {
       const result = await f.request('/bookings', {
         method: 'POST',
@@ -55,7 +51,7 @@ test(
       return result.body.data;
     }
     function lifecycle(action, body) {
-      return f.request(`/admin/providers/${f.company.providerId}/${action}`, {
+      return f.request(`/admin/providers/${f.providerAccount.providerId}/${action}`, {
         method: 'POST',
         actor: f.admin,
         body,
@@ -64,7 +60,7 @@ test(
     const ownBooking = await book(car);
     const otherBooking = await book(otherCar, 5, f.otherCustomer);
     await User.updateOne({ _id: f.customer.user._id }, { $set: { name: 'Current Customer Name' } });
-    const list = await f.request('/company/bookings', { actor: f.company });
+    const list = await f.request('/provider/bookings', { actor: f.providerAccount });
     assert.equal(list.status, 200);
     assert.deepEqual(
       list.body.data.map((entry) => entry.id),
@@ -73,20 +69,26 @@ test(
     assert.equal(list.body.data[0].customer.name, 'Current Customer Name');
     assert.equal(list.body.data[0].customer.passwordHash, undefined);
     assert.equal(
-      (await f.request(`/company/bookings/${ownBooking.id}`, { actor: f.otherCompany })).status,
-      404,
-    );
-    assert.equal(
-      (await f.request(`/company/bookings?vehicleId=${otherCar.id}`, { actor: f.company })).status,
-      404,
-    );
-    assert.equal(
-      (await f.request(`/bookings/${ownBooking.id}`, { method: 'DELETE', actor: f.company }))
+      (await f.request(`/provider/bookings/${ownBooking.id}`, { actor: f.otherProviderAccount }))
         .status,
+      404,
+    );
+    assert.equal(
+      (await f.request(`/provider/bookings?vehicleId=${otherCar.id}`, { actor: f.providerAccount }))
+        .status,
+      404,
+    );
+    assert.equal(
+      (
+        await f.request(`/bookings/${ownBooking.id}`, {
+          method: 'DELETE',
+          actor: f.providerAccount,
+        })
+      ).status,
       403,
     );
     const adminList = await f.request(
-      `/bookings?providerId=${f.company.providerId}&userId=${f.customer.user.id}`,
+      `/bookings?providerId=${f.providerAccount.providerId}&userId=${f.customer.user.id}`,
       { actor: f.admin },
     );
     assert.deepEqual(
@@ -95,10 +97,10 @@ test(
     );
 
     // A pending/rejected revision must not replace the approved public profile.
-    const publicBefore = (await f.request(`/providers/${f.company.providerId}`)).body.data;
-    const revision = await f.request('/company/applications', {
+    const publicBefore = (await f.request(`/providers/${f.providerAccount.providerId}`)).body.data;
+    const revision = await f.request('/provider/applications', {
       method: 'POST',
-      actor: f.company,
+      actor: f.providerAccount,
       body: {
         legalName: 'Proposed Name',
         registeredAddress: 'Proposed Road',
@@ -109,7 +111,7 @@ test(
     });
     assert.equal(revision.status, 201);
     assert.deepEqual(
-      (await f.request(`/providers/${f.company.providerId}`)).body.data,
+      (await f.request(`/providers/${f.providerAccount.providerId}`)).body.data,
       publicBefore,
     );
     const reject = await f.request(`/admin/applications/${revision.body.data.id}/review`, {
@@ -119,7 +121,7 @@ test(
     });
     assert.equal(reject.status, 200);
     assert.deepEqual(
-      (await f.request(`/providers/${f.company.providerId}`)).body.data,
+      (await f.request(`/providers/${f.providerAccount.providerId}`)).body.data,
       publicBefore,
     );
 
@@ -163,7 +165,7 @@ test(
         assert.equal((await suspension).status, 200);
         assert.equal(
           await Booking.countDocuments({
-            providerId: f.company.providerId,
+            providerId: f.providerAccount.providerId,
             state: 'confirmed',
             dueDate: { $gte: f.today },
           }),
@@ -198,8 +200,8 @@ test(
     );
     assert.equal((await Booking.findById(ownBooking.id)).state, 'cancelled');
     assert.equal((await Booking.findById(otherBooking.id)).state, 'confirmed');
-    assert.equal((await f.request('/company/bookings', { actor: f.company })).status, 403);
-    assert.equal((await f.request('/company/vehicles', { actor: f.company })).status, 403);
+    assert.equal((await f.request('/provider/bookings', { actor: f.providerAccount })).status, 403);
+    assert.equal((await f.request('/provider/vehicles', { actor: f.providerAccount })).status, 403);
     assert.equal((await f.request(`/vehicles/${car.id}`)).status, 404);
     const deniedBooking = await f.request('/bookings', {
       method: 'POST',
@@ -223,9 +225,9 @@ test(
     );
     assert.equal(
       (
-        await f.request(`/company/vehicles/${car.id}/activation`, {
+        await f.request(`/provider/vehicles/${car.id}/activation`, {
           method: 'PATCH',
-          actor: f.company,
+          actor: f.providerAccount,
           body: { isActive: false },
         })
       ).status,
@@ -254,7 +256,7 @@ test(
     );
 
     const rollbackBooking = await book(car, 20);
-    const before = await Provider.findById(f.company.providerId);
+    const before = await Provider.findById(f.providerAccount.providerId);
     const userRevisionBefore = (await User.findById(f.customer.user._id)).bookingRevision;
     const vehicleRevisionBefore = (await Vehicle.findById(car.id)).revision;
     const originalCancel = cancellation.cancelNonCompletedForProvider;
@@ -269,8 +271,11 @@ test(
         success: false,
         message: 'The request could not be completed.',
       });
-      assert.equal((await Provider.findById(f.company.providerId)).status, 'approved');
-      assert.equal((await Provider.findById(f.company.providerId)).revision, before.revision);
+      assert.equal((await Provider.findById(f.providerAccount.providerId)).status, 'approved');
+      assert.equal(
+        (await Provider.findById(f.providerAccount.providerId)).revision,
+        before.revision,
+      );
       assert.equal((await Booking.findById(rollbackBooking.id)).state, 'confirmed');
       assert.equal((await User.findById(f.customer.user._id)).bookingRevision, userRevisionBefore);
       assert.equal((await Vehicle.findById(car.id)).revision, vehicleRevisionBefore);
@@ -279,7 +284,7 @@ test(
     }
     const completedInput = bookingInput({
       userId: f.customer.user._id,
-      providerId: f.company.providerId,
+      providerId: f.providerAccount.providerId,
       vehicleId: car.id,
       startDate: addDays(f.today, -1),
       dueDate: addDays(f.today, -1),
@@ -298,37 +303,37 @@ test(
       'provider_suspended',
     );
     assert.equal(
-      (await f.request('/auth/logout', { method: 'POST', actor: f.company })).status,
+      (await f.request('/auth/logout', { method: 'POST', actor: f.providerAccount })).status,
       200,
     );
     assert.equal(
       (await lifecycle('reactivate', { resolutionNote: 'Synthetic resolution' })).status,
       200,
     );
-    assert.equal((await f.request('/company/bookings', { actor: f.company })).status, 401);
+    assert.equal((await f.request('/provider/bookings', { actor: f.providerAccount })).status, 401);
     assert.equal((await Booking.findById(rollbackBooking.id)).state, 'cancelled');
     assert.equal((await Vehicle.findById(car.id)).isActive, true);
     const login = await f.request('/auth/login', {
       method: 'POST',
       body: {
-        email: f.company.user.email,
+        email: f.providerAccount.user.email,
         password: 'synthetic-password',
       },
     });
     assert.equal(login.status, 200);
     const renewed = { token: login.body.data.token };
-    const cancelledHistory = await f.request('/company/bookings?status=cancelled', {
+    const cancelledHistory = await f.request('/provider/bookings?status=cancelled', {
       actor: renewed,
     });
     assert.equal(cancelledHistory.status, 200);
     assert.ok(cancelledHistory.body.data.some((entry) => entry.id === rollbackBooking.id));
-    const completedHistory = await f.request('/company/bookings?status=completed', {
+    const completedHistory = await f.request('/provider/bookings?status=completed', {
       actor: renewed,
     });
     assert.equal(completedHistory.status, 200);
     assert.ok(completedHistory.body.data.some((entry) => entry.id === completed.id));
     assert.equal(
-      (await f.request(`/company/bookings/${completed.id}`, { actor: renewed })).status,
+      (await f.request(`/provider/bookings/${completed.id}`, { actor: renewed })).status,
       200,
     );
   },
