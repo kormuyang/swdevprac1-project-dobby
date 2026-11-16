@@ -25,8 +25,12 @@ function validatePerformanceConfiguration() {
   if (!['mongodb:', 'mongodb+srv:'].includes(parsed.protocol) || parsed.pathname !== '/dobby') {
     throw new Error('MONGO_URI must name shared dobby.');
   }
-  if (parsed.hostname.endsWith('.mongodb.net') && !process.env.PERF_DB_REGION?.trim()) {
+  const region = process.env.PERF_DB_REGION?.trim();
+  if (parsed.hostname.endsWith('.mongodb.net') && !region) {
     throw new Error('Set PERF_DB_REGION before an Atlas performance run.');
+  }
+  if (region && !/^[a-zA-Z][a-zA-Z0-9 ._()-]{0,99}$/.test(region)) {
+    throw new Error('PERF_DB_REGION must be a region name or code, not a connection string.');
   }
   return {
     uri: process.env.MONGO_URI,
@@ -277,7 +281,7 @@ async function measureResponseTimes(outputPath = 'reports/response-times.json') 
       database: {
         kind: config.databaseKind,
         version: build.version,
-        region: process.env.PERF_DB_REGION || 'not supplied',
+        region: process.env.PERF_DB_REGION?.trim() || 'not supplied',
         label: 'shared dobby database',
       },
       dataset: { providers: 2, vehicles: 10, historicalBookings: 30 },

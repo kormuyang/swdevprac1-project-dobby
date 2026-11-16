@@ -147,3 +147,15 @@ Verification: Node 24.22.3 local suite passed 45/45, including request validatio
 Use one MONGO_URI naming dobby for the app, all integration tests, seed/reset and performance checks. Remove the A/B owner reset option. Integration files run sequentially and load .env explicitly through Node; deliberate race scenarios remain concurrent. Performance loads .env and retains its empty-database requirement. Reset still requires the flag and now clearly identifies that it deletes the shared database. Earlier database-isolation notes are historical. No database operation is authorized or performed as part of this configuration change.
 
 Verification: Node 24.22.3 local suite passed 45/45; lint, formatting and diff checks passed. Database integration and performance were not run; no real environment file was read and no database was connected to or reset.
+
+## Integrated database verification — November 16
+
+After the user configured MONGO_URI with the explicit dobby database, `npm run test:integration` passed on Node 24.22.3: eight top-level tests plus four nested checks, 12/12 total, in about 111 seconds. This includes persisted signup/session revocation, provider review/versioning, vehicle ownership/discovery, immutable snapshots, concurrent VIN uniqueness, booking cap/overlap races, suspension races and rollback, and reactivation without restoring bookings. The combined Newman journey passed 35 requests and 57 assertions; its maximum response time was 637 ms. Tests used synthetic fixtures with their normal cleanup; no seed or database reset was run.
+
+This closes the previously unrun integrated-suite/Newman execution for the current source. It does not establish the separate T41 performance protocol or close instructor/partner delivery decisions under T42. Connection details and tokens are not recorded.
+
+## Performance measurement — November 16
+
+The Node 24.22.3 Atlas performance run recorded 150 requests across 15 endpoint cases, ten repetitions each, using two providers, ten vehicles and thirty historical bookings. All statuses matched expectations and every measured request met 3000 ms; maximum 566.19 ms (login). API process startup was recorded separately at 1708.81 ms. The runner completed with fixture cleanup and no seed/reset. Timing details are in the ignored reports/response-times.json.
+
+The region setting was invalid, so the region metadata was removed from the generated report. The user subsequently confirmed AWS Singapore (ap-southeast-1); that region is now recorded in the report with its confirmation source. T41 passed for the recorded dataset and conditions; T42 delivery/instructor/partner checks remain open. Region validation now rejects URI/email-shaped values before connecting; a local regression checks rejected values and accepted region names/codes.
