@@ -12,15 +12,15 @@ const { serializeBooking } = require('../serializers/bookings');
 const { serializeVehicle } = require('../serializers/vehicles');
 
 test('rental models persist indexes, fixed fields and booked snapshots', async (t) => {
-  const uri = process.env.TEST_MONGO_URI_B;
+  const uri = process.env.MONGO_URI;
   let databaseName;
   try {
     databaseName = new URL(uri).pathname.slice(1);
   } catch {
-    throw new Error('Set TEST_MONGO_URI_B to a dedicated dobby_test_b replica-set database.');
+    throw new Error('Set MONGO_URI to a shared dobby replica-set database.');
   }
-  if (databaseName !== 'dobby_test_b') {
-    throw new Error('TEST_MONGO_URI_B must name only dobby_test_b.');
+  if (databaseName !== 'dobby') {
+    throw new Error('MONGO_URI must name only dobby.');
   }
 
   const suffix = randomUUID();

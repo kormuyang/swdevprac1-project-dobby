@@ -43,4 +43,4 @@ sequenceDiagram
 
 ## Verification limits
 
-Local tests cover validation, allowlists, normalization and serialization. The integration test uses only `TEST_MONGO_URI` naming `dobby_test_a`, initializes indexes, and checks role denial, concurrent submission, persisted version pointers and approval during suspension. A database run is required to confirm transaction behavior.
+Local tests cover validation, allowlists, normalization and serialization. The integration test uses only `MONGO_URI` naming the shared `dobby` database (D-55), initializes indexes, and checks role denial, concurrent submission, persisted version pointers and approval during suspension. A database run is required to confirm transaction behavior.

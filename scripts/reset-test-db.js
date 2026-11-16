@@ -7,32 +7,27 @@ function getDatabaseName(uri) {
   try {
     parsed = new URL(uri);
   } catch {
-    throw new Error('TEST_MONGO_URI must be a valid MongoDB connection string.');
+    throw new Error('MONGO_URI must be a valid MongoDB connection string.');
   }
   if (!['mongodb:', 'mongodb+srv:'].includes(parsed.protocol)) {
-    throw new Error('TEST_MONGO_URI must be a valid MongoDB connection string.');
+    throw new Error('MONGO_URI must be a valid MongoDB connection string.');
   }
   return parsed.pathname.replace(/^\//, '');
 }
 
-function validateConfiguration(owner = 'a') {
-  if (!['a', 'b'].includes(owner)) {
-    throw new Error('Reset owner must be a or b.');
-  }
-  const variable = owner === 'b' ? 'TEST_MONGO_URI_B' : 'TEST_MONGO_URI';
-  const database = `dobby_test_${owner}`;
-  const uri = process.env[variable];
-  if (!uri || getDatabaseName(uri) !== database) {
-    throw new Error(`${variable} must explicitly name ${database}.`);
+function validateConfiguration() {
+  const uri = process.env.MONGO_URI;
+  if (!uri || getDatabaseName(uri) !== 'dobby') {
+    throw new Error('MONGO_URI must explicitly name dobby.');
   }
   if (process.env.ALLOW_TEST_DB_RESET !== 'true') {
-    throw new Error(`Set ALLOW_TEST_DB_RESET=true to reset ${database}.`);
+    throw new Error('Set ALLOW_TEST_DB_RESET=true to reset the shared dobby database.');
   }
   return uri;
 }
 
-async function resetTestDatabase(owner = 'a') {
-  const uri = validateConfiguration(owner);
+async function resetTestDatabase() {
+  const uri = validateConfiguration();
   await mongoose.connect(uri);
   try {
     await mongoose.connection.dropDatabase();
@@ -42,25 +37,20 @@ async function resetTestDatabase(owner = 'a') {
 }
 
 if (require.main === module) {
-  let owner = 'invalid';
-  if (process.argv[2] === undefined || process.argv[2] === '--owner=a') {
-    owner = 'a';
+  if (process.argv.length > 2) {
+    console.error('reset:test does not accept arguments. It resets the shared dobby database.');
+    process.exit(1);
   }
-  if (process.argv[2] === '--owner=b') {
-    owner = 'b';
-  }
-  resetTestDatabase(owner)
+  resetTestDatabase()
     .then(() => {
-      console.log(`Reset dobby_test_${owner}.`);
+      console.log('Reset the shared dobby database.');
     })
     .catch((error) => {
-      const safeConfigurationError = /^(TEST_MONGO_URI|Set ALLOW_TEST_DB_RESET)/.test(
-        error.message,
-      );
+      const safeConfigurationError = /^(MONGO_URI|Set ALLOW_TEST_DB_RESET)/.test(error.message);
       console.error(
         safeConfigurationError
           ? error.message
-          : 'Reset failed. Check the local test database connection.',
+          : 'Reset failed. Check the shared database connection.',
       );
       process.exitCode = 1;
     });

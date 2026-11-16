@@ -12,8 +12,6 @@ function runScript(script, values = {}, args = []) {
     ...process.env,
     DOTENV_CONFIG_PATH: '/dev/null',
     MONGO_URI: '',
-    TEST_MONGO_URI: '',
-    TEST_MONGO_URI_B: '',
     ALLOW_TEST_DB_RESET: '',
     SEED_ADMIN_EMAIL: '',
     SEED_ADMIN_PASSWORD: '',
@@ -44,25 +42,25 @@ test('seed refuses missing or non-allowlisted database before connecting', () =>
 });
 
 test('seed requires locally supplied credentials before connecting', () => {
-  const result = runScript(seedScript, { MONGO_URI: 'mongodb://127.0.0.1:27017/dobby_dev_a' });
+  const result = runScript(seedScript, { MONGO_URI: 'mongodb://127.0.0.1:27017/dobby' });
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Set SEED_ADMIN_EMAIL/);
 });
 
-test('reset requires the dedicated test database and explicit reset flag before connecting', () => {
+test('reset requires the shared database name and explicit reset flag before connecting', () => {
   const missing = runScript(resetScript, { ALLOW_TEST_DB_RESET: 'true' });
   assert.equal(missing.status, 1);
-  assert.match(missing.stderr, /TEST_MONGO_URI must explicitly name/);
+  assert.match(missing.stderr, /MONGO_URI must explicitly name/);
 
   const wrongDatabase = runScript(resetScript, {
-    TEST_MONGO_URI: 'mongodb://127.0.0.1:27017/dobby_dev_a',
+    MONGO_URI: 'mongodb://127.0.0.1:27017/other',
     ALLOW_TEST_DB_RESET: 'true',
   });
   assert.equal(wrongDatabase.status, 1);
-  assert.match(wrongDatabase.stderr, /TEST_MONGO_URI must explicitly name/);
+  assert.match(wrongDatabase.stderr, /MONGO_URI must explicitly name/);
 
   const noFlag = runScript(resetScript, {
-    TEST_MONGO_URI: 'mongodb://127.0.0.1:27017/dobby_test_a',
+    MONGO_URI: 'mongodb://127.0.0.1:27017/dobby',
   });
   assert.equal(noFlag.status, 1);
   assert.match(noFlag.stderr, /ALLOW_TEST_DB_RESET=true/);
@@ -70,7 +68,7 @@ test('reset requires the dedicated test database and explicit reset flag before 
 
 test('seed rejects an unusable admin email before connecting', () => {
   const result = runScript(seedScript, {
-    MONGO_URI: 'mongodb://127.0.0.1:27017/dobby_dev_a',
+    MONGO_URI: 'mongodb://127.0.0.1:27017/dobby',
     SEED_ADMIN_EMAIL: 'invalid-email',
     SEED_ADMIN_PASSWORD: 'synthetic-password',
     SEED_FIXTURE_PASSWORD: 'synthetic-password',
@@ -79,19 +77,10 @@ test('seed rejects an unusable admin email before connecting', () => {
   assert.match(result.stderr, /SEED_ADMIN_EMAIL must be a valid login email/);
 });
 
-test('B reset requires its own connection and explicit reset flag', () => {
-  const missing = runScript(resetScript, { ALLOW_TEST_DB_RESET: 'true' }, ['--owner=b']);
-  assert.equal(missing.status, 1);
-  assert.match(missing.stderr, /TEST_MONGO_URI_B must explicitly name dobby_test_b/);
-  const noFlag = runScript(
-    resetScript,
-    {
-      TEST_MONGO_URI_B: ['mongodb:', '//127.0.0.1:1/dobby_test_b'].join(''),
-    },
-    ['--owner=b'],
-  );
-  assert.equal(noFlag.status, 1);
-  assert.match(noFlag.stderr, /ALLOW_TEST_DB_RESET=true/);
+test('reset rejects obsolete owner arguments before connecting', () => {
+  const result = runScript(resetScript, {}, ['--owner=b']);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /does not accept arguments/);
 });
 
 test('global JSON parsing uses safe JSON errors before authentication', async (t) => {

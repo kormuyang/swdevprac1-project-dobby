@@ -15,9 +15,9 @@ test(
   'suspension cancels atomically, blocks old sessions, and reactivation restores no bookings',
   { timeout: 30000 },
   async (t) => {
-    const uri = process.env.TEST_MONGO_URI;
-    assert.ok(uri, 'TEST_MONGO_URI must name dedicated dobby_test_a.');
-    assert.equal(new URL(uri).pathname, '/dobby_test_a');
+    const uri = process.env.MONGO_URI;
+    assert.ok(uri, 'MONGO_URI must name shared dobby.');
+    assert.equal(new URL(uri).pathname, '/dobby');
     const previousSecret = process.env.JWT_SECRET;
     process.env.JWT_SECRET = randomUUID();
     const userIds = [];

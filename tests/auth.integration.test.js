@@ -10,7 +10,7 @@ const ProviderApplication = require('../models/ProviderApplication');
 const User = require('../models/User');
 const authRouter = require('../routes/auth');
 
-const mongoUri = process.env.TEST_MONGO_URI;
+const mongoUri = process.env.MONGO_URI;
 const testSecret = randomUUID();
 const previousSecret = process.env.JWT_SECRET;
 let server;
@@ -19,13 +19,9 @@ let createdEmail;
 let createdRegistration;
 
 test('auth API persists signup/session, supports login and revokes only the logged out session', async (t) => {
-  assert.ok(mongoUri, 'Set TEST_MONGO_URI to a dedicated dobby_test_a replica-set database.');
+  assert.ok(mongoUri, 'Set MONGO_URI to a shared dobby replica-set database.');
   const database = new URL(mongoUri).pathname.replace(/^\//, '');
-  assert.equal(
-    database,
-    'dobby_test_a',
-    'TEST_MONGO_URI must name the dedicated dobby_test_a database',
-  );
+  assert.equal(database, 'dobby', 'MONGO_URI must name the shared dobby database');
   const suffix = randomUUID();
   createdEmail = `auth-${suffix}@example.test`;
   createdRegistration = `REG-${suffix}`;

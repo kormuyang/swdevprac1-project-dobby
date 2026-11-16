@@ -1,6 +1,6 @@
 # Test checklist
 
-The checklist spans implemented and planned features; it has not passed in full. See [README](../README.md#tests) for test commands. Use node:test for pure rules, isolated Atlas integration for DB behavior, and Runner/Newman for the demo. Check persisted results as well as responses.
+The checklist spans implemented and planned features; it has not passed in full. See [README](../README.md#tests) for test commands. Use node:test for pure rules, Atlas integration against the shared dobby database for DB behavior, and Runner/Newman for the demo. Check persisted results as well as responses.
 
 ## Test data
 

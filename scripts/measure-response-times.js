@@ -18,21 +18,18 @@ const { todayBangkok } = require('../utils/dates');
 function validatePerformanceConfiguration() {
   let parsed;
   try {
-    parsed = new URL(process.env.TEST_PERF_MONGO_URI);
+    parsed = new URL(process.env.MONGO_URI);
   } catch {
-    throw new Error('Set TEST_PERF_MONGO_URI to dedicated dobby_test_performance.');
+    throw new Error('Set MONGO_URI to shared dobby.');
   }
-  if (
-    !['mongodb:', 'mongodb+srv:'].includes(parsed.protocol) ||
-    parsed.pathname !== '/dobby_test_performance'
-  ) {
-    throw new Error('TEST_PERF_MONGO_URI must name dedicated dobby_test_performance.');
+  if (!['mongodb:', 'mongodb+srv:'].includes(parsed.protocol) || parsed.pathname !== '/dobby') {
+    throw new Error('MONGO_URI must name shared dobby.');
   }
   if (parsed.hostname.endsWith('.mongodb.net') && !process.env.PERF_DB_REGION?.trim()) {
     throw new Error('Set PERF_DB_REGION before an Atlas performance run.');
   }
   return {
-    uri: process.env.TEST_PERF_MONGO_URI,
+    uri: process.env.MONGO_URI,
     databaseKind: parsed.hostname.endsWith('.mongodb.net') ? 'Atlas' : 'local-or-other',
   };
 }
@@ -63,9 +60,7 @@ async function measureResponseTimes(outputPath = 'reports/response-times.json') 
     await mongoose.connect(config.uri);
     for (const Model of [User, Provider, ProviderApplication, AuthSession, Vehicle, Booking]) {
       if ((await Model.countDocuments({})) !== 0) {
-        throw new Error(
-          'Performance database must be empty; choose a fresh dedicated test database.',
-        );
+        throw new Error('Performance database must be empty; use an empty shared database.');
       }
       await Model.createIndexes();
     }
@@ -283,7 +278,7 @@ async function measureResponseTimes(outputPath = 'reports/response-times.json') 
         kind: config.databaseKind,
         version: build.version,
         region: process.env.PERF_DB_REGION || 'not supplied',
-        label: 'dedicated performance test database',
+        label: 'shared dobby database',
       },
       dataset: { providers: 2, vehicles: 10, historicalBookings: 30 },
       repetitions: 10,
@@ -345,6 +340,7 @@ async function measureResponseTimes(outputPath = 'reports/response-times.json') 
 }
 
 if (require.main === module) {
+  require('dotenv').config({ quiet: true, path: process.env.DOTENV_CONFIG_PATH || '.env' });
   measureResponseTimes(process.argv[2])
     .then((report) => {
       if (!report.passed) {
@@ -353,7 +349,7 @@ if (require.main === module) {
     })
     .catch(() => {
       console.error(
-        'Response-time check failed. Verify the dedicated database and local API setup; no connection details printed.',
+        'Response-time check failed. Verify the shared database and local API setup; no connection details printed.',
       );
       process.exitCode = 1;
     });

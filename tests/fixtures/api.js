@@ -21,15 +21,12 @@ function addDays(date, days) {
 async function apiFixture(t) {
   let parsed;
   try {
-    parsed = new URL(process.env.TEST_MONGO_URI_B);
+    parsed = new URL(process.env.MONGO_URI);
   } catch {
-    throw new Error('Set TEST_MONGO_URI_B to dedicated dobby_test_b.');
+    throw new Error('Set MONGO_URI to shared dobby.');
   }
-  if (
-    !['mongodb:', 'mongodb+srv:'].includes(parsed.protocol) ||
-    parsed.pathname !== '/dobby_test_b'
-  ) {
-    throw new Error('TEST_MONGO_URI_B must name dedicated dobby_test_b.');
+  if (!['mongodb:', 'mongodb+srv:'].includes(parsed.protocol) || parsed.pathname !== '/dobby') {
+    throw new Error('MONGO_URI must name shared dobby.');
   }
   const previousSecret = process.env.JWT_SECRET;
   const secret = randomUUID();
@@ -59,7 +56,7 @@ async function apiFixture(t) {
       }
     }
   });
-  await mongoose.connect(process.env.TEST_MONGO_URI_B);
+  await mongoose.connect(process.env.MONGO_URI);
   for (const Model of [User, Provider, ProviderApplication, AuthSession, Vehicle, Booking]) {
     await Model.createIndexes();
   }

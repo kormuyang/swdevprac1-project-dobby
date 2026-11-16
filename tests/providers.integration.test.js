@@ -11,13 +11,13 @@ const ProviderApplication = require('../models/ProviderApplication');
 const User = require('../models/User');
 const providerRoutes = require('../routes/providers');
 
-const mongoUri = process.env.TEST_MONGO_URI;
+const mongoUri = process.env.MONGO_URI;
 test('provider review and profile versioning persist atomically', async (t) => {
-  assert.ok(mongoUri, 'Set TEST_MONGO_URI to a dedicated dobby_test_a replica-set database.');
+  assert.ok(mongoUri, 'Set MONGO_URI to a shared dobby replica-set database.');
   assert.equal(
     new URL(mongoUri).pathname.replace(/^\//, ''),
-    'dobby_test_a',
-    'TEST_MONGO_URI must name dobby_test_a.',
+    'dobby',
+    'MONGO_URI must name dobby.',
   );
   const suffix = randomUUID();
   const providerEmail = `provider-${suffix}@example.test`;

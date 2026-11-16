@@ -76,10 +76,8 @@ function getDatabaseName(uri) {
 function validateConfiguration() {
   const uri = process.env.MONGO_URI;
   const databaseName = uri && getDatabaseName(uri);
-  if (!['dobby_dev_a', 'dobby_test_a', 'dobby_dev_b', 'dobby_test_b'].includes(databaseName)) {
-    throw new Error(
-      'MONGO_URI must explicitly name dobby_dev_a, dobby_dev_b, dobby_test_a or dobby_test_b.',
-    );
+  if (databaseName !== 'dobby') {
+    throw new Error('MONGO_URI must explicitly name dobby.');
   }
   const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
   if (fixtures.some((fixture) => (fixture.email || providerEmail(fixture.key)) === adminEmail)) {
@@ -148,9 +146,7 @@ async function removeExistingFixtures(session) {
     { session },
   );
   if (vehicle || booking) {
-    throw new Error(
-      'Seed fixtures have vehicle or booking data. Reset the dedicated test database first.',
-    );
+    throw new Error('Seed fixtures have dependent vehicle or booking data; reseeding is refused.');
   }
 
   await Booking.deleteOne(

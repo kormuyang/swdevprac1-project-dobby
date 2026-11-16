@@ -56,3 +56,7 @@ Record new decisions with their date, who agreed and affected work. Keep course 
 ## D-54: Restore focused middleware and shared errors
 
 User, November 16: restore route validation and approved-provider middleware. Store normalized body/query/params in `req.validated`, leaving Express request properties untouched. Use a small `AppError(status, message)` class for expected failures and one JSON error handler for controller, parser and framework errors. Controllers forward failures with `next(error)`; keep transaction checks. Retain the global rate limit only, provider naming, named imports, resource routers and global `express.json()`. Supersedes the placement/error policies in D-48–D-50 and D-52.
+
+## D-55: One shared database
+
+User, November 16: use only MONGO_URI and the same database for the app, integration tests, seed/reset and performance checks. Use the explicit database name dobby for setup/test guards. This replaces A/B/test database isolation. Run integration files sequentially; retain fixture-scoped cleanup and transaction races within individual tests. Performance still requires an empty database; reset deletes the shared database only with ALLOW_TEST_DB_RESET=true. No database is modified by this source change.

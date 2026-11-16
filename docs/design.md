@@ -194,7 +194,7 @@ Serialize _id as id; hide __v, revisions, passwordHash, sid and raw claims. Sele
 - `validators/fields.js` holds the existing scalar/object checks shared with auth; moving those checks does not change auth behavior. List/query validation is called directly by the B02/B03 controllers.
 - `serializers/vehicles.js`: `serializeVehicle(vehicle)`, `serializeVehicleSnapshot(vehicle)`. `serializers/bookings.js`: `serializeBooking(booking, customer, today)` requires explicitly selected current customer contact and one captured Thailand date. These return DTOs, not HTTP envelopes, and never populate database references themselves.
 - Vehicle and Booking enforce field constraints and fixed snapshots on document saves. Booking checks that dates, days and total agree; historical records remain valid. Later services own eligibility, permissions, state transitions and concurrency guards. Query writes must use allowlisted fields and enable update validation; multi-field booking edits use document saves so the consistency checks run.
-- `npm run test:integration` runs both owners' suites. Auth/provider-review tests use `TEST_MONGO_URI` with `dobby_test_a`; rental models use `TEST_MONGO_URI_B` with `dobby_test_b`. Each suite rejects a different database name before connecting and deletes only its synthetic fixture IDs.
+- `npm run test:integration` runs both owners' suites. All suites use `MONGO_URI` naming the shared `dobby` database. Files run sequentially to avoid fixture interference; deliberate race requests inside a test remain concurrent. Tests delete only their synthetic fixture IDs (D-55).
 
 ```mermaid
 erDiagram
@@ -359,7 +359,7 @@ Provider booking reads require current approved status, scope by provider before
 
 ### B05 setup and delivery
 
-The combined Postman collection extends A05 with vehicle/booking folders and assertions for suspension cancellation and no restoration. Credentials and generated tokens stay in memory. Seed adds two approved-provider vehicles and a fixed synthetic historical booking; reseeding can replace only identified fixtures and refuses other dependent data. Reset defaults to A; `--owner=b` explicitly selects B and still requires the reset flag. Performance checks use a separate `TEST_PERF_MONGO_URI` naming `dobby_test_performance`, build the prescribed two-provider/ten-vehicle/thirty-history dataset and report every elapsed time. Local runs do not establish Atlas results.
+The combined Postman collection extends A05 with vehicle/booking folders and assertions for suspension cancellation and no restoration. Credentials and generated tokens stay in memory. Seed adds two approved-provider vehicles and a fixed synthetic historical booking; reseeding can replace only identified fixtures and refuses other dependent data. Reset uses MONGO_URI naming dobby and requires the explicit reset flag; it deletes the shared database. Performance checks use the same MONGO_URI, refuse a non-empty database, build the prescribed two-provider/ten-vehicle/thirty-history dataset and report every elapsed time. Local runs do not establish Atlas results.
 
 ### Course alignment for B
 

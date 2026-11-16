@@ -1,6 +1,6 @@
 # Implementation plan
 
-Saint = A; Poom = B. The A/B implementation is integrated in main through the linked task PRs. Keep developer databases separate. Atlas acceptance and delivery decisions remain open.
+Saint = A; Poom = B. The A/B implementation is integrated in main through the linked task PRs. Under D-55, the app and tools share MONGO_URI naming dobby. Atlas acceptance and delivery decisions remain open.
 
 ## Who owns what?
 
@@ -141,3 +141,9 @@ Verification on November 16: Node 24 local tests passed 45/45, including the ful
 Restore feature validation middleware, normalized req.validated input, provider approval middleware, AppError and a shared JSON error handler. Keep in-transaction checks, resource routes, provider naming and the global-only rate limit. This supersedes the earlier controller-validation/parser-error implementation notes above. Validate with the local HTTP regression, full unit suite, lint and formatting; database acceptance remains separate.
 
 Verification: Node 24.22.3 local suite passed 45/45, including request validation/permission order, normalized vehicle input, domain conflict forwarding, parser 400/413 and safe unexpected 500 responses. Lint, formatting and OpenAPI local-reference checks passed. Dedicated integration connections are unavailable; Atlas acceptance and concurrency checks were not run.
+
+## Shared database configuration (D-55)
+
+Use one MONGO_URI naming dobby for the app, all integration tests, seed/reset and performance checks. Remove the A/B owner reset option. Integration files run sequentially and load .env explicitly through Node; deliberate race scenarios remain concurrent. Performance loads .env and retains its empty-database requirement. Reset still requires the flag and now clearly identifies that it deletes the shared database. Earlier database-isolation notes are historical. No database operation is authorized or performed as part of this configuration change.
+
+Verification: Node 24.22.3 local suite passed 45/45; lint, formatting and diff checks passed. Database integration and performance were not run; no real environment file was read and no database was connected to or reset.
