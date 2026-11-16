@@ -37,9 +37,11 @@ test('routes retain middleware validation and permission order with synthetic ac
   app.set('query parser', 'extended');
   app.use(express.json());
   app.use('/auth', require('../routes/auth'));
-  app.use('/', require('../routes/providers'));
-  app.use('/', require('../routes/vehicles'));
-  app.use('/', require('../routes/bookings'));
+  app.use('/providers', require('../routes/providers'));
+  app.use('/provider', require('../routes/provider'));
+  app.use('/admin', require('../routes/admin'));
+  app.use('/vehicles', require('../routes/vehicles'));
+  app.use('/bookings', require('../routes/bookings'));
   app.use(require('../middleware/errorHandler').errorHandler);
   const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));

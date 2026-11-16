@@ -94,6 +94,6 @@ For each PR, list test IDs, command, test environment/database, pass/fail counts
 - Booking scope, prices, cutoffs and cap/overlap races: [booking HTTP integration](../tests/bookings.api.integration.test.js).
 - Provider views, suspension races, rollback and no restoration: [combined lifecycle integration](../tests/booking-lifecycle.api.integration.test.js).
 - T40 journey and saved results: [Newman integration](../tests/demo.integration.test.js).
-- T41 runner: [response-time measurement](../scripts/measure-response-times.js). The November 16 Atlas run passed 150 requests across 15 cases (latest maximum 958.38 ms); see the recorded conditions and results in the implementation plan.
+- T41 runner: [response-time measurement](../scripts/measure-response-times.js). The November 16 Atlas run passed 150 requests across 15 cases (latest maximum 784.64 ms); see the recorded conditions and results in the implementation plan.
 
 Commands/results and unverified cases are recorded in each PR. D-07/D-10 and partner acceptance remain open for T42.

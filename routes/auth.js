@@ -1,3 +1,4 @@
+const express = require('express');
 const {
   validateRegisterCustomer,
   validateRegisterProvider,
@@ -5,7 +6,6 @@ const {
   validateLogout,
   validateGetMe,
 } = require('../middleware/authValidation');
-const express = require('express');
 const { protect } = require('../middleware/auth');
 const { registerCustomer, registerProvider, login, logout, getMe } = require('../controllers/auth');
 

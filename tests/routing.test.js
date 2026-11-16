@@ -4,7 +4,7 @@ const express = require('express');
 const auth = require('../middleware/auth');
 const { paths } = require('../docs/contracts/openapi.json');
 
-test('resource routers preserve documented handlers and role access without protecting public paths', async (t) => {
+test('first-level routers preserve documented handlers and role access without protecting public paths', async (t) => {
   // Keep real route registration and authorize(), but avoid sessions and business writes.
   t.mock.method(auth, 'protect', (options = {}) => (req, res, next) => {
     const role = req.get('x-test-role');
@@ -38,9 +38,11 @@ test('resource routers preserve documented handlers and role access without prot
   }
   const app = express();
   app.use('/api/v1/auth', require('../routes/auth'));
-  app.use('/api/v1', require('../routes/providers'));
-  app.use('/api/v1', require('../routes/vehicles'));
-  app.use('/api/v1', require('../routes/bookings'));
+  app.use('/api/v1/providers', require('../routes/providers'));
+  app.use('/api/v1/provider', require('../routes/provider'));
+  app.use('/api/v1/admin', require('../routes/admin'));
+  app.use('/api/v1/vehicles', require('../routes/vehicles'));
+  app.use('/api/v1/bookings', require('../routes/bookings'));
   app.use((req, res) => res.status(404).json({ success: false }));
   app.use(require('../middleware/errorHandler').errorHandler);
   const server = app.listen(0, '127.0.0.1');
@@ -97,7 +99,17 @@ test('resource routers preserve documented handlers and role access without prot
     }
   }
   assert.equal(checked, 33);
-  for (const path of ['/unknown', '/provider/unknown', '/admin/unknown']) {
+  for (const path of [
+    '/unknown',
+    '/provider',
+    '/admin',
+    '/provider/unknown',
+    '/admin/unknown',
+    '/auth/unknown',
+    '/providers/unknown/extra',
+    '/vehicles/unknown/extra',
+    '/bookings/unknown/extra',
+  ]) {
     const response = await request('GET', path);
     assert.equal(response.status, 404);
     await response.json();

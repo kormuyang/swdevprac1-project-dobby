@@ -92,7 +92,7 @@ test('global JSON parsing uses safe JSON errors before authentication', async (t
   app.get('/failure', () => {
     throw new Error('Synthetic internal diagnostic');
   });
-  app.use('/', require('../routes/bookings'));
+  app.use('/bookings', require('../routes/bookings'));
   app.use(require('../middleware/errorHandler').errorHandler);
   const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));

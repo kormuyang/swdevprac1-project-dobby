@@ -134,7 +134,9 @@ test(
     const app = express();
     app.use(express.json());
     app.use('/api/v1/auth', require('../routes/auth'));
-    app.use('/api/v1', require('../routes/providers'));
+    app.use('/api/v1/providers', require('../routes/providers'));
+    app.use('/api/v1/provider', require('../routes/provider'));
+    app.use('/api/v1/admin', require('../routes/admin'));
     app.use(require('../middleware/errorHandler').errorHandler);
     server = app.listen(0, '127.0.0.1');
     await new Promise((resolve) => server.once('listening', resolve));

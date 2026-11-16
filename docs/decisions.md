@@ -64,3 +64,7 @@ User, November 16: use only MONGO_URI and the same database for the app, integra
 ## D-56: Consistent feature modules and request handling
 
 User, November 16: fix the seven code consistency findings. Handle known parser failures with safe client statuses, forward authentication failures to the shared error handler, use one normalized ObjectId validator, keep lifecycle input rules pure and authorization in routes, move public provider discovery into provider modules, use the shared Bangkok date helper and remove unused validation time input. CLI tools load .env only in their entry points. Keep current URLs: /providers is public discovery, /provider/... is the authenticated representative workspace, and /admin/providers is admin management. These prefixes describe access contexts, not different business entities.
+
+## D-57: First-level route mounts in server.js
+
+User, November 16: expose the first API path segment in server.js instead of mounting resource routers at /api/v1. Use six flat routers: auth, providers, vehicles, bookings, provider and admin. Each router declares paths relative to its mount; representative and admin routers collect their respective workspace operations. Keep existing endpoint URLs, named controller imports, router.route() chains and route-scoped middleware. This replaces the four-file mount structure of D-53 without changing the OpenAPI interface.

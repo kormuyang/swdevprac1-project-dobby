@@ -32,12 +32,14 @@ flowchart LR
 ```mermaid
 flowchart LR
     Server[server.js] --> AuthRoutes[auth.js at /api/v1/auth]
-    Server --> ProviderRoutes[providers.js at /api/v1]
-    Server --> VehicleRoutes[vehicles.js at /api/v1]
-    Server --> BookingRoutes[bookings.js at /api/v1]
+    Server --> PublicProviderRoutes[providers.js at /api/v1/providers]
+    Server --> VehicleRoutes[vehicles.js at /api/v1/vehicles]
+    Server --> BookingRoutes[bookings.js at /api/v1/bookings]
+    Server --> ProviderRoutes[provider.js at /api/v1/provider]
+    Server --> AdminRoutes[admin.js at /api/v1/admin]
 ```
 
-Each file groups methods by path with router.route() chains. Authentication and roles attach only to protected route chains; public discovery remains accessible when the resource routers share a mount prefix (D-53).
+Each file groups methods by relative path with router.route() chains. server.js shows each first-level API prefix. Authentication, roles, approval and validation remain attached to the applicable route chains; public and unknown paths keep their existing behavior (D-57).
 
 ## Request flow
 
