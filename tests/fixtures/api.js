@@ -18,15 +18,15 @@ function addDays(date, days) {
   return instant.toISOString().slice(0, 10);
 }
 
-async function apiFixture(t, extraRoutes = []) {
+async function apiFixture(t) {
   let parsed;
   try {
-    parsed = new URL(process.env.TEST_MONGO_URI_B);
+    parsed = new URL(process.env.MONGO_URI);
   } catch {
-    throw new Error('Set TEST_MONGO_URI_B to dedicated dobby_test_b.');
+    throw new Error('Set MONGO_URI to shared dobby.');
   }
-  if (!['mongodb:', 'mongodb+srv:'].includes(parsed.protocol) || parsed.pathname !== '/dobby_test_b') {
-    throw new Error('TEST_MONGO_URI_B must name dedicated dobby_test_b.');
+  if (!['mongodb:', 'mongodb+srv:'].includes(parsed.protocol) || parsed.pathname !== '/dobby') {
+    throw new Error('MONGO_URI must name shared dobby.');
   }
   const previousSecret = process.env.JWT_SECRET;
   const secret = randomUUID();
@@ -56,17 +56,23 @@ async function apiFixture(t, extraRoutes = []) {
       }
     }
   });
-  await mongoose.connect(process.env.TEST_MONGO_URI_B);
+  await mongoose.connect(process.env.MONGO_URI);
   for (const Model of [User, Provider, ProviderApplication, AuthSession, Vehicle, Booking]) {
     await Model.createIndexes();
   }
   async function account(role, status = null) {
     const userId = new mongoose.Types.ObjectId();
     users.push(userId);
-    const input = { _id: userId, name: 'Synthetic Account', email: `${randomUUID()}@example.test`,
-      telephone: '123456789', passwordHash: 'synthetic-password', role };
+    const input = {
+      _id: userId,
+      name: 'Synthetic Account',
+      email: `${randomUUID()}@example.test`,
+      telephone: '123456789',
+      passwordHash: 'synthetic-password',
+      role,
+    };
     let providerId = null;
-    if (role === 'company') {
+    if (role === 'provider') {
       providerId = new mongoose.Types.ObjectId();
       providers.push(providerId);
       input.providerId = providerId;
@@ -75,37 +81,70 @@ async function apiFixture(t, extraRoutes = []) {
     if (providerId) {
       const applicationId = new mongoose.Types.ObjectId();
       const registration = randomUUID();
-      await ProviderApplication.create({ _id: applicationId, providerId, version: 1,
-        businessRegistrationNumber: registration, status: status === 'approved' ? 'approved' : 'pending',
-        profile: { legalName: `Synthetic ${providerId}`, registeredAddress: 'Test Road', telephone: '123456789',
-          contactEmail: 'contact@example.test', documentUrl: 'https://example.test/private-document' } });
-      await Provider.create({ _id: providerId, representativeId: userId, businessRegistrationNumber: registration,
-        status, latestApplicationId: applicationId, approvedApplicationId: status === 'approved' ? applicationId : null });
+      await ProviderApplication.create({
+        _id: applicationId,
+        providerId,
+        version: 1,
+        businessRegistrationNumber: registration,
+        status: status === 'approved' ? 'approved' : 'pending',
+        profile: {
+          legalName: `Synthetic ${providerId}`,
+          registeredAddress: 'Test Road',
+          telephone: '123456789',
+          contactEmail: 'contact@example.test',
+          documentUrl: 'https://example.test/private-document',
+        },
+      });
+      await Provider.create({
+        _id: providerId,
+        representativeId: userId,
+        businessRegistrationNumber: registration,
+        status,
+        latestApplicationId: applicationId,
+        approvedApplicationId: status === 'approved' ? applicationId : null,
+      });
     }
     const sid = randomUUID();
     await AuthSession.create({ sid, userId, expiresAt: new Date(Date.now() + 300_000) });
-    const token = jwt.sign({ sid }, secret, { subject: String(userId), algorithm: 'HS256', expiresIn: '5m' });
-    return { user, providerId, token, actor: { userId: String(userId), providerId: providerId ? String(providerId) : null, role, sessionId: sid } };
+    const token = jwt.sign({ sid }, secret, {
+      subject: String(userId),
+      algorithm: 'HS256',
+      expiresIn: '5m',
+    });
+    return {
+      user,
+      providerId,
+      token,
+      actor: {
+        userId: String(userId),
+        providerId: providerId ? String(providerId) : null,
+        role,
+        sessionId: sid,
+      },
+    };
   }
   const admin = await account('admin');
   const customer = await account('user');
   const otherCustomer = await account('user');
-  const company = await account('company', 'approved');
-  const otherCompany = await account('company', 'approved');
-  const pending = await account('company', 'pending');
+  const providerAccount = await account('provider', 'approved');
+  const otherProviderAccount = await account('provider', 'approved');
+  const pending = await account('provider', 'pending');
   const app = express();
+  app.use(express.json());
   app.set('query parser', 'extended');
-  app.use('/api/v1', require('../../routes/publicVehicles'));
-  app.use('/api/v1/company/vehicles', require('../../routes/companyVehicles'));
   app.use('/api/v1/auth', require('../../routes/auth'));
-  app.use('/api/v1/admin/providers', require('../../routes/providerLifecycle'));
-  for (const [route, router] of extraRoutes) {
-    app.use(route, router);
-  }
-  app.use('/api/v1/company', require('../../routes/company'));
+  app.use('/api/v1/providers', require('../../routes/providers'));
+  app.use('/api/v1/provider', require('../../routes/provider'));
+  app.use('/api/v1/admin', require('../../routes/admin'));
+  app.use('/api/v1/vehicles', require('../../routes/vehicles'));
+  app.use('/api/v1/bookings', require('../../routes/bookings'));
   app.use((req, res) => res.status(404).json({ success: false, message: 'Not found.' }));
+  app.use(require('../../middleware/errorHandler').errorHandler);
   server = app.listen(0, '127.0.0.1');
-  await new Promise((resolve, reject) => { server.once('listening', resolve); server.once('error', reject); });
+  await new Promise((resolve, reject) => {
+    server.once('listening', resolve);
+    server.once('error', reject);
+  });
   const base = `http://127.0.0.1:${server.address().port}/api/v1`;
   async function request(path, options = {}) {
     const { actor, body, ...rest } = options;
@@ -116,17 +155,37 @@ async function apiFixture(t, extraRoutes = []) {
     if (body !== undefined) {
       headers['content-type'] = 'application/json';
     }
-    const response = await fetch(base + path, { ...rest, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+    const response = await fetch(base + path, {
+      ...rest,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
     return { status: response.status, body: await response.json() };
   }
-  async function createVehicle(owner = company, changes = {}) {
-    const { providerId, ...body } = vehicleInput({ vin: `V-${randomUUID()}`, availableFrom: todayBangkok(new Date()), ...changes });
-    const response = await request('/company/vehicles', { method: 'POST', actor: owner, body });
+  async function createVehicle(owner = providerAccount, changes = {}) {
+    const { providerId, ...body } = vehicleInput({
+      vin: `V-${randomUUID()}`,
+      availableFrom: todayBangkok(new Date()),
+      ...changes,
+    });
+    const response = await request('/provider/vehicles', { method: 'POST', actor: owner, body });
     assert.equal(response.status, 201, 'Synthetic vehicle creation must succeed.');
     return response.body.data;
   }
-  return { app, base, request, createVehicle, account, admin, customer, otherCustomer, company, otherCompany, pending,
-    today: todayBangkok(new Date()) };
+  return {
+    app,
+    base,
+    request,
+    createVehicle,
+    account,
+    admin,
+    customer,
+    otherCustomer,
+    providerAccount,
+    otherProviderAccount,
+    pending,
+    today: todayBangkok(new Date()),
+  };
 }
 
 module.exports = { apiFixture, addDays };

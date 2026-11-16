@@ -1,9 +1,8 @@
+const AppError = require('./AppError');
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function rejectDate(message) {
-  const error = new Error(message);
-  error.status = 400;
-  throw error;
+  throw new AppError(400, message);
 }
 
 function todayBangkok(now) {
@@ -77,10 +76,7 @@ function overlaps(aStart, aDue, bStart, bDue) {
 }
 
 function bookingStatus(booking, today) {
-  if (
-    !booking ||
-    (booking.state !== 'confirmed' && booking.state !== 'cancelled')
-  ) {
+  if (!booking || (booking.state !== 'confirmed' && booking.state !== 'cancelled')) {
     rejectDate('A booking must have a confirmed or cancelled state.');
   }
   validateDateOnly(today);

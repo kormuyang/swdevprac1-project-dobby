@@ -1,0 +1,34 @@
+classDiagram
+    direction LR
+    class API["Dobby API"] {
+        <<Application>>
+        basePath = /api/v1
+    }
+    class R0["availability"] {
+        <<Resource>>
+        +PATCH(AvailabilityUpdate) 200
+    }
+    class R1["activation"] {
+        <<Resource>>
+        +PATCH(ActivationUpdate) 200
+    }
+    class ActivationUpdate {
+        <<Representation>>
+        isActive : boolean
+    }
+    class AvailabilityUpdate {
+        <<Representation>>
+        availableFrom : string
+        availableUntil : string
+    }
+    class VehicleResponse {
+        <<Representation>>
+        success : boolean
+        data : Vehicle
+    }
+    R0 ..> AvailabilityUpdate : «use» request
+    R0 ..> VehicleResponse : «use» response
+    API --> R0 : «Path» /provider/vehicles/{vehicleId}/availability
+    R1 ..> ActivationUpdate : «use» request
+    R1 ..> VehicleResponse : «use» response
+    API --> R1 : «Path» /provider/vehicles/{vehicleId}/activation

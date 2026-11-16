@@ -4,17 +4,17 @@ Admin suspension and reactivation implement FR-14. See the [contract](../contrac
 
 ## Use cases
 
-- An admin suspends an approved company with a reason. All its upcoming/ongoing confirmed bookings are cancelled together with the suspension.
+- An admin suspends an approved provider with a reason. All its upcoming/ongoing confirmed bookings are cancelled together with the suspension.
 - A suspended representative is denied protected reads and fresh login. An existing session can still log out.
-- An admin reactivates a suspended company with an approved profile and a resolution note. Cancelled bookings and revoked sessions remain unchanged.
+- An admin reactivates a suspended provider with an approved profile and a resolution note. Cancelled bookings and revoked sessions remain unchanged.
 
 ```mermaid
 sequenceDiagram
     actor Admin
     participant Controller as Lifecycle controller
     participant DB as MongoDB transaction
-    participant Cancel as bookingCancellation
-    Admin->>Controller: Suspend company, reason
+    participant Cancel as Bookings service
+    Admin->>Controller: Suspend provider, reason
     Controller->>DB: Lock provider by incrementing revision
     Controller->>DB: Check approved state/profile, set suspended
     Controller->>Cancel: Same session, provider, actor, today
@@ -28,9 +28,9 @@ sequenceDiagram
 
 ## Integration contract
 
-`services/bookingCancellation.js` implements the agreed B-owned helper interface. It uses real `bookings` and `vehicles` collections and User guards; it requires the caller's active transaction and provider guard. Saint implemented this dependency to unblock A03 before B’s models/API were available. B owns its subsequent integration and review.
+`services/bookings.js` exports cancelNonCompletedForProvider through the agreed B-owned helper interface (D-58). It uses real `bookings` and `vehicles` collections and User guards; it requires the caller's active transaction and provider guard. Saint implemented this dependency to unblock A03 before B’s models/API were available. B owns its subsequent integration and review.
 
-Booking writers must use provider → sorted users → sorted vehicles guards and recheck eligibility inside the same transaction. The integration test uses synthetic native collection fixtures and a competing B-style guarded transaction. It verifies persisted cancellation, rollback after cancellation writes, old-session denial/logout, no restoration and serialization with that competing transaction. Actual B HTTP races and rollback are covered separately in [combined lifecycle integration](../../tests/booking-lifecycle.api.integration.test.js); Atlas acceptance remains pending.
+Booking writers must use provider → sorted users → sorted vehicles guards and recheck eligibility inside the same transaction. The integration test uses synthetic native collection fixtures and a competing B-style guarded transaction. It verifies persisted cancellation, rollback after cancellation writes, old-session denial/logout, no restoration and serialization with that competing transaction. Actual B HTTP races and rollback are covered separately in [combined lifecycle integration](../../tests/booking-lifecycle.api.integration.test.js); these passed in the November 16 integrated database verification recorded in the implementation plan.
 
 ## Reactivate
 
@@ -51,4 +51,4 @@ sequenceDiagram
     Note over Controller,DB: Previously cancelled bookings and revoked sessions stay unchanged
 ```
 
-These diagrams describe interfaces and implementation behavior. They do not establish a live database result. The instructor-specific API UML notation remains unresolved under D-07.
+These diagrams describe interfaces and implementation behavior, not a live database result. See the [submission REST profile](../api-diagram.md) and exported [sequence views](../sequence-diagrams.md) for the supplied Chapter 6 notation and integrated implementation (D-59).

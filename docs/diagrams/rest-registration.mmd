@@ -1,0 +1,41 @@
+classDiagram
+    direction LR
+    class API["Dobby API"] {
+        <<Application>>
+        basePath = /api/v1
+    }
+    class R0["register"] {
+        <<Resource>>
+        +POST(RegistrationInput) 201
+    }
+    class R1["register-provider"] {
+        <<Resource>>
+        +POST(ProviderRegistrationInput) 201
+    }
+    class AuthResultResponse {
+        <<Representation>>
+        success : boolean
+        data : AuthResult
+    }
+    class ProviderRegistrationInput {
+        <<Representation>>
+        name : string
+        telephone : string
+        email : string
+        password : string
+        businessRegistrationNumber : string
+        profile : ProfileInput
+    }
+    class RegistrationInput {
+        <<Representation>>
+        name : string
+        telephone : string
+        email : string
+        password : string
+    }
+    R0 ..> RegistrationInput : «use» request
+    R0 ..> AuthResultResponse : «use» response
+    API --> R0 : «Path» /auth/register
+    R1 ..> ProviderRegistrationInput : «use» request
+    R1 ..> AuthResultResponse : «use» response
+    API --> R1 : «Path» /auth/register-provider

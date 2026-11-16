@@ -1,3 +1,4 @@
+const AppError = require('../utils/AppError');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
@@ -15,7 +16,7 @@ const TODAY = '2030-01-10';
 
 function assertBadInput(work) {
   assert.throws(work, (error) => {
-    assert.equal(error.constructor, Error);
+    assert.ok(error instanceof AppError);
     assert.equal(error.status, 400);
     assert.ok(error.message.length > 0);
     assert.equal(error.code, undefined);
@@ -31,10 +32,23 @@ test('calendar validation accepts real dates and leap years', () => {
 
 test('calendar validation rejects rollover dates, wrong formats and non-strings', () => {
   const invalidDates = [
-    '0000-01-01', '1900-02-29', '2030-02-29', '2030-04-31',
-    '2030-13-01', '2030-01-00', '2030-1-10', ' 2030-01-10',
-    '2030-01-10\n', '2030-01-10T00:00:00Z', '', null, undefined,
-    20300110, [], {}, { $gt: '' },
+    '0000-01-01',
+    '1900-02-29',
+    '2030-02-29',
+    '2030-04-31',
+    '2030-13-01',
+    '2030-01-00',
+    '2030-1-10',
+    ' 2030-01-10',
+    '2030-01-10\n',
+    '2030-01-10T00:00:00Z',
+    '',
+    null,
+    undefined,
+    20300110,
+    [],
+    {},
+    { $gt: '' },
   ];
   for (const date of invalidDates) {
     assertBadInput(() => validateDateOnly(date));
@@ -46,7 +60,10 @@ test('Bangkok today changes at 17:00 UTC, including the year boundary', () => {
   assert.equal(todayBangkok(new Date('2029-12-31T17:00:00.000Z')), '2030-01-01');
   assert.equal(todayBangkok(new Date('2030-01-09T17:00:00.000Z')), TODAY);
   for (const now of [
-    undefined, null, '2030-01-10', new Date(NaN),
+    undefined,
+    null,
+    '2030-01-10',
+    new Date(NaN),
     new Date('0000-01-01T00:00:00Z'),
     new Date('-000001-01-01T00:00:00Z'),
     new Date('+010000-01-01T00:00:00Z'),

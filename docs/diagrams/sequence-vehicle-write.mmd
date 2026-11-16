@@ -1,0 +1,37 @@
+sequenceDiagram
+
+actor Rep as Approved provider representative
+participant Server as server.js
+participant Route as routes/provider.js + guards + validation
+participant C as controllers/vehicles.js
+participant S as services/vehicles.js + providers guard
+participant M as Provider / Vehicle / Booking
+participant DB as MongoDB
+Rep->>Server: POST vehicle or PATCH details, availability, activation
+Server->>Route: Match provider workspace path
+Route->>Route: Authenticate, authorize provider, require approval, validate
+Route->>C: Normalized input and scoped actor
+C->>S: createVehicle / updateVehicle / updateAvailability / setVehicleActivation
+activate S
+S->>DB: Start transaction
+S->>M: Increment owned Provider revision, recheck approval
+M->>DB: Provider guard and current state in session
+alt Create
+    S->>M: Construct Vehicle with actor.providerId
+else Existing vehicle
+    S->>M: Guard Vehicle scoped to actor.providerId
+    M->>DB: Increment vehicle revision
+end
+opt Offering period update
+    S->>M: Check confirmed bookings due today or later
+    M->>DB: Reject a window excluding an upcoming/ongoing booking
+end
+S->>M: Apply allowlisted changes and save
+M->>DB: Save vehicle with same session
+DB-->>S: Commit
+S-->>C: Vehicle
+deactivate S
+C->>C: serializeVehicle
+C-->>Server: 201 create or 200 update
+Server-->>Rep: JSON response
+Note over S,DB: Errors abort, duplicate VIN and eligible write conflicts map to 409, missing owned vehicle is 404

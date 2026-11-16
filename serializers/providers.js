@@ -1,3 +1,13 @@
+function serializePublicProvider(provider) {
+  const profile = provider.approvedApplication.profile;
+  return {
+    id: String(provider._id),
+    name: profile.legalName,
+    address: profile.registeredAddress,
+    telephone: profile.telephone,
+  };
+}
+
 function id(value) {
   return value ? String(value._id || value) : null;
 }
@@ -49,4 +59,9 @@ function serializePage(data, count, page, limit) {
   };
 }
 
-module.exports = { serializeApplication, serializePage, serializeProvider };
+module.exports = {
+  serializePublicProvider,
+  serializeApplication,
+  serializePage,
+  serializeProvider,
+};

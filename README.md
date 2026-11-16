@@ -1,6 +1,6 @@
 # Dobby Rental Car Booking
 
-A rental car booking backend by Saint (A) and Poom (B). This branch integrates authentication, company review/suspension, vehicle discovery/management, bookings, setup and the combined demo. See the implementation plan and PRs for review and merge status.
+A rental car booking backend by Saint (A) and Poom (B). This branch integrates authentication, provider review/suspension, vehicle discovery/management, bookings, setup and the combined demo. See the implementation plan and PRs for review and merge status.
 
 ## Start here
 
@@ -14,7 +14,7 @@ Follow [AGENTS.md](AGENTS.md) when coding.
 
 ## Setup
 
-Use Node 24. Copy `.env.example` to `.env` and set `MONGO_URI` and `JWT_SECRET` locally. Signup needs a transaction-capable MongoDB replica set such as Atlas. Bootstrap the four auth models' indexes before checking uniqueness; normal startup does not sync or drop indexes.
+Use Node 24. Copy `.env.example` to `.env` and set `MONGO_URI` (with database name `dobby`) and `JWT_SECRET` locally. The app, tests and tools share this database. Signup needs a transaction-capable MongoDB replica set such as Atlas. Bootstrap the four auth models' indexes before checking uniqueness; normal startup does not sync or drop indexes.
 
 ```text
 npm ci
@@ -29,18 +29,26 @@ The default port is 5003. Health is at `/api/v1/health`; Swagger UI is at `/api-
 The base path is `/api/v1/auth`:
 
 - `POST /register`: customer signup.
-- `POST /register-company`: company account, provider, first application and session in one transaction.
+- `POST /register-provider`: provider account, provider, first application and session in one transaction.
 - `POST /login`: create a session.
 - `GET /me`: read the authenticated account.
-- `POST /logout`: revoke the current session, including for suspended companies.
+- `POST /logout`: revoke the current session, including for suspended providers.
 
 Authentication uses 24-hour HS256 Bearer tokens with persisted, revocable sessions. Use [OpenAPI](docs/contracts/openapi.json) for request fields and [A01 diagrams](docs/diagrams/a01-auth.md) for flows and course alignment. Never commit credentials or tokens.
 
-## Company applications and review
+## Provider applications and review
 
-Company representatives can read their profile and application history and submit revisions. Admins review applications and access the review queue. A revision does not replace the approved profile until approval; approval never clears suspension. See [OpenAPI](docs/contracts/openapi.json) for endpoints and fields and [A02 diagrams](docs/diagrams/a02-company-review.md) for the flow.
+Representative accounts use role `provider`. Their endpoints are under `/api/v1/provider`; signup uses `/api/v1/auth/register-provider`. Existing databases using the previous role value need a separately authorized [role migration](docs/design.md#provider-terminology-transition-d-51). This source update does not change stored accounts.
+
+Provider representatives can read their profile and application history and submit revisions. Admins review applications and access the review queue. A revision does not replace the approved profile until approval; approval never clears suspension. See [OpenAPI](docs/contracts/openapi.json) for endpoints and fields and [A02 diagrams](docs/diagrams/a02-provider-review.md) for the flow.
+
+## Routes
+
+server.js declares the first path segment: `/api/v1/auth`, `/api/v1/providers`, `/api/v1/vehicles`, `/api/v1/bookings`, `/api/v1/provider` and `/api/v1/admin`. Each has a matching route file with relative paths and router.route() chains. Public `/providers` lists approved businesses; `/provider/...` is the signed-in representative workspace scoped to their business; `/admin/providers` is admin management. Guards stay on individual route chains. Existing URLs are unchanged; `/provider` alone has no endpoint (D-57).
 
 ## Tests
+
+Check JavaScript with `npm run lint` and formatting with `npm run format:check`. Apply safe lint fixes with `npm run lint:fix` and format supported JavaScript, JSON and Markdown files with `npm run format`. Dependencies, generated output, environment files and the npm-generated lockfile are excluded from formatting.
 
 Run all local tests without a database:
 
@@ -48,22 +56,26 @@ Run all local tests without a database:
 npm test
 ```
 
-Run all database integration tests with both test connections supplied locally:
+Run all database integration tests with MONGO_URI supplied in your local .env (loaded automatically):
 
 ```text
 npm run test:integration
 ```
 
-Auth/company-review tests use `TEST_MONGO_URI` and accept only `dobby_test_a`. Rental model tests use `TEST_MONGO_URI_B` and accept only `dobby_test_b`. All need a replica set, create indexes first and clean up only their synthetic fixtures. Keep them separate from development data. Test results and unverified cases belong in the PR description; the checklist tracks acceptance coverage.
+All integration tests use `MONGO_URI` naming `dobby`. Files run sequentially, while race scenarios inside each test remain concurrent. Tests create indexes and clean up their synthetic fixtures. They share the application database; avoid running the app, demo or other database-writing commands during a test run. A replica set such as Atlas is required. Local `npm test` needs no database.
 
 ## Seed and reset
 
-`npm run seed` requires MONGO_URI to name dobby_dev_a, dobby_dev_b, dobby_test_a or dobby_test_b, plus locally supplied SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD and SEED_FIXTURE_PASSWORD. It creates synthetic accounts (two approved companies, pending/rejected/suspended companies and two customers), two vehicles and one historical booking. Repeated seed replaces identified fixtures only; other dependent vehicle/booking data makes it refuse replacement.
+`npm run seed-admin` creates only the administrator needed for the Postman demo. It requires MONGO_URI to name dobby, plus locally supplied SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD. If that email already belongs to an admin, the command leaves the account and password unchanged. It refuses an email belonging to a customer or provider. It does not create sample customers, providers, vehicles or bookings, or delete existing data. The Postman Runner creates its own demo data.
 
-`npm run reset:test` targets only dobby_test_a through TEST_MONGO_URI. `npm run reset:test -- --owner=b` targets only dobby_test_b through TEST_MONGO_URI_B. Both delete the selected test database and require ALLOW_TEST_DB_RESET=true. No reset runs during ordinary startup.
+`npm run reset:test` deletes the entire shared dobby database selected by MONGO_URI and requires ALLOW_TEST_DB_RESET=true. It has no A/B owner option. No reset runs during ordinary startup or integration testing.
 
 ## Demo and response times
 
-After seeding and starting the local API, supply the seeded admin credentials locally and run `npm run test:demo`. It generates the other credentials in memory and runs the [combined collection](postman/dobby.postman_collection.json) against loopback hosts only. See the [demo guide](docs/demo-guide.md), [use cases](docs/use-cases.md) and [API map](docs/diagrams/api.md).
+For Postman Runner, import the [collection](postman/dobby.postman_collection.json) and [example environment](postman/dobby-local.postman_environment.json), use the example admin credentials or enter your existing credentials locally, then run the required sections 01–12 before extra-credit sections 13–16 (36 requests total). Follow the [import and run steps](docs/demo-guide.md#postman-runner).
 
-`npm run test:performance` starts its own local API against TEST_PERF_MONGO_URI, which must name an empty dobby_test_performance database. Supply PERF_DB_REGION for Atlas. It creates two providers, ten vehicles and thirty historical bookings, records ten sequential measurements per selected endpoint, then removes its own fixtures. The sanitized report is written to reports/response-times.json (ignored by Git); pass another output path after `--` if needed. Local results do not establish Atlas T41 acceptance. D-07/D-10 and Saint’s integrated-main review remain open. Existing Newman development dependency findings are deferred under D-45; run only the trusted project collection against the local API.
+After creating the admin, preparing an available vehicle and starting the local API, supply the seeded admin credentials locally and run `npm run test:demo`. It generates the other credentials in memory and runs the [combined collection](postman/dobby.postman_collection.json) against loopback hosts only. See the [demo guide](docs/demo-guide.md), [use cases](docs/use-cases.md) and [API map](docs/diagrams/api.md).
+
+Use Postman Runner's response times to inspect request duration against the three-second non-functional requirement. Record the request, status and measured time when collecting submission evidence. The dedicated performance runner has been removed (D-61).
+
+The D-07 notation reference is supplied; D-10 and Saint’s integrated-main review remain open. Existing Newman development dependency findings are deferred under D-45; run only the trusted project collection against the local API.

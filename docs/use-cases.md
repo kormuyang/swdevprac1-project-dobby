@@ -4,12 +4,12 @@ These use cases cover the integrated A/B API. Endpoint names and fields follow t
 
 ## Visitor and account holder
 
-- A visitor registers a customer or a company representative. Public signup assigns the role and creates the first company application for a representative.
+- A visitor registers a customer or a provider representative. Public signup assigns the role and creates the first provider application for a representative.
 - An account holder logs in and receives a separate 24-hour session.
 - An authenticated account holder reads their own account and logs out of the current session. Other sessions remain active.
-- A suspended representative cannot log in or use protected company data. The representative can log out.
+- A suspended representative cannot log in or use protected provider data. The representative can log out.
 
-## Company representative
+## Provider representative
 
 - A representative reads their own provider profile and application history.
 - A representative submits a profile as a new application version. Submitted profile fields remain fixed.
@@ -29,11 +29,11 @@ These use cases cover the integrated A/B API. Endpoint names and fields follow t
 - A customer reads only their own bookings, edits dates before the original start while retaining the agreed rate, or cancels before start.
 - Cancellation keeps history and frees dates; completion is derived after the due date.
 
-## Approved company vehicle operations
+## Approved provider vehicle operations
 
-- The company creates and reads its vehicles, changes branch/rate, offering period and activation.
+- The provider creates and reads its vehicles, changes branch/rate, offering period and activation.
 - Existing booking snapshots remain fixed. Window changes must retain upcoming/ongoing bookings.
-- The company reads own-vehicle booking history with current customer contact; it cannot edit or cancel bookings.
+- The provider reads own-vehicle booking history with current customer contact; it cannot edit or cancel bookings.
 
 ## Administrator booking operations
 
@@ -43,13 +43,11 @@ These use cases cover the integrated A/B API. Endpoint names and fields follow t
 
 ## API entry points
 
-- Authentication: `POST /auth/register`, `POST /auth/register-company`, `POST /auth/login`, `GET /auth/me`, `POST /auth/logout`.
-- Company applications: `GET /company/profile`, `GET /company/applications`, `POST /company/applications`, and `GET /company/applications/{applicationId}`.
+- Authentication: `POST /auth/register`, `POST /auth/register-provider`, `POST /auth/login`, `GET /auth/me`, `POST /auth/logout`.
+- Provider applications: `GET /provider/profile`, `GET /provider/applications`, `POST /provider/applications`, and `GET /provider/applications/{applicationId}`.
 - Admin review: `GET /admin/providers`, `GET /admin/providers/{providerId}`, `GET /admin/applications`, `GET /admin/applications/{applicationId}`, and `POST /admin/applications/{applicationId}/review`.
 - Provider lifecycle: `POST /admin/providers/{providerId}/suspend` and `POST /admin/providers/{providerId}/reactivate`.
 
 ## Diagram notation
 
-The sequence diagrams are Mermaid engineering diagrams. They do not claim to use the instructor's UML Profile for API. D-07 remains open until the required notation is confirmed.
-
-See the [implemented API map](diagrams/api.md) for access and endpoint groups.
+See the [use case diagrams](use-case-diagrams.md), [REST UML profile](api-diagram.md) and [sequence diagrams](sequence-diagrams.md) for the submission views and editable Mermaid/SVG pairs. The REST profile follows the supplied Chapter 6 slide 32 example (D-59); final delivery review remains separate.

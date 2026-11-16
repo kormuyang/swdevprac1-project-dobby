@@ -1,3 +1,4 @@
+const AppError = require('../utils/AppError');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { calculateTotal } = require('../utils/money');
@@ -10,19 +11,35 @@ test('total uses integer satang, including minimum and maximum values', () => {
 });
 
 test('total rejects invalid rates and rental lengths without coercing strings', () => {
-  const invalidRates = [0, -1, 1.5, 1_000_000_001, Number.MAX_SAFE_INTEGER + 1, NaN, Infinity, '100', null, undefined, {}, []];
+  const invalidRates = [
+    0,
+    -1,
+    1.5,
+    1_000_000_001,
+    Number.MAX_SAFE_INTEGER + 1,
+    NaN,
+    Infinity,
+    '100',
+    null,
+    undefined,
+    {},
+    [],
+  ];
   const invalidDays = [0, -1, 1.5, 31, NaN, Infinity, '3', null, undefined, {}, []];
   const invalidPairs = [
     ...invalidRates.map((rate) => [rate, 1]),
     ...invalidDays.map((days) => [100, days]),
   ];
   for (const [rate, days] of invalidPairs) {
-    assert.throws(() => calculateTotal(rate, days), (error) => {
-      assert.equal(error.constructor, Error);
-      assert.equal(error.status, 400);
-      assert.ok(error.message.length > 0);
-      assert.equal(error.code, undefined);
-      return true;
-    });
+    assert.throws(
+      () => calculateTotal(rate, days),
+      (error) => {
+        assert.ok(error instanceof AppError);
+        assert.equal(error.status, 400);
+        assert.ok(error.message.length > 0);
+        assert.equal(error.code, undefined);
+        return true;
+      },
+    );
   }
 });

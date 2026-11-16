@@ -1,9 +1,9 @@
+const { objectIdField, requireObject, rejectUnknownFields, stringField } = require('./fields');
+const AppError = require('../utils/AppError');
 const { validateProfile } = require('./auth');
 
 function badRequest(message) {
-  const error = new Error(message);
-  error.status = 400;
-  return error;
+  return new AppError(400, message);
 }
 
 function validateReview(body) {
@@ -13,7 +13,10 @@ function validateReview(body) {
   if (body.decision === 'approve' && Object.keys(body).length === 1) {
     return { decision: 'approve' };
   }
-  if (body.decision === 'reject' && Object.keys(body).every((key) => ['decision', 'reason'].includes(key))) {
+  if (
+    body.decision === 'reject' &&
+    Object.keys(body).every((key) => ['decision', 'reason'].includes(key))
+  ) {
     if (typeof body.reason !== 'string') {
       throw badRequest('reason is required when rejecting an application.');
     }
@@ -24,13 +27,6 @@ function validateReview(body) {
     return { decision: 'reject', reason };
   }
   throw badRequest('Review must be approve or reject with a reason.');
-}
-
-function validateObjectId(value, name) {
-  if (typeof value !== 'string' || !/^[0-9a-fA-F]{24}$/.test(value)) {
-    throw badRequest(`${name} must be a MongoDB ObjectId.`);
-  }
-  return value;
 }
 
 function validatePage(query, { statuses, allowProviderId = false } = {}) {
@@ -49,7 +45,11 @@ function validatePage(query, { statuses, allowProviderId = false } = {}) {
     if (query[name] === undefined) {
       return fallback;
     }
-    if (typeof query[name] !== 'string' || !/^[1-9]\d*$/.test(query[name]) || Number(query[name]) > max) {
+    if (
+      typeof query[name] !== 'string' ||
+      !/^[1-9]\d*$/.test(query[name]) ||
+      Number(query[name]) > max
+    ) {
       throw badRequest(`${name} must be a positive integer no greater than ${max}.`);
     }
     return Number(query[name]);
@@ -64,7 +64,7 @@ function validatePage(query, { statuses, allowProviderId = false } = {}) {
     result.status = query.status;
   }
   if (query.providerId !== undefined) {
-    result.providerId = validateObjectId(query.providerId, 'providerId');
+    result.providerId = objectIdField(query.providerId, 'providerId');
   }
   return result;
 }
@@ -73,4 +73,22 @@ function validateApplication(body) {
   return validateProfile(body);
 }
 
-module.exports = { validateApplication, validateObjectId, validatePage, validateReview };
+function validatePublicProviderFilters(query) {
+  requireObject(query, 'Query');
+  rejectUnknownFields(query, ['page', 'limit'], 'query');
+  return validatePage(query);
+}
+
+function validateLifecycleInput(body, field) {
+  requireObject(body, 'Request body');
+  rejectUnknownFields(body, [field], 'request');
+  return { [field]: stringField(body[field], field, { min: 1, max: 1000 }) };
+}
+
+module.exports = {
+  validateApplication,
+  validatePage,
+  validateReview,
+  validatePublicProviderFilters,
+  validateLifecycleInput,
+};

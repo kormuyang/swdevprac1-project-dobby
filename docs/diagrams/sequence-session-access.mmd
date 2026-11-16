@@ -1,0 +1,39 @@
+sequenceDiagram
+
+actor Client
+participant Server as server.js
+participant Route as Mounted feature router
+participant Auth as protect / authorize / approvedProvider
+participant M as User / AuthSession / Provider
+participant DB as MongoDB
+participant C as Named feature controller
+Client->>Server: Protected request + Authorization header
+Server->>Route: Parse JSON, match method/path
+Route->>Auth: protect(options)
+activate Auth
+Auth->>Auth: Verify JWT signature, expiry and subject
+Auth->>M: Read user and active non-expired session
+M->>DB: Scoped authentication reads
+DB-->>Auth: Current role, provider and session
+opt Provider role and not logout
+    Auth->>M: Read current Provider status
+    M->>DB: Check provider exists and is not suspended
+end
+Auth-->>Route: req.actor or next(error)
+deactivate Auth
+Route->>Route: Role guard, approval when required, input validation
+Route->>C: req.actor + req.validated
+alt GET /api/v1/auth/me
+    C->>M: Read own User by actor.userId
+    M->>DB: Read account
+    C-->>Server: 200 serialized account
+else POST /api/v1/auth/logout
+    Note over Route,Auth: allowSuspended true, token/session must still be valid
+    C->>M: Revoke only actor.sessionId for actor.userId
+    M->>DB: Set revokedAt if active and unexpired
+    C-->>Server: 200 logout message, or 401 if no active session
+else Other protected operation
+    C-->>Server: Feature response after its scoped work
+end
+Server-->>Client: JSON response
+Note over Server,C: Validation/auth/domain failures use the shared handler, unexpected failures have a safe 500 message

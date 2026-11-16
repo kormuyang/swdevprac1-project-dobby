@@ -1,0 +1,37 @@
+sequenceDiagram
+
+actor Admin
+participant Server as server.js
+participant Route as routes/admin.js + guards + validation
+participant C as controllers/providers.js
+participant M as Provider / ProviderApplication
+participant DB as MongoDB
+Admin->>Server: POST /api/v1/admin/applications/{applicationId}/review
+Server->>Route: Parsed JSON
+Route->>C: Admin actor + validated decision and optional reason
+activate C
+C->>M: Preliminary application lookup for providerId
+M->>DB: Read provider reference
+C->>DB: Start transaction
+C->>M: Increment provider revision guard
+M->>DB: Lock provider
+C->>M: Update application only if still pending
+M->>DB: Record decision, reviewer, timestamp and rejection reason
+alt No pending application matched
+    C->>DB: Abort
+    C-->>Server: next(AppError 409)
+else Decision is approve
+    C->>M: Set approvedApplicationId
+    Note over C,M: Set approved status only if provider is not suspended
+    M->>DB: Update provider in same session
+    DB-->>C: Commit
+    C-->>Server: 200 serialized application
+else Decision is reject
+    Note over C,M: Keep last approved profile, set rejected only without one and when not suspended
+    C->>M: Update provider status if applicable
+    M->>DB: Persist in same session
+    DB-->>C: Commit
+    C-->>Server: 200 serialized application
+end
+deactivate C
+Server-->>Admin: JSON response

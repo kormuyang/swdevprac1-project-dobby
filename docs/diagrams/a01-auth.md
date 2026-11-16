@@ -4,24 +4,25 @@ A01 covers FR-01, FR-02 and the initial signup portion of FR-10. Application rea
 
 ## Use cases
 
-- A visitor registers a customer or a company representative and receives an initial session.
+- A visitor registers a customer or a provider representative and receives an initial session.
 - An account holder logs in and receives another independent 24-hour session.
 - An authenticated account holder reads their own account.
 - An account holder logs out of the current session. Other sessions remain active.
-- A suspended representative can log out but cannot log in or read protected company data.
+- A suspended representative can log out but cannot log in or read protected provider data.
 
-## Company signup
+## Provider signup
 
 ```mermaid
 sequenceDiagram
     actor Visitor
-    participant Route as Auth route / validation
+    participant Route as Auth route
     participant Service as Auth controller
     participant DB as MongoDB
-    Visitor->>Route: POST /auth/register-company
-    Route->>Service: Validated credentials and profile
+    Visitor->>Route: POST /auth/register-provider
+    Route->>Service: Request body and query
+    Service->>Service: Validate credentials and profile
     Service->>DB: Begin transaction
-    Service->>DB: Save company user with bcrypt hash
+    Service->>DB: Save provider user with bcrypt hash
     Service->>DB: Save pending provider and application v1
     Service->>DB: Save initial auth session
     Service->>DB: Commit
@@ -42,11 +43,11 @@ sequenceDiagram
     Auth->>DB: Read matching active session and current user
     Auth->>Auth: Build req.actor from current records
     alt GET /auth/me
-        Auth->>DB: Check current company state when applicable
+        Auth->>DB: Check current provider state when applicable
         Auth->>Handler: Authenticated actor
         Handler-->>Client: Safe current user
     else POST /auth/logout
-        Auth->>Handler: Authenticated actor, allow suspended company
+        Auth->>Handler: Authenticated actor, allow suspended provider
         Handler->>DB: Revoke current session
         Handler-->>Client: Logout message
     end
@@ -55,12 +56,12 @@ sequenceDiagram
 
 ## API responsibilities
 
-Routes choose validation, authentication and permission checks. Auth controllers own persistence, company-signup transactions, and local error responses using the committed OpenAPI shapes. Models define fields, indexes and password hashing. The user serializer allowlists public account fields.
+Routes choose authentication, permissions and validation middleware and import controller functions by name. Auth controllers consume req.validated, own persistence/provider-signup transactions and forward failures to the shared JSON error handler (D-54). Models define fields, indexes and password hashing. The user serializer allowlists public account fields.
 
-These diagrams describe the A01 implementation scope. They do not establish a live database test result or satisfy the unresolved course-specific UML Profile notation decision (D-07).
+These diagrams describe the A01 implementation scope, not a live database test result. The [submission REST profile](../api-diagram.md) follows the supplied Chapter 6 notation; exported [sequence views](../sequence-diagrams.md) cover the integrated implementation (D-59).
 
 ## Course alignment
 
 The [assignment 9 backend](https://github.com/Azther0z/cp51/tree/d959a57b66f90592b27eaeb48d6acae71e245ae/2110503-sw_dev_prac_1/assignment9/vacqbackend) supplies the route/controller/model layout, Bearer verification and bcrypt password hashing pattern. Chapter 12 covers JWT protection, headers and rate limiting; Chapter 13 covers the API specification and Swagger UI; Chapter 15 covers API assertions, Collection Runner and Newman.
 
-Dobby adds server-side session revocation for logout (FR-02), server-assigned signup roles (D-21), and atomic company signup (FR-10). Input allowlists and safe user serialization enforce NFR-02. The Mongoose save hook uses the installed version's async pattern and avoids rehashing an unchanged password. These additions implement the agreed behavior.
+Dobby adds server-side session revocation for logout (FR-02), server-assigned signup roles (D-21), and atomic provider signup (FR-10). Input allowlists and safe user serialization enforce NFR-02. The Mongoose save hook uses the installed version's async pattern and avoids rehashing an unchanged password. These additions implement the agreed behavior.

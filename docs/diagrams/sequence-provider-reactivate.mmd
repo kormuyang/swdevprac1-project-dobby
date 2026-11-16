@@ -1,0 +1,27 @@
+sequenceDiagram
+
+actor Admin
+participant Server as server.js
+participant Route as routes/admin.js + guards + validation
+participant C as controllers/providerLifecycle.js
+participant M as Provider / ProviderApplication
+participant DB as MongoDB
+Admin->>Server: POST /api/v1/admin/providers/{providerId}/reactivate
+Server->>Route: Parsed JSON
+Route->>C: Admin actor, providerId and resolutionNote
+activate C
+C->>DB: Start transaction
+C->>M: Increment Provider revision guard
+M->>DB: Guard provider
+C->>M: Load current approved application
+M->>DB: Read profile in session
+C->>C: Require suspended provider and approved profile
+C->>M: Save approved status and resolution audit fields
+M->>DB: Persist provider in same session
+DB-->>C: Commit
+C->>C: Serialize provider
+C-->>Server: 200 success
+deactivate C
+Server-->>Admin: JSON response
+Note over C,DB: Wrong lifecycle state is 409, missing provider is 404, failures abort
+Note over M,DB: Booking history, vehicle flags and session records remain unchanged

@@ -4,19 +4,19 @@ The [OpenAPI JSON](../contracts/openapi.json) is the authoritative field/status 
 
 ```mermaid
 flowchart LR
-    Visitor[Visitor] --> Auth["POST /auth/register<br/>POST /auth/register-company<br/>POST /auth/login"]
+    Visitor[Visitor] --> Auth["POST /auth/register<br/>POST /auth/register-provider<br/>POST /auth/login"]
     Account[Authenticated account] --> Session["GET /auth/me<br/>POST /auth/logout"]
-    Company[Company representative] --> Own["GET /company/profile<br/>GET, POST /company/applications<br/>GET /company/applications/:applicationId"]
+    Provider[Provider representative] --> Own["GET /provider/profile<br/>GET, POST /provider/applications<br/>GET /provider/applications/:applicationId"]
     Admin[Administrator] --> Review["GET /admin/providers<br/>GET /admin/providers/:providerId<br/>GET /admin/applications<br/>GET /admin/applications/:applicationId<br/>POST /admin/applications/:applicationId/review"]
     Admin --> Lifecycle["POST /admin/providers/:providerId/suspend<br/>POST /admin/providers/:providerId/reactivate"]
     Visitor --> Discovery["GET /providers and /vehicles<br/>GET provider/vehicle detail"]
-    Company --> Vehicles["GET, POST /company/vehicles<br/>PATCH details, availability and activation"]
+    Provider --> Vehicles["GET, POST /provider/vehicles<br/>PATCH details, availability and activation"]
     Customer[Customer] --> Bookings["GET, POST /bookings<br/>GET, PATCH, DELETE booking detail"]
-    Company --> CompanyBookings["GET /company/bookings<br/>GET booking detail"]
+    Provider --> ProviderBookings["GET /provider/bookings<br/>GET booking detail"]
     Admin -->|Read, date-edit, cancel| Bookings
     Vehicles --> Rentals[(Vehicle / Booking)]
     Bookings --> Rentals
-    CompanyBookings --> Rentals
+    ProviderBookings --> Rentals
     Discovery --> Rentals
     Auth --> Users[(User / AuthSession)]
     Session --> Users
@@ -27,6 +27,41 @@ flowchart LR
     Lifecycle --> Cancellation[Same-transaction booking cancellation]
 ```
 
-Company protected reads/writes require a current non-suspended provider. Pending/rejected companies can read history and submit revisions but cannot manage vehicles. Logout permits a suspended account. B owns vehicle/booking operations; pending and rejected companies cannot use them.
+## Route files
 
-This is an engineering API map. The instructor's UML Profile for API notation remains unconfirmed under D-07.
+```mermaid
+flowchart LR
+    Server[server.js] --> AuthRoutes[auth.js at /api/v1/auth]
+    Server --> PublicProviderRoutes[providers.js at /api/v1/providers]
+    Server --> VehicleRoutes[vehicles.js at /api/v1/vehicles]
+    Server --> BookingRoutes[bookings.js at /api/v1/bookings]
+    Server --> ProviderRoutes[provider.js at /api/v1/provider]
+    Server --> AdminRoutes[admin.js at /api/v1/admin]
+```
+
+Each file groups methods by relative path with router.route() chains. server.js shows each first-level API prefix. Authentication, roles, approval and validation remain attached to the applicable route chains; public and unknown paths keep their existing behavior (D-57).
+
+## Request flow
+
+```mermaid
+flowchart LR
+    Request --> JSON[Global express.json]
+    JSON --> Auth[Authentication and roles]
+    JSON -->|Invalid, oversized or unsupported encoding| Error[Safe JSON error handler]
+    Auth --> Approval[Provider approval where required]
+    Approval --> Validation[Request validation middleware]
+    Validation --> Controller
+    Controller --> Logic[Feature logic]
+    Validation -->|Invalid input| Error
+    Logic -->|Failure| Error
+    Logic -->|Simple scoped reads| Models
+    Logic -->|Discovery or transactional writes| Service[Feature service]
+    Service --> Models
+    Controller --> Output[Allowlisted response]
+```
+
+Booking list/detail and provider vehicle reads live in controllers. Booking creation/date edits and the separate cancellation flow remain in services with provider → user → vehicle transaction guards. JSON parsing uses the Express default 100 KB limit and runs before route authentication (D-46). The shared JSON error handler returns 400 for malformed JSON, 413 for oversized bodies, 415 for unsupported charset/encoding and a safe generic 500 for unexpected failures (D-54).
+
+Provider protected reads/writes require a current non-suspended provider. Pending/rejected providers can read history and submit revisions but cannot manage vehicles. Logout permits a suspended account. B owns vehicle/booking operations; pending and rejected providers cannot use them.
+
+This remains an engineering API map. Use the [REST UML profile](../api-diagram.md), [use case diagrams](../use-case-diagrams.md) and [sequence diagrams](../sequence-diagrams.md) for the submission views and Mermaid/SVG pairs (D-59).

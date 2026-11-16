@@ -17,8 +17,8 @@ Prefer the simplest correct implementation and less code. Avoid speculative abst
 
 Keep responsibilities clear:
 
-- Routes: method/path, authentication, roles and validation.
-- Controllers: HTTP input/output and small, single-use feature logic.
+- Routes: method/path, authentication, roles, provider approval, validation and named controller imports.
+- Controllers: validated input, HTTP input/output and small, single-use feature logic; forward errors with next(error).
 - Services: reusable or complex business logic that benefits from extraction.
 - Models: fields, validation and indexes.
 - Serializers: fields returned to the client.
@@ -29,7 +29,7 @@ Use async Mongoose 9 save hooks without a callback. Check `isModified('passwordH
 
 When a feature needs a transaction, keep its boundary in the controller or service that owns the operation. Every operation in one transaction uses the same session, with no parallel DB calls. Production must use real dependencies, not no-op stubs. Keep imports safe so tests do not connect to a database.
 
-Use node:test for pure rules and native HTTP fetch for Atlas integration tests. Build indexes first and check persisted results as well as responses. Keep A/B/test databases separate. Seed/reset must check an explicit allowed database name; destructive reset also needs an explicit flag. Use synthetic data and runtime collection variables without committing tokens.
+Use node:test for pure rules and native HTTP fetch for Atlas integration tests. Build indexes first and check persisted results as well as responses. Under D-55, use MONGO_URI and the shared dobby database for the app and all tests; run integration files sequentially and keep cleanup scoped to synthetic fixtures. Seed/reset must check an explicit allowed database name; destructive reset also needs an explicit flag. Use synthetic data and runtime collection variables without committing tokens.
 
 ## Writing docs
 
@@ -37,4 +37,4 @@ Use short headings, direct sentences and bullets for rules or assumptions. Expla
 
 ## Current state
 
-The development stack includes auth/company review/lifecycle, vehicle/discovery/booking APIs, guarded setup, the combined demo and response-time tooling. See README and the implementation plan for commands, PR dependencies and verification limits. Under D-43, Poom owns the merge decision with Codex-assisted review at each step; Saint reviews integrated main afterward. Atlas acceptance and D-07/D-10 remain open. Keep errors as `{success:false,message}` and transactions in their owning features.
+The development stack includes auth/provider review/lifecycle, vehicle/discovery/booking APIs, guarded setup, the combined demo and response-time tooling. See README and the implementation plan for commands, PR dependencies and verification limits. Under D-43, Poom owns the merge decision with Codex-assisted review at each step; Saint reviews integrated main afterward. Automated database/Newman and T41 checks passed; human review and D-10 remain open. D-59 records the supplied D-07 notation reference and submission diagram pages. Keep application errors as `{success:false,message}` and transactions in their owning features. Under D-54, use AppError for expected failures and the shared JSON handler for parser/framework failures. Validation middleware stores normalized input in req.validated.

@@ -1,9 +1,8 @@
+const AppError = require('../utils/AppError');
 const { requireObject, rejectUnknownFields, stringField } = require('./fields');
 
 function badRequest(message) {
-  const error = new Error(message);
-  error.status = 400;
-  return error;
+  return new AppError(400, message);
 }
 
 function passwordField(value) {
@@ -21,8 +20,12 @@ function validateCredentials(body, allowedFields) {
   requireObject(body, 'Request body');
   rejectUnknownFields(body, allowedFields, 'request');
   return {
-    name: body.name === undefined ? undefined : stringField(body.name, 'name', { min: 1, max: 120 }),
-    telephone: body.telephone === undefined ? undefined : stringField(body.telephone, 'telephone', { min: 3, max: 30 }),
+    name:
+      body.name === undefined ? undefined : stringField(body.name, 'name', { min: 1, max: 120 }),
+    telephone:
+      body.telephone === undefined
+        ? undefined
+        : stringField(body.telephone, 'telephone', { min: 3, max: 30 }),
     email: stringField(body.email, 'email', { min: 1, max: 254, email: true }).toLowerCase(),
     password: passwordField(body.password),
   };
@@ -47,9 +50,16 @@ function validateProfile(value) {
   rejectUnknownFields(value, fields, 'profile');
   const profile = {
     legalName: stringField(value.legalName, 'profile.legalName', { min: 1, max: 200 }),
-    registeredAddress: stringField(value.registeredAddress, 'profile.registeredAddress', { min: 1, max: 500 }),
+    registeredAddress: stringField(value.registeredAddress, 'profile.registeredAddress', {
+      min: 1,
+      max: 500,
+    }),
     telephone: stringField(value.telephone, 'profile.telephone', { min: 3, max: 30 }),
-    contactEmail: stringField(value.contactEmail, 'profile.contactEmail', { min: 1, max: 254, email: true }).toLowerCase(),
+    contactEmail: stringField(value.contactEmail, 'profile.contactEmail', {
+      min: 1,
+      max: 254,
+      email: true,
+    }).toLowerCase(),
     documentUrl: stringField(value.documentUrl, 'profile.documentUrl', { min: 1, max: 2048 }),
   };
   let document;
@@ -64,11 +74,13 @@ function validateProfile(value) {
   return profile;
 }
 
-function validateCompanyRegistration(body) {
+function validateProviderRegistration(body) {
   requireObject(body, 'Request body');
-  rejectUnknownFields(body, [
-    'name', 'telephone', 'email', 'password', 'businessRegistrationNumber', 'profile',
-  ], 'request');
+  rejectUnknownFields(
+    body,
+    ['name', 'telephone', 'email', 'password', 'businessRegistrationNumber', 'profile'],
+    'request',
+  );
   const credentials = validateRegistration({
     name: body.name,
     telephone: body.telephone,
@@ -77,9 +89,18 @@ function validateCompanyRegistration(body) {
   });
   return {
     ...credentials,
-    businessRegistrationNumber: stringField(body.businessRegistrationNumber, 'businessRegistrationNumber', { min: 1, max: 50 }),
+    businessRegistrationNumber: stringField(
+      body.businessRegistrationNumber,
+      'businessRegistrationNumber',
+      { min: 1, max: 50 },
+    ),
     profile: validateProfile(body.profile),
   };
 }
 
-module.exports = { validateCompanyRegistration, validateLogin, validateProfile, validateRegistration };
+module.exports = {
+  validateProviderRegistration,
+  validateLogin,
+  validateProfile,
+  validateRegistration,
+};

@@ -1,0 +1,20 @@
+flowchart LR
+    Visitor["«actor» Visitor"]
+    Account["«actor» Account holder"]
+    subgraph Dobby["Dobby rental car booking API"]
+        direction TB
+        Register(["Register customer"])
+        Onboard(["Register provider and first application"])
+        Login(["Log in"])
+        Me(["View own account"])
+        Logout(["Log out current session"])
+        Providers(["Browse approved providers"])
+        Vehicles(["Search and view eligible vehicles"])
+    end
+    Visitor --- Register
+    Visitor --- Onboard
+    Visitor --- Login
+    Account --- Me
+    Account --- Logout
+    Visitor --- Providers
+    Visitor --- Vehicles

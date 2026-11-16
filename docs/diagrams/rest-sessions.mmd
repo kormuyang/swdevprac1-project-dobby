@@ -1,0 +1,56 @@
+classDiagram
+    direction LR
+    class API["Dobby API"] {
+        <<Application>>
+        basePath = /api/v1
+    }
+    class R0["login"] {
+        <<Resource>>
+        +POST(LoginInput) 200
+    }
+    class R1["logout"] {
+        <<Resource>>
+        +POST() 200
+    }
+    class R2["me"] {
+        <<Resource>>
+        +GET() 200
+    }
+    class R3["health"] {
+        <<Resource>>
+        +GET() 200
+    }
+    class AuthResultResponse {
+        <<Representation>>
+        success : boolean
+        data : AuthResult
+    }
+    class HealthResponse {
+        <<Representation>>
+        success : boolean
+        data : Health
+    }
+    class LoginInput {
+        <<Representation>>
+        email : string
+        password : string
+    }
+    class OkResponse {
+        <<Representation>>
+        success : boolean
+        data : Ok
+    }
+    class UserResponse {
+        <<Representation>>
+        success : boolean
+        data : User
+    }
+    R0 ..> LoginInput : «use» request
+    R0 ..> AuthResultResponse : «use» response
+    API --> R0 : «Path» /auth/login
+    R1 ..> OkResponse : «use» response
+    API --> R1 : «Path» /auth/logout
+    R2 ..> UserResponse : «use» response
+    API --> R2 : «Path» /auth/me
+    R3 ..> HealthResponse : «use» response
+    API --> R3 : «Path» /health

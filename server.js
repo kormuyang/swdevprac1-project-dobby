@@ -9,48 +9,50 @@ const swaggerUi = require('swagger-ui-express');
 
 const openApiDocument = require('./docs/contracts/openapi.json');
 const connectDB = require('./config/db');
+const { errorHandler } = require('./middleware/errorHandler');
 const authRoutes = require('./routes/auth');
-const companyRoutes = require('./routes/company');
-const adminProviderRoutes = require('./routes/adminProviders');
-const providerLifecycleRoutes = require('./routes/providerLifecycle');
+const providersRoutes = require('./routes/providers');
+const vehiclesRoutes = require('./routes/vehicles');
+const bookingsRoutes = require('./routes/bookings');
+const providerRoutes = require('./routes/provider');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 5003;
 
-connectDB().catch(() => {
-  console.error('MongoDB connection failed.');
-  process.exit(1);
-});
+connectDB();
 
 app.use(cors());
 app.use(helmet());
 app.use(cookieParser());
 app.set('query parser', 'extended');
-app.use(rateLimit({
-  windowMs: 10 * 60 * 1000,
-  limit: 1000,
-  standardHeaders: 'draft-8',
-  legacyHeaders: false,
-  handler(req, res) {
-    res.status(429).json({
-      success: false,
-      message: 'Too many requests. Try again later.',
-    });
-  },
-}));
+app.use(
+  rateLimit({
+    windowMs: 10 * 60 * 1000,
+    limit: 1000,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    handler(req, res) {
+      res.status(429).json({
+        success: false,
+        message: 'Too many requests. Try again later.',
+      });
+    },
+  }),
+);
+
+app.use(express.json());
 
 app.get('/api/v1/health', (req, res) => {
   res.status(200).json({ success: true, data: { status: 'ok' } });
 });
 
 app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/bookings', require('./routes/bookings'));
-app.use('/api/v1', require('./routes/publicVehicles'));
-app.use('/api/v1/company/vehicles', require('./routes/companyVehicles'));
-app.use('/api/v1/company/bookings', require('./routes/companyBookings'));
-app.use('/api/v1/company', companyRoutes);
-app.use('/api/v1/admin/providers', providerLifecycleRoutes);
-app.use('/api/v1/admin', adminProviderRoutes);
+app.use('/api/v1/providers', providersRoutes);
+app.use('/api/v1/vehicles', vehiclesRoutes);
+app.use('/api/v1/bookings', bookingsRoutes);
+app.use('/api/v1/provider', providerRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
@@ -60,6 +62,8 @@ app.use((req, res) => {
     message: 'The requested resource was not found.',
   });
 });
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Dobby API listening on port ${PORT}`);

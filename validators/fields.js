@@ -1,9 +1,8 @@
+const AppError = require('../utils/AppError');
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+\.[^\s@]+$/;
 
 function badRequest(message) {
-  const error = new Error(message);
-  error.status = 400;
-  return error;
+  return new AppError(400, message);
 }
 
 function requireObject(value, label) {
@@ -57,4 +56,11 @@ function objectIdField(value, field) {
   return value.toLowerCase();
 }
 
-module.exports = { requireObject, rejectUnknownFields, stringField, integerField, enumField, objectIdField };
+module.exports = {
+  requireObject,
+  rejectUnknownFields,
+  stringField,
+  integerField,
+  enumField,
+  objectIdField,
+};

@@ -1,0 +1,32 @@
+sequenceDiagram
+
+actor Visitor
+participant Server as server.js
+participant Route as routes/auth.js + authValidation
+participant Controller as controllers/auth.js
+participant Models as User / Provider / ProviderApplication / AuthSession
+participant DB as MongoDB
+Visitor->>Server: POST /api/v1/auth/register or /auth/register-provider
+activate Server
+Server->>Route: Parsed JSON, registered auth path
+Route->>Route: Validate and allowlist input
+Route->>Controller: registerCustomer or registerProvider(req.validated)
+activate Controller
+Controller->>DB: startSession + withTransaction
+Controller->>Models: User.create with server-assigned role
+Models->>Models: User save hook hashes password
+Models->>DB: Insert user in session
+opt Provider registration
+    Controller->>Models: Create pending Provider and application version 1
+    Models->>DB: Insert linked records in same session
+end
+Controller->>Controller: Sign token with unique session ID
+Controller->>Models: AuthSession.create in same session
+Models->>DB: Insert session
+Controller->>Controller: Serialize user and build result
+DB-->>Controller: Commit transaction
+Controller-->>Server: 201 success + data
+deactivate Controller
+Server-->>Visitor: JSON response
+deactivate Server
+Note over Controller,DB: Duplicate email or business number maps to 409, transaction failure rolls back all inserts

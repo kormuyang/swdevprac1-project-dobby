@@ -1,0 +1,57 @@
+classDiagram
+    direction LR
+    class API["Dobby API"] {
+        <<Application>>
+        basePath = /api/v1
+    }
+    class R0["providers"] {
+        <<Resource>>
+        +GET(filters QueryParams) 200
+    }
+    class R1["{providerId}"] {
+        <<Resource>>
+        +GET() 200
+    }
+    class R2["suspend"] {
+        <<Resource>>
+        +POST(SuspendInput) 200
+    }
+    class R3["reactivate"] {
+        <<Resource>>
+        +POST(ReactivateInput) 200
+    }
+    class ProviderPrivateListResponse {
+        <<Representation>>
+        success : boolean
+        count : integer
+        pagination : Pagination
+        data : ProviderPrivate[]
+    }
+    class ProviderPrivateResponse {
+        <<Representation>>
+        success : boolean
+        data : ProviderPrivate
+    }
+    class ReactivateInput {
+        <<Representation>>
+        resolutionNote : string
+    }
+    class SuspendInput {
+        <<Representation>>
+        reason : string
+    }
+    class SuspensionResultResponse {
+        <<Representation>>
+        success : boolean
+        data : SuspensionResult
+    }
+    R0 ..> ProviderPrivateListResponse : «use» response
+    API --> R0 : «Path» /admin/providers
+    R1 ..> ProviderPrivateResponse : «use» response
+    R0 --> R1 : «Path» /{providerId}
+    R2 ..> SuspendInput : «use» request
+    R2 ..> SuspensionResultResponse : «use» response
+    R1 --> R2 : «Path» /suspend
+    R3 ..> ReactivateInput : «use» request
+    R3 ..> ProviderPrivateResponse : «use» response
+    R1 --> R3 : «Path» /reactivate

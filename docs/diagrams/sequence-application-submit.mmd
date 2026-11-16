@@ -1,0 +1,32 @@
+sequenceDiagram
+
+actor Rep as Provider representative
+participant Server as server.js
+participant Route as routes/provider.js + guards + validation
+participant C as controllers/providers.js
+participant M as Provider / ProviderApplication
+participant DB as MongoDB
+Rep->>Server: POST /api/v1/provider/applications
+Server->>Route: Parsed JSON
+Route->>Route: Authenticate provider, validate ProfileInput
+Route->>C: submitApplication(req.actor, req.validated)
+activate C
+C->>DB: Start transaction
+C->>M: Guard owned non-suspended Provider via revision increment
+M->>DB: Find/update provider with session
+C->>M: Check pending application exists
+M->>DB: Read provider-scoped pending version
+alt A pending version exists
+    C->>DB: Abort transaction
+    C-->>Server: next(AppError 409)
+else No pending version
+    C->>M: Save new version = applicationSequence + 1
+    M->>DB: Insert immutable application in session
+    C->>M: Set latestApplicationId, increment sequence
+    Note over C,M: Keep approvedApplicationId, only set pending when no approved profile
+    M->>DB: Update provider in same session
+    DB-->>C: Commit
+    C-->>Server: 201 serialized application
+end
+deactivate C
+Server-->>Rep: Success or safe JSON error

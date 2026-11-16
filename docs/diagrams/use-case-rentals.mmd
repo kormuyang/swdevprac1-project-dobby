@@ -1,0 +1,24 @@
+flowchart LR
+    Customer["«actor» Customer"]
+    Admin["«actor» Administrator"]
+    subgraph Dobby["Dobby rental car booking API"]
+        direction TB
+        Create(["Book one vehicle"])
+        Own(["View own bookings"])
+        EditOwn(["Edit own booking dates before original start"])
+        CancelOwn(["Cancel own booking before start"])
+        All(["View bookings across providers"])
+        EditAny(["Edit booking dates before original start"])
+        CancelAny(["Cancel non-completed booking, including emergency"])
+        Eligibility(["Check dates, provider, vehicle, cap and overlap"])
+    end
+    Customer --- Create
+    Customer --- Own
+    Customer --- EditOwn
+    Customer --- CancelOwn
+    Admin --- All
+    Admin --- EditAny
+    Admin --- CancelAny
+    Create -.->|"«include»"| Eligibility
+    EditOwn -.->|"«include»"| Eligibility
+    EditAny -.->|"«include»"| Eligibility
