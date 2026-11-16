@@ -27,6 +27,18 @@ flowchart LR
     Lifecycle --> Cancellation[Same-transaction booking cancellation]
 ```
 
+## Route files
+
+```mermaid
+flowchart LR
+    Server[server.js] --> AuthRoutes[auth.js at /api/v1/auth]
+    Server --> ProviderRoutes[providers.js at /api/v1]
+    Server --> VehicleRoutes[vehicles.js at /api/v1]
+    Server --> BookingRoutes[bookings.js at /api/v1]
+```
+
+Each file groups methods by path with router.route() chains. Authentication and roles attach only to protected route chains; public discovery remains accessible when the resource routers share a mount prefix (D-53).
+
 ## Request flow
 
 ```mermaid

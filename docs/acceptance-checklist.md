@@ -87,6 +87,7 @@ For each PR, list test IDs, command, test environment/database, pass/fail counts
 
 ## Implemented check locations
 
+- Route layout, unchanged URLs/handlers and role boundaries across shared mounts: [resource routing checks](../tests/routing.test.js).
 - T38 controller request validation and permission ordering with synthetic actors: [local HTTP checks](../tests/request-validation.test.js). These do not establish database behavior.
 - T38 global JSON parsing, default body limit and Express default errors before authentication: [local setup checks](../tests/setup.test.js).
 - Vehicle ownership, discovery, windows and safe output: [vehicle HTTP integration](../tests/vehicles.api.integration.test.js).

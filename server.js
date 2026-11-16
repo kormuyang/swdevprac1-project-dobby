@@ -10,13 +10,9 @@ const swaggerUi = require('swagger-ui-express');
 const openApiDocument = require('./docs/contracts/openapi.json');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
+const providerRoutes = require('./routes/providers');
+const vehicleRoutes = require('./routes/vehicles');
 const bookingRoutes = require('./routes/bookings');
-const publicVehicleRoutes = require('./routes/publicVehicles');
-const providerVehicleRoutes = require('./routes/providerVehicles');
-const providerBookingRoutes = require('./routes/providerBookings');
-const providerRoutes = require('./routes/provider');
-const adminProviderRoutes = require('./routes/adminProviders');
-const providerLifecycleRoutes = require('./routes/providerLifecycle');
 
 const app = express();
 const PORT = process.env.PORT || 5003;
@@ -52,13 +48,9 @@ app.get('/api/v1/health', (req, res) => {
 });
 
 app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/bookings', bookingRoutes);
-app.use('/api/v1', publicVehicleRoutes);
-app.use('/api/v1/provider/vehicles', providerVehicleRoutes);
-app.use('/api/v1/provider/bookings', providerBookingRoutes);
-app.use('/api/v1/provider', providerRoutes);
-app.use('/api/v1/admin', adminProviderRoutes);
-app.use('/api/v1/admin/providers', providerLifecycleRoutes);
+app.use('/api/v1', providerRoutes);
+app.use('/api/v1', vehicleRoutes);
+app.use('/api/v1', bookingRoutes);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
 

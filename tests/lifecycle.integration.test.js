@@ -134,7 +134,7 @@ test(
     const app = express();
     app.use(express.json());
     app.use('/api/v1/auth', require('../routes/auth'));
-    app.use('/api/v1/admin/providers', require('../routes/providerLifecycle'));
+    app.use('/api/v1', require('../routes/providers'));
     server = app.listen(0, '127.0.0.1');
     await new Promise((resolve) => server.once('listening', resolve));
     const base = `http://127.0.0.1:${server.address().port}`;

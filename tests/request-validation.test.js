@@ -36,12 +36,9 @@ test('routes retain controller validation and permission order with synthetic ac
   app.set('query parser', 'extended');
   app.use(express.json());
   app.use('/auth', require('../routes/auth'));
-  app.use('/bookings', require('../routes/bookings'));
-  app.use('/', require('../routes/publicVehicles'));
-  app.use('/provider/vehicles', require('../routes/providerVehicles'));
-  app.use('/provider/bookings', require('../routes/providerBookings'));
-  app.use('/provider', require('../routes/provider'));
-  app.use('/admin', require('../routes/adminProviders'));
+  app.use('/', require('../routes/providers'));
+  app.use('/', require('../routes/vehicles'));
+  app.use('/', require('../routes/bookings'));
   const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
   t.after(() => new Promise((resolve) => server.close(resolve)));

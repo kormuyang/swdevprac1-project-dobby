@@ -42,6 +42,10 @@ Representative accounts use role `provider`. Their endpoints are under `/api/v1/
 
 Provider representatives can read their profile and application history and submit revisions. Admins review applications and access the review queue. A revision does not replace the approved profile until approval; approval never clears suspension. See [OpenAPI](docs/contracts/openapi.json) for endpoints and fields and [A02 diagrams](docs/diagrams/a02-provider-review.md) for the flow.
 
+## Routes
+
+Route files are grouped by resource: `auth.js`, `providers.js`, `vehicles.js` and `bookings.js`. Methods sharing a path use `router.route()` chains. Auth mounts at `/api/v1/auth`; the other resource routers mount at `/api/v1`. Each protected route chain declares its authentication and roles. Endpoint URLs remain unchanged.
+
 ## Tests
 
 Check JavaScript with `npm run lint` and formatting with `npm run format:check`. Apply safe lint fixes with `npm run lint:fix` and format supported JavaScript, JSON and Markdown files with `npm run format`. Dependencies, generated output, environment files and the npm-generated lockfile are excluded from formatting.

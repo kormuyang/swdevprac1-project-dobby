@@ -136,13 +136,9 @@ async function apiFixture(t) {
   app.use(express.json());
   app.set('query parser', 'extended');
   app.use('/api/v1/auth', require('../../routes/auth'));
-  app.use('/api/v1/bookings', require('../../routes/bookings'));
-  app.use('/api/v1', require('../../routes/publicVehicles'));
-  app.use('/api/v1/provider/vehicles', require('../../routes/providerVehicles'));
-  app.use('/api/v1/provider/bookings', require('../../routes/providerBookings'));
-  app.use('/api/v1/provider', require('../../routes/provider'));
-  app.use('/api/v1/admin', require('../../routes/adminProviders'));
-  app.use('/api/v1/admin/providers', require('../../routes/providerLifecycle'));
+  app.use('/api/v1', require('../../routes/providers'));
+  app.use('/api/v1', require('../../routes/vehicles'));
+  app.use('/api/v1', require('../../routes/bookings'));
   app.use((req, res) => res.status(404).json({ success: false, message: 'Not found.' }));
   server = app.listen(0, '127.0.0.1');
   await new Promise((resolve, reject) => {

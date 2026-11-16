@@ -103,7 +103,7 @@ test('global JSON parsing uses Express default errors before authentication', as
   app.get('/failure', () => {
     throw new Error('Synthetic internal diagnostic');
   });
-  app.use('/bookings', require('../routes/bookings'));
+  app.use('/', require('../routes/bookings'));
   const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
   t.after(() => new Promise((resolve) => server.close(resolve)));

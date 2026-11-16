@@ -9,8 +9,7 @@ const AuthSession = require('../models/AuthSession');
 const Provider = require('../models/Provider');
 const ProviderApplication = require('../models/ProviderApplication');
 const User = require('../models/User');
-const providerRoutes = require('../routes/provider');
-const adminRoutes = require('../routes/adminProviders');
+const providerRoutes = require('../routes/providers');
 
 const mongoUri = process.env.TEST_MONGO_URI;
 test('provider review and profile versioning persist atomically', async (t) => {
@@ -139,8 +138,7 @@ test('provider review and profile versioning persist atomically', async (t) => {
   ]);
   const app = express();
   app.use(express.json());
-  app.use('/api/v1/provider', providerRoutes);
-  app.use('/api/v1/admin', adminRoutes);
+  app.use('/api/v1', providerRoutes);
   server = http.createServer(app);
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${server.address().port}/api/v1`;

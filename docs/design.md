@@ -20,6 +20,8 @@ Use Node 24/npm/CommonJS, Express 5, Mongoose 9 and Atlas. Installed packages in
 
 Routes import controller functions by name and declare paths, authentication and roles. Controllers call request validators directly and use local input/filter/ID variables, without validation middleware or derived request properties (D-48). Shared body/query rejection functions live in validators/request.js. Authentication/roles remain middleware; provider controllers check eligibility before request validation (D-52), with write services rechecking inside their transactions. Express handles uncaught parser errors by default (D-49).
 
+Routing uses four flat resource files (D-53): auth.js, providers.js, vehicles.js and bookings.js. Auth mounts at /api/v1/auth; the other three mount at /api/v1 and declare their full resource paths. Providers includes public discovery, representative profiles/applications and admin review/lifecycle. Vehicles and bookings each include their public/customer and representative operations. Use router.route() chains to group methods for one path. Scope authentication/roles to individual route chains so mounting several resource routers at the same prefix does not protect public or unrelated paths. URLs and controller contracts are unchanged.
+
 The configured local port defaults to 5003. Health is at `/api/v1/health`; Swagger UI at `/api-docs` serves committed JSON. CORS uses default middleware options. `cookie-parser` parses cookies; it does not implement cookie authentication. Auth routes use Bearer authentication with revocable sessions.
 
 ## Provider terminology transition (D-51)

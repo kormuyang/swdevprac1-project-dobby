@@ -6,14 +6,28 @@ const {
   getBooking,
   updateBookingDates,
   cancelBooking,
+  listProviderBookings,
+  getProviderBooking,
 } = require('../controllers/bookings');
 
 const router = express.Router();
-router.use(protect());
-router.post('/', authorize('user'), createBooking);
-router.get('/', authorize('user', 'admin'), listBookings);
-router.get('/:bookingId', authorize('user', 'admin'), getBooking);
-router.patch('/:bookingId', authorize('user', 'admin'), updateBookingDates);
-router.delete('/:bookingId', authorize('user', 'admin'), cancelBooking);
+
+router
+  .route('/bookings')
+  .all(protect())
+  .get(authorize('user', 'admin'), listBookings)
+  .post(authorize('user'), createBooking);
+router
+  .route('/bookings/:bookingId')
+  .all(protect(), authorize('user', 'admin'))
+  .get(getBooking)
+  .patch(updateBookingDates)
+  .delete(cancelBooking);
+
+router.route('/provider/bookings').all(protect(), authorize('provider')).get(listProviderBookings);
+router
+  .route('/provider/bookings/:bookingId')
+  .all(protect(), authorize('provider'))
+  .get(getProviderBooking);
 
 module.exports = router;

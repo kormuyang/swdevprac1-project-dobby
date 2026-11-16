@@ -9,7 +9,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
-    "test": "node --test tests/auth.test.js tests/dates.test.js tests/money.test.js tests/providers.test.js tests/vehicles.test.js tests/bookings.test.js tests/setup.test.js tests/demo.test.js tests/performance.test.js tests/request-validation.test.js",
+    "test": "node --test tests/auth.test.js tests/dates.test.js tests/money.test.js tests/providers.test.js tests/vehicles.test.js tests/bookings.test.js tests/setup.test.js tests/demo.test.js tests/performance.test.js tests/request-validation.test.js tests/routing.test.js",
     "dev": "nodemon server.js",
     "start": "node server.js",
     "test:integration": "node --test tests/auth.integration.test.js tests/providers.integration.test.js tests/rentals.integration.test.js tests/lifecycle.integration.test.js tests/vehicles.api.integration.test.js tests/bookings.api.integration.test.js tests/booking-lifecycle.api.integration.test.js tests/demo.integration.test.js",

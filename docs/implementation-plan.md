@@ -127,3 +127,11 @@ Node 24 verification: 44/44 local tests, lint, formatting and diff checks passed
 ## Provider eligibility in controllers (D-52)
 
 The user requested removing approvedProvider middleware. The six provider vehicle handlers and two provider booking-read handlers check requireApprovedProvider before request validation. Routes retain protect/authorize. Vehicle write services still recheck provider eligibility in their owning transactions. No provider access rule is removed.
+
+## Resource routing (D-53)
+
+The user chose resource grouping, unchanged URLs and router.route() chains. Four flat route files replace the mixed access-area files. Server and test hosts mount auth at /api/v1/auth and the other resource routers at /api/v1. The shared API fixture mounts the complete route set without optional extra routers. Controllers, transaction boundaries and OpenAPI paths remain unchanged.
+
+Local routing checks compare every routed OpenAPI operation with its handler and exercise visitor/customer/provider/admin access, public-route fallthrough, unknown paths and the suspended-account logout exception. Authentication and controller handlers are mocked only in this routing test; it does not prove database behavior.
+
+Verification on November 16: Node 24 local tests passed 45/45, including the full 33-operation routing/access matrix. Lint, format checks, static local imports and git diff checks passed. Neither dedicated test database connection was available, so Atlas integration, database races and the full Newman journey remain unrun.
