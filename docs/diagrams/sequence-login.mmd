@@ -1,0 +1,37 @@
+sequenceDiagram
+
+actor Account as Account holder
+participant Server as server.js
+participant Route as routes/auth.js + authValidation
+participant C as controllers/auth.js
+participant M as User / Provider / AuthSession
+participant DB as MongoDB
+Account->>Server: POST /api/v1/auth/login
+Server->>Route: Parsed JSON
+Route->>C: Validated email/password
+activate C
+C->>M: User.findOne(email), select passwordHash
+M->>DB: Read account
+DB-->>C: Account or missing
+C->>C: Compare password hash
+alt Invalid credentials
+    C-->>Server: next(AppError 401)
+else Valid credentials
+    opt Provider role
+        C->>M: Provider.findById(providerId), select status
+        M->>DB: Read provider status
+        DB-->>C: Status
+        opt Missing or suspended provider
+            break Login denied
+                C-->>Server: next(AppError 403)
+                Server-->>Account: Safe JSON error
+            end
+        end
+    end
+    C->>C: Sign token and capture 24-hour expiry
+    C->>M: AuthSession.create(sid, userId, expiresAt)
+    M->>DB: Persist separate session
+    C-->>Server: 200 serialized user + token + expiry
+end
+deactivate C
+Server-->>Account: Success JSON or shared safe JSON error

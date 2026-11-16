@@ -141,4 +141,4 @@ Deliver:
 - Work allocation and the GitHub link.
 - A Postman Runner/Newman demo in a presentation of at most seven minutes, plus up to three minutes of questions.
 
-Confirm the API-diagram notation, AI disclosure and extra-credit/video expectations in [open decisions](decisions.md#open-decisions).
+Use the supplied Chapter 6 notation for the [REST UML profile](api-diagram.md) (D-59). Confirm remaining AI disclosure and extra-credit/video expectations in [open decisions](decisions.md#open-decisions).

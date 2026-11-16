@@ -47,7 +47,7 @@ Booking records supply occupied dates; do not duplicate the list on Vehicle.
 
 ## Open decisions
 
-- **D-07:** confirm the instructor's UML Profile for API notation and baseline diagrams before delivery.
+- **D-07 reference resolved:** the user supplied Chapter 6 slides 32–33 and Tutor Matcher examples. Use their REST profile and sequence notation (D-59). Final diagram acceptance remains part of delivery review.
 - **D-10:** confirm AI disclosure, extra credit and teaching-video expectations. No AI policy or disclosure wording has been agreed.
 - **Provider history:** keeping every suspension/reactivation event was proposed but not agreed. For now, the model keeps the latest lifecycle details and all application versions.
 
@@ -72,3 +72,7 @@ User, November 16: expose the first API path segment in server.js instead of mou
 ## D-58: Consolidate feature services
 
 User, November 16: move cancelNonCompletedForProvider from bookingCancellation.js into services/bookings.js, and requireApprovedProvider from providerAccess.js into services/providers.js. Remove the two single-function files and update callers/tests. Keep bulk provider cancellation distinct from customer/admin cancellation, including its caller-owned transaction, same-session writes and provider → sorted users → sorted vehicles guard order. Keep the approval guard reusable from middleware and in-transaction vehicle writes.
+
+## D-59: Submission diagram sources and exports
+
+User, November 16: provide use case, REST UML profile class and sequence diagrams as paired .mmd/.svg files, with three Markdown pages embedding the views. Split features for readability. Follow the supplied Tutor Matcher examples and Chapter 6 slides 32–33: Application, Resource and Representation stereotypes; Path labels on URI connections; request-flow lifelines matching the implementation. This supplies the previously missing D-07 notation reference, without claiming instructor acceptance. Use case flowcharts emulate UML actors, ovals and system boundaries because Mermaid has no native use-case diagram. Keep routes and runtime behavior unchanged.

@@ -1,0 +1,42 @@
+classDiagram
+    direction LR
+    class API["Dobby API"] {
+        <<Application>>
+        basePath = /api/v1
+    }
+    class R0["applications"] {
+        <<Resource>>
+        +GET(filters QueryParams) 200
+    }
+    class R1["{applicationId}"] {
+        <<Resource>>
+        +GET() 200
+    }
+    class R2["review"] {
+        <<Resource>>
+        +POST(ReviewInput) 200
+    }
+    class ApplicationListResponse {
+        <<Representation>>
+        success : boolean
+        count : integer
+        pagination : Pagination
+        data : Application[]
+    }
+    class ApplicationResponse {
+        <<Representation>>
+        success : boolean
+        data : Application
+    }
+    class ReviewInput {
+        <<Representation>>
+        decision : approve or reject
+        reason : required for reject
+    }
+    R0 ..> ApplicationListResponse : «use» response
+    API --> R0 : «Path» /admin/applications
+    R1 ..> ApplicationResponse : «use» response
+    R0 --> R1 : «Path» /{applicationId}
+    R2 ..> ReviewInput : «use» request
+    R2 ..> ApplicationResponse : «use» response
+    R1 --> R2 : «Path» /review

@@ -1,0 +1,35 @@
+sequenceDiagram
+
+actor Visitor
+participant Server as server.js
+participant Route as routes/providers.js or vehicles.js
+participant V as Public validation middleware
+participant C as Provider or vehicle controller
+participant S as Provider or vehicle service
+participant M as Provider or Vehicle model
+participant DB as MongoDB
+Visitor->>Server: GET /api/v1/providers or /vehicles, list or detail
+Server->>Route: Match public route
+Route->>V: Validate ID or allowlisted query, reject body
+V->>C: req.validated
+activate C
+C->>S: listPublic... or getPublic...
+activate S
+S->>S: Build approved provider/profile pipeline
+opt Vehicle discovery
+    S->>S: Require active vehicle and non-expired offering
+    opt Date-filtered vehicle list
+        S->>S: Require full date interval inside offering
+        S->>S: Exclude inclusive overlap with confirmed bookings
+    end
+end
+S->>M: Execute provider or vehicle aggregation
+M->>DB: Run aggregation and pagination or detail match
+DB-->>S: Eligible records, totals or no detail
+S-->>C: Page or record, missing detail throws 404
+deactivate S
+C->>C: Serialize public fields
+C-->>Server: 200 JSON page or detail
+deactivate C
+Server-->>Visitor: JSON response
+Note over Visitor,DB: Search is advisory, booking writes recheck eligibility inside their transaction

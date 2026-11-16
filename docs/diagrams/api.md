@@ -64,4 +64,4 @@ Booking list/detail and provider vehicle reads live in controllers. Booking crea
 
 Provider protected reads/writes require a current non-suspended provider. Pending/rejected providers can read history and submit revisions but cannot manage vehicles. Logout permits a suspended account. B owns vehicle/booking operations; pending and rejected providers cannot use them.
 
-This is an engineering API map. The instructor's UML Profile for API notation remains unconfirmed under D-07.
+This remains an engineering API map. Use the [REST UML profile](../api-diagram.md), [use case diagrams](../use-case-diagrams.md) and [sequence diagrams](../sequence-diagrams.md) for the submission views and Mermaid/SVG pairs (D-59).

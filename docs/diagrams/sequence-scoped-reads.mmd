@@ -1,0 +1,29 @@
+sequenceDiagram
+
+actor Caller as Customer, provider representative or administrator
+participant Server as server.js
+participant Route as Matching router + guards + validation
+participant C as Named feature controller
+participant M as Provider / ProviderApplication / Vehicle / Booking
+participant DB as MongoDB
+Caller->>Server: GET private list or detail
+Server->>Route: Registered resource path
+Route->>Route: Authenticate and authorize, approval for provider vehicles/bookings
+Route->>Route: Validate ID, filters and pagination, reject body
+Route->>C: req.actor + req.validated
+activate C
+C->>C: Build ownership-scoped filter before loading records
+Note over C,M: Customer booking scope = actor.userId, provider scope = actor.providerId, admin scope may be global
+C->>M: Find/count scoped records with selected filters
+M->>DB: Execute reads and list ordering/pagination
+DB-->>M: Records and total, or no detail
+M-->>C: Scoped results
+opt Booking response
+    C->>M: Populate only current customer name, email, telephone
+    M->>DB: Read selected current contact
+    C->>C: Derive status using Thailand today, retain stored snapshot
+end
+C->>C: Serialize safe fields, missing/hidden detail becomes 404
+C-->>Server: 200 data, count and pagination for lists
+deactivate C
+Server-->>Caller: JSON response

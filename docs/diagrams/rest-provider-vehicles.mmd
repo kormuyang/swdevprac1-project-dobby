@@ -1,0 +1,54 @@
+classDiagram
+    direction LR
+    class API["Dobby API"] {
+        <<Application>>
+        basePath = /api/v1
+    }
+    class R0["vehicles"] {
+        <<Resource>>
+        +GET(filters QueryParams) 200
+        +POST(VehicleCreate) 201
+    }
+    class R1["{vehicleId}"] {
+        <<Resource>>
+        +GET() 200
+        +PATCH(VehicleUpdate) 200
+    }
+    class VehicleCreate {
+        <<Representation>>
+        vin : string
+        brand : string
+        model : string
+        modelYear : integer
+        transmissionType : string
+        fuelType : string
+        seatingCapacity : integer
+        pickupBranch : Branch
+        ratePerDaySatang : integer
+        availableFrom : string
+        availableUntil : string
+    }
+    class VehicleListResponse {
+        <<Representation>>
+        success : boolean
+        count : integer
+        pagination : Pagination
+        data : Vehicle[]
+    }
+    class VehicleResponse {
+        <<Representation>>
+        success : boolean
+        data : Vehicle
+    }
+    class VehicleUpdate {
+        <<Representation>>
+        pickupBranch : Branch
+        ratePerDaySatang : integer
+    }
+    R0 ..> VehicleListResponse : «use» response
+    R0 ..> VehicleCreate : «use» request
+    R0 ..> VehicleResponse : «use» response
+    API --> R0 : «Path» /provider/vehicles
+    R1 ..> VehicleResponse : «use» response
+    R1 ..> VehicleUpdate : «use» request
+    R0 --> R1 : «Path» /{vehicleId}

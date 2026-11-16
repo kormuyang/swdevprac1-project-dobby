@@ -1,0 +1,43 @@
+sequenceDiagram
+
+actor Caller as Customer or administrator
+participant Server as server.js
+participant Route as routes/bookings.js + guards + validation
+participant C as controllers/bookings.js
+participant S as services/bookings.js
+participant M as Provider / User / Vehicle / Booking
+participant DB as MongoDB
+Caller->>Server: DELETE /api/v1/bookings/{bookingId}
+Server->>Route: Parse and route request
+Route->>C: Authenticated authorized actor and validated bookingId
+C->>S: cancelBooking(id, actor, now)
+activate S
+S->>M: Read scoped booking references
+M->>DB: Ownership-scoped reference lookup
+S->>DB: Start transaction
+S->>M: Guard provider, user, then vehicle
+M->>DB: Increment revisions sequentially in same session
+S->>M: Re-read scoped booking
+M->>DB: Read current state/dates
+alt Already cancelled
+    Note over S,DB: No additional cancellation write
+else Cancellation permitted
+    S->>M: Set cancelled state, actor, time and role-based reason
+    M->>DB: Save in same session
+else Completed, or customer at/after start
+    break Cancellation rejected
+        S->>DB: Abort
+        S-->>C: Throw AppError 409
+        C-->>Server: next(error)
+        Server-->>Caller: 409 safe JSON error
+    end
+end
+Note over S,DB: Commit only on successful branches, thrown failures leave through shared error handler
+DB-->>S: Commit on success
+S->>M: Populate selected customer contact after commit
+M->>DB: Read current contact
+S-->>C: Booking
+deactivate S
+C->>C: Serialize retained booking and derived cancelled status
+C-->>Server: 200 JSON on success
+Server-->>Caller: Success JSON or safe error

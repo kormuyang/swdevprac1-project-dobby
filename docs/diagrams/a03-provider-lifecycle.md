@@ -51,4 +51,4 @@ sequenceDiagram
     Note over Controller,DB: Previously cancelled bookings and revoked sessions stay unchanged
 ```
 
-These diagrams describe interfaces and implementation behavior. They do not establish a live database result. The instructor-specific API UML notation remains unresolved under D-07.
+These diagrams describe interfaces and implementation behavior, not a live database result. See the [submission REST profile](../api-diagram.md) and exported [sequence views](../sequence-diagrams.md) for the supplied Chapter 6 notation and integrated implementation (D-59).

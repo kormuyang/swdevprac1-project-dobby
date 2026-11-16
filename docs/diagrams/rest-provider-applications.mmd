@@ -1,0 +1,52 @@
+classDiagram
+    direction LR
+    class API["Dobby API"] {
+        <<Application>>
+        basePath = /api/v1
+    }
+    class R0["profile"] {
+        <<Resource>>
+        +GET() 200
+    }
+    class R1["applications"] {
+        <<Resource>>
+        +GET(filters QueryParams) 200
+        +POST(ProfileInput) 201
+    }
+    class R2["{applicationId}"] {
+        <<Resource>>
+        +GET() 200
+    }
+    class ApplicationListResponse {
+        <<Representation>>
+        success : boolean
+        count : integer
+        pagination : Pagination
+        data : Application[]
+    }
+    class ApplicationResponse {
+        <<Representation>>
+        success : boolean
+        data : Application
+    }
+    class ProfileInput {
+        <<Representation>>
+        legalName : string
+        registeredAddress : string
+        telephone : string
+        contactEmail : string
+        documentUrl : string
+    }
+    class ProviderPrivateResponse {
+        <<Representation>>
+        success : boolean
+        data : ProviderPrivate
+    }
+    R0 ..> ProviderPrivateResponse : «use» response
+    API --> R0 : «Path» /provider/profile
+    R1 ..> ApplicationListResponse : «use» response
+    R1 ..> ProfileInput : «use» request
+    R1 ..> ApplicationResponse : «use» response
+    API --> R1 : «Path» /provider/applications
+    R2 ..> ApplicationResponse : «use» response
+    R1 --> R2 : «Path» /{applicationId}

@@ -1,0 +1,18 @@
+{
+  "theme": "default",
+  "fontFamily": "Arial",
+  "securityLevel": "strict",
+  "htmlLabels": false,
+  "flowchart": {
+    "htmlLabels": false,
+    "curve": "linear"
+  },
+  "class": {
+    "hideEmptyMembersBox": true
+  },
+  "sequence": {
+    "useMaxWidth": false,
+    "wrap": true,
+    "width": 180
+  }
+}

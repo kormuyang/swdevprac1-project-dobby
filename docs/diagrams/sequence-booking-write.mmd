@@ -1,0 +1,50 @@
+sequenceDiagram
+
+actor Caller as Customer or administrator
+participant Server as server.js
+participant Route as routes/bookings.js + guards + validation
+participant C as controllers/bookings.js
+participant S as services/bookings.js
+participant M as Provider / User / Vehicle / ProviderApplication / Booking
+participant DB as MongoDB
+Caller->>Server: POST /api/v1/bookings or PATCH /bookings/{bookingId}
+Server->>Route: Parsed JSON
+Route->>Route: Authenticate, POST customer only, PATCH customer/admin, validate
+Route->>C: req.actor + req.validated
+C->>S: createBooking or updateBookingDates
+activate S
+S->>M: Read vehicle provider or ownership-scoped booking references
+M->>DB: Preliminary references
+S->>DB: Start snapshot transaction
+S->>M: Increment Provider revision
+M->>DB: Provider guard
+S->>M: Increment User bookingRevision
+M->>DB: Customer cap guard
+S->>M: Increment owned Vehicle revision
+M->>DB: Vehicle guard
+opt Date edit
+    S->>M: Re-read ownership-scoped booking in session
+    Note over S,M: Require not cancelled and today before original start
+end
+S->>S: Validate Thailand dates and 1–30 inclusive rental days
+S->>M: Check approved provider/profile, active vehicle and offering period
+M->>DB: Eligibility reads in same session
+S->>M: Count customer non-completed bookings, check vehicle overlap
+M->>DB: Exclude current booking ID on edits
+Note over S,M: Reject cap of three or inclusive overlap with 409
+alt Create
+    S->>S: Snapshot vehicle and current rate, calculate satang total
+else Edit
+    S->>S: Retain snapshot/rate, recalculate days and total
+end
+S->>M: Save booking in session
+M->>DB: Persist booking
+DB-->>S: Commit
+S->>M: Detach session, populate selected current customer contact
+M->>DB: Read customer contact after commit
+S-->>C: Booking with current customer
+deactivate S
+C->>C: Serialize with captured Thailand today
+C-->>Server: 201 create or 200 edit
+Server-->>Caller: JSON response
+Note over S,DB: Domain failures abort, eligible transient transaction failures map to safe 409

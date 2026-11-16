@@ -96,4 +96,6 @@ For each PR, list test IDs, command, test environment/database, pass/fail counts
 - T40 journey and saved results: [Newman integration](../tests/demo.integration.test.js).
 - T41 runner: [response-time measurement](../scripts/measure-response-times.js). The November 16 Atlas run passed 150 requests across 15 cases (latest maximum 784.64 ms); see the recorded conditions and results in the implementation plan.
 
-Commands/results and unverified cases are recorded in each PR. D-07/D-10 and partner acceptance remain open for T42.
+Commands/results and unverified cases are recorded in each PR. D-07 notation now follows the supplied Chapter 6 reference (D-59). D-10 and final instructor/partner acceptance remain open for T42.
+
+Submission diagram views: [use cases](use-case-diagrams.md), [REST UML profile](api-diagram.md) and [sequences](sequence-diagrams.md). Check Mermaid/SVG pairing, all 34 API operations, local links and visual readability when these change.

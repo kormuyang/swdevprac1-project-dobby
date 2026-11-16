@@ -1,0 +1,12 @@
+flowchart LR
+    Rep["«actor» Provider representative"]
+    subgraph Dobby["Dobby rental car booking API"]
+        Profile(["View own profile and application history"])
+        Submit(["Submit a new immutable application version"])
+        Manage(["Create, read and update own vehicles - approved only"])
+        Read(["Read own-vehicle bookings and customer contact - approved only"])
+    end
+    Rep --- Profile
+    Rep --- Submit
+    Rep --- Manage
+    Rep --- Read

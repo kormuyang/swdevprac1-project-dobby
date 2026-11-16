@@ -1,0 +1,47 @@
+classDiagram
+    direction LR
+    class API["Dobby API"] {
+        <<Application>>
+        basePath = /api/v1
+    }
+    class R0["bookings"] {
+        <<Resource>>
+        +GET(filters QueryParams) 200
+        +POST(BookingCreate) 201
+    }
+    class R1["{bookingId}"] {
+        <<Resource>>
+        +GET() 200
+        +PATCH(BookingDatesUpdate) 200
+        +DELETE() 200
+    }
+    class BookingCreate {
+        <<Representation>>
+        vehicleId : string
+        startDate : string
+        dueDate : string
+    }
+    class BookingDatesUpdate {
+        <<Representation>>
+        startDate : string
+        dueDate : string
+    }
+    class BookingListResponse {
+        <<Representation>>
+        success : boolean
+        count : integer
+        pagination : Pagination
+        data : Booking[]
+    }
+    class BookingResponse {
+        <<Representation>>
+        success : boolean
+        data : Booking
+    }
+    R0 ..> BookingListResponse : «use» response
+    R0 ..> BookingCreate : «use» request
+    R0 ..> BookingResponse : «use» response
+    API --> R0 : «Path» /bookings
+    R1 ..> BookingResponse : «use» response
+    R1 ..> BookingDatesUpdate : «use» request
+    R0 --> R1 : «Path» /{bookingId}

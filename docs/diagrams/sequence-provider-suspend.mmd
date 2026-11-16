@@ -1,0 +1,43 @@
+sequenceDiagram
+
+actor Admin
+participant Server as server.js
+participant Route as routes/admin.js + guards + validation
+participant C as controllers/providerLifecycle.js
+participant S as services/bookings.js
+participant M as Provider / ProviderApplication / User + native collections
+participant DB as MongoDB
+Admin->>Server: POST /api/v1/admin/providers/{providerId}/suspend
+Server->>Route: Parsed JSON
+Route->>C: Admin actor, validated providerId and reason
+activate C
+C->>DB: Start transaction
+C->>M: Increment Provider revision guard
+M->>DB: Lock provider in session
+C->>M: Require approved Provider and approved application
+M->>DB: Read approved application in same session
+C->>M: Save suspended status, reason, time and admin
+M->>DB: Provider save in same session
+C->>S: cancelNonCompletedForProvider with active session
+activate S
+S->>M: Find confirmed bookings with dueDate at/after Thailand today
+M->>DB: Native bookings collection read in session
+loop Distinct user IDs in sorted order
+    S->>M: Increment User.bookingRevision
+    M->>DB: Lock user in same session
+end
+loop Distinct vehicle IDs in sorted order
+    S->>M: Increment vehicle revision
+    M->>DB: Lock vehicle in same session
+end
+S->>M: Cancel matching bookings with provider_suspended reason
+M->>DB: Native updateMany in same session
+S-->>C: Actual cancelledBookingCount
+deactivate S
+DB-->>C: Commit suspension and cancellations together
+C->>C: Serialize provider and count
+C-->>Server: 200 success
+deactivate C
+Server-->>Admin: JSON result
+Note over C,DB: Any failure aborts both changes, matching provider-first guards serialize booking writes
+Note over Server,DB: Protected provider requests check current status, this operation does not revoke AuthSession records

@@ -50,6 +50,4 @@ These use cases cover the integrated A/B API. Endpoint names and fields follow t
 
 ## Diagram notation
 
-The sequence diagrams are Mermaid engineering diagrams. They do not claim to use the instructor's UML Profile for API. D-07 remains open until the required notation is confirmed.
-
-See the [implemented API map](diagrams/api.md) for access and endpoint groups.
+See the [use case diagrams](use-case-diagrams.md), [REST UML profile](api-diagram.md) and [sequence diagrams](sequence-diagrams.md) for the submission views and editable Mermaid/SVG pairs. The REST profile follows the supplied Chapter 6 slide 32 example (D-59); final delivery review remains separate.

@@ -373,3 +373,7 @@ Vehicle and booking endpoints retain the course route/controller/model structure
 - `/admin/providers`: administrator management of provider records.
 
 Public provider discovery belongs to provider controllers, validation middleware, validators, services and serializers. Vehicle discovery reuses the provider eligibility aggregation stages. All IDs use objectIdField and normalize to lowercase. Lifecycle validators accept plain input; route middleware handles authorization separately. Authentication forwards AppError/unknown errors to the shared JSON handler. The standalone demo loads .env at its CLI entry point like the other tools.
+
+## Submission diagram views
+
+The [REST UML profile](api-diagram.md) models all API operations with Application/Resource/Representation stereotypes and Path relationships. [Use cases](use-case-diagrams.md) describe actor goals; [sequence diagrams](sequence-diagrams.md) show request flow and transaction ownership. Each partial view has editable Mermaid and an SVG export under diagrams/ (D-59).

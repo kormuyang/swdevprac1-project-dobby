@@ -1,0 +1,30 @@
+classDiagram
+    direction LR
+    class API["Dobby API"] {
+        <<Application>>
+        basePath = /api/v1
+    }
+    class R0["bookings"] {
+        <<Resource>>
+        +GET(filters QueryParams) 200
+    }
+    class R1["{bookingId}"] {
+        <<Resource>>
+        +GET() 200
+    }
+    class BookingListResponse {
+        <<Representation>>
+        success : boolean
+        count : integer
+        pagination : Pagination
+        data : Booking[]
+    }
+    class BookingResponse {
+        <<Representation>>
+        success : boolean
+        data : Booking
+    }
+    R0 ..> BookingListResponse : «use» response
+    API --> R0 : «Path» /provider/bookings
+    R1 ..> BookingResponse : «use» response
+    R0 --> R1 : «Path» /{bookingId}

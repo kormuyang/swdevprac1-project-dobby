@@ -58,7 +58,7 @@ sequenceDiagram
 
 Routes choose authentication, permissions and validation middleware and import controller functions by name. Auth controllers consume req.validated, own persistence/provider-signup transactions and forward failures to the shared JSON error handler (D-54). Models define fields, indexes and password hashing. The user serializer allowlists public account fields.
 
-These diagrams describe the A01 implementation scope. They do not establish a live database test result or satisfy the unresolved course-specific UML Profile notation decision (D-07).
+These diagrams describe the A01 implementation scope, not a live database test result. The [submission REST profile](../api-diagram.md) follows the supplied Chapter 6 notation; exported [sequence views](../sequence-diagrams.md) cover the integrated implementation (D-59).
 
 ## Course alignment
 

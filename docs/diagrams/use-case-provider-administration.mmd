@@ -1,0 +1,14 @@
+flowchart LR
+    Admin["«actor» Administrator"]
+    subgraph Dobby["Dobby rental car booking API"]
+        Records(["View provider records and application queue"])
+        Review(["Approve or reject pending application"])
+        Suspend(["Suspend approved provider"])
+        Cancel(["Cancel all upcoming and ongoing provider bookings"])
+        Reactivate(["Reactivate suspended provider"])
+    end
+    Admin --- Records
+    Admin --- Review
+    Admin --- Suspend
+    Admin --- Reactivate
+    Suspend -.->|"«include»"| Cancel
