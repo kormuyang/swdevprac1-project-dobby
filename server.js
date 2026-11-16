@@ -20,10 +20,7 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 const PORT = process.env.PORT || 5003;
 
-connectDB().catch(() => {
-  console.error('MongoDB connection failed.');
-  process.exit(1);
-});
+connectDB();
 
 app.use(cors());
 app.use(helmet());
