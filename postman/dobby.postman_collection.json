@@ -1,49 +1,15 @@
 {
   "info": {
-    "name": "Dobby complete rental journey",
-    "description": "Synthetic local A+B journey: authentication, provider review, vehicles, booking changes, emergency cancellation, suspension and reactivation. Runtime credentials and tokens must not be exported.",
+    "name": "Dobby required sequence and extra credits",
+    "description": "Run sections 01–12 in the course-required order, then sections 13–16 for Dobby additions. Before running: create the admin and have an approved provider with an active vehicle available from today +5 through today +13. Step 04 creates two bookings so user and admin can each edit and cancel one. DELETE retains a cancelled record. The run creates synthetic data and leaves it for inspection. Set the local environment. Example admin credentials work only if created with npm run seed-admin.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "01 Auth and onboarding",
+      "name": "01 User Registration + Validation Check",
       "item": [
         {
-          "name": "Admin login",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": "{{baseUrl}}/auth/login"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('admin login returns a session', function () { pm.response.to.have.status(200); });",
-                  "if (pm.response.code === 200) { pm.environment.set('adminToken', pm.response.json().data.token); }"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Customer signup",
+          "name": "Register user",
           "request": {
             "method": "POST",
             "header": [
@@ -55,13 +21,101 @@
             "url": "{{baseUrl}}/auth/register",
             "body": {
               "mode": "raw",
-              "raw": "{\"name\": \"Synthetic Demo Customer\", \"telephone\": \"123456789\", \"email\": \"{{customerEmail}}\", \"password\": \"{{customerPassword}}\"}",
+              "raw": "{\n  \"name\": \"Synthetic Demo Customer\",\n  \"telephone\": \"123456789\",\n  \"email\": \"{{customerEmail}}\",\n  \"password\": \"{{customerPassword}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
+            },
+            "description": "01 User Registration + Validation Check. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.variables.get('adminEmail') || !pm.variables.get('adminPassword')) {",
+                  "  pm.execution.setNextRequest(null);",
+                  "  pm.execution.skipRequest();",
+                  "  throw new Error('Select the local environment and enter adminEmail/adminPassword for the seeded administrator.');",
+                  "}",
+                  "// Environment overrides preserve the existing Newman runner; generated values stay run-local.",
+                  "const runId = pm.environment.get('runId') || pm.variables.replaceIn('{{$guid}}');",
+                  "const today = pm.environment.get('today') || new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);",
+                  "function dateAfter(days) {",
+                  "  const date = new Date(today + 'T00:00:00Z');",
+                  "  date.setUTCDate(date.getUTCDate() + days);",
+                  "  return date.toISOString().slice(0, 10);",
+                  "}",
+                  "const values = {",
+                  "  runId, today,",
+                  "  startDate: dateAfter(5), dueDate: dateAfter(7),",
+                  "  editStart: dateAfter(8), editDue: dateAfter(9),",
+                  "  adminEditStart: dateAfter(10), adminEditDue: dateAfter(11),",
+                  "  suspensionStart: dateAfter(14),",
+                  "  customerEmail: 'demo-customer-' + runId + '@example.test',",
+                  "  customerPassword: pm.variables.replaceIn('{{$guid}}') + '-Demo1!',",
+                  "  providerEmail: 'demo-' + runId + '@example.test',",
+                  "  providerPassword: pm.variables.replaceIn('{{$guid}}') + '-Demo1!',",
+                  "  registrationNumber: 'DEMO-' + runId,",
+                  "  contactEmail: 'contact-' + runId + '@example.test',",
+                  "  legalNameV1: 'Demo Rental ' + runId.slice(0, 8),",
+                  "  legalNameV2: 'Demo Rental Revision ' + runId.slice(0, 8),",
+                  "  legalNameV3: 'Demo Rental Approved ' + runId.slice(0, 8)",
+                  "};",
+                  "for (const [key, value] of Object.entries(values)) {",
+                  "  const supplied = pm.environment.get(key);",
+                  "  pm.variables.set(key, supplied === undefined || supplied === '' ? value : supplied);",
+                  "}",
+                  "for (const key of ['adminToken', 'customerToken', 'providerToken', 'customerId', 'providerId', 'applicationId', 'vehicleId', 'bookingId', 'adminBookingId', 'suspensionBookingId']) {",
+                  "  pm.variables.set(key, '');",
+                  "}",
+                  "pm.variables.set('coreVehicleId', pm.environment.get('coreVehicleId') || '');",
+                  "pm.variables.set('secondStart', dateAfter(12));",
+                  "pm.variables.set('secondDue', dateAfter(13));",
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.variables.set('customerId', data.user.id);",
+                  "pm.test(\"Safe customer account\", function () { pm.expect(data.user.role).to.eql('user'); pm.expect(data.user).not.to.have.property('passwordHash'); });",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
             }
+          ]
+        },
+        {
+          "name": "Reject invalid registration password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Synthetic Demo Customer\",\n  \"telephone\": \"123456789\",\n  \"email\": \"{{customerEmail}}\",\n  \"password\": \"short\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "01 User Registration + Validation Check. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -69,15 +123,234 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('customer signup returns 201', function () { pm.response.to.have.status(201); });",
-                  "if (pm.response.code === 201) { const data = pm.response.json().data; pm.test('signup assigns customer role and safe output', function () { pm.expect(data.user.role).to.eql('user'); pm.expect(data.user).not.to.have.property('passwordHash'); }); pm.environment.set('customerToken', data.token); }"
+                  "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "if (pm.response.code === 400) {",
+                  "  const data = pm.response.json().data;",
+                  "",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 User Log-in",
+      "item": [
+        {
+          "name": "User log-in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{customerEmail}}\",\n  \"password\": \"{{customerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "02 User Log-in. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.variables.set('customerToken', data.token);",
+                  "pm.test(\"User session\", function () { pm.expect(data.token).to.be.a('string').and.not.empty; });",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 User View Product",
+      "item": [
+        {
+          "name": "View available vehicles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/vehicles?startDate={{startDate}}&dueDate={{secondDue}}",
+            "description": "03 User View Product. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "const preferred = pm.variables.get('coreVehicleId');",
+                  "const vehicle = preferred ? data.find(v => v.id === preferred) : data[0];",
+                  "pm.test('An available vehicle exists before this run', function () { pm.expect(vehicle, 'Create an approved provider and available vehicle before running the required flow.').to.exist; });",
+                  "if (!vehicle) { pm.execution.setNextRequest(null); } else {",
+                  "  pm.variables.set('coreVehicleId', vehicle.id);",
+                  "  pm.variables.set('coreRate', vehicle.ratePerDaySatang);",
+                  "}",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 User Create Booking + Check Create Condition",
+      "item": [
+        {
+          "name": "Create booking for user edit and delete",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/bookings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"{{coreVehicleId}}\",\n  \"startDate\": \"{{startDate}}\",\n  \"dueDate\": \"{{dueDate}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "04 User Create Booking + Check Create Condition. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.variables.set('bookingId', data.id);",
+                  "pm.test(\"Server calculates price\", function () { pm.expect(data.rentalDays).to.eql(3);pm.expect(data.totalPriceSatang).to.eql(pm.variables.get('coreRate') * 3); });",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Customer reads own account",
+          "name": "Reject overlapping booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/bookings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"{{coreVehicleId}}\",\n  \"startDate\": \"{{startDate}}\",\n  \"dueDate\": \"{{dueDate}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "04 User Create Booking + Check Create Condition. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', function () { pm.response.to.have.status(409); });",
+                  "if (pm.response.code === 409) {",
+                  "  const data = pm.response.json().data;",
+                  "",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create second booking for admin edit and delete",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/bookings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"{{coreVehicleId}}\",\n  \"startDate\": \"{{secondStart}}\",\n  \"dueDate\": \"{{secondDue}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "04 User Create Booking + Check Create Condition. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.variables.set('adminBookingId', data.id);",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 User View Own Booking",
+      "item": [
+        {
+          "name": "User views own bookings",
           "request": {
             "method": "GET",
             "header": [
@@ -86,7 +359,8 @@
                 "value": "Bearer {{customerToken}}"
               }
             ],
-            "url": "{{baseUrl}}/auth/me"
+            "url": "{{baseUrl}}/bookings",
+            "description": "05 User View Own Booking. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -94,15 +368,138 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('customer reads own account', function () { pm.response.to.have.status(200); });",
-                  "if (pm.response.code === 200) { pm.test('account email belongs to the customer', function () { pm.expect(pm.response.json().data.email).to.eql(pm.environment.get('customerEmail')); }); }"
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.test(\"Both bookings belong to this user\", function () { pm.expect(data.map(b => b.id)).to.include(pm.variables.get('bookingId')); pm.expect(data.map(b => b.id)).to.include(pm.variables.get('adminBookingId')); pm.expect(data.every(b => b.userId === pm.variables.get('customerId'))).to.eql(true); });",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
           ]
-        },
+        }
+      ]
+    },
+    {
+      "name": "06 User Edit Own Booking",
+      "item": [
         {
-          "name": "Register synthetic provider and pending application v1",
+          "name": "User edits first booking",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/bookings/{{bookingId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"{{editStart}}\",\n  \"dueDate\": \"{{editDue}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "06 User Edit Own Booking. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.test(\"User dates changed\", function () { pm.expect(data.startDate).to.eql(pm.variables.get('editStart'));pm.expect(data.totalPriceSatang).to.eql(pm.variables.get('coreRate') * 2); });",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 User Delete Own Booking",
+      "item": [
+        {
+          "name": "User cancels first booking",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/bookings/{{bookingId}}",
+            "description": "07 User Delete Own Booking. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.test(\"User booking cancelled\", function () { pm.expect(data.status).to.eql('cancelled');pm.expect(data.cancellationReason).to.eql('customer_cancelled'); });",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 User Log-out",
+      "item": [
+        {
+          "name": "User log-out",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/logout",
+            "description": "08 User Log-out. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.variables.set('customerToken', '');",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "09 Admin Log-in",
+      "item": [
+        {
+          "name": "Admin log-in",
           "request": {
             "method": "POST",
             "header": [
@@ -111,16 +508,17 @@
                 "value": "application/json"
               }
             ],
+            "url": "{{baseUrl}}/auth/login",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"{{legalNameV1}}\",\n  \"telephone\": \"+66000000000\",\n  \"email\": \"{{providerEmail}}\",\n  \"password\": \"{{providerPassword}}\",\n  \"businessRegistrationNumber\": \"{{registrationNumber}}\",\n  \"profile\": {\n    \"legalName\": \"{{legalNameV1}}\",\n    \"registeredAddress\": \"1 Synthetic Demo Road, Bangkok\",\n    \"telephone\": \"+66000000000\",\n    \"contactEmail\": \"{{contactEmail}}\",\n    \"documentUrl\": \"https://example.test/demo-registration.pdf\"\n  }\n}",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": "{{baseUrl}}/auth/register-provider"
+            "description": "09 Admin Log-in. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -128,20 +526,177 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('provider signup returns 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.variables.set('adminToken', data.token);",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10 Admin View Any Booking",
+      "item": [
+        {
+          "name": "Admin views customer bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/bookings?userId={{customerId}}",
+            "description": "10 Admin View Any Booking. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.test(\"Admin sees the remaining booking\", function () { pm.expect(data.map(b => b.id)).to.include(pm.variables.get('adminBookingId')); });",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "11 Admin Edit Any Booking",
+      "item": [
+        {
+          "name": "Admin edits second booking",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/bookings/{{adminBookingId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"{{adminEditStart}}\",\n  \"dueDate\": \"{{adminEditDue}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "11 Admin Edit Any Booking. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.test(\"Admin dates changed\", function () { pm.expect(data.startDate).to.eql(pm.variables.get('adminEditStart'));pm.expect(data.dueDate).to.eql(pm.variables.get('adminEditDue')); });",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "12 Admin Delete Any Booking",
+      "item": [
+        {
+          "name": "Admin cancels second booking",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/bookings/{{adminBookingId}}",
+            "description": "12 Admin Delete Any Booking. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.test(\"Admin booking cancelled\", function () { pm.expect(data.status).to.eql('cancelled');pm.expect(data.cancellationReason).to.eql('admin_cancelled'); });",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "13 Extra Credits - Provider Registration and Review",
+      "item": [
+        {
+          "name": "Register pending provider",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/register-provider",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Synthetic Provider\",\n  \"telephone\": \"+66000000000\",\n  \"email\": \"{{providerEmail}}\",\n  \"password\": \"{{providerPassword}}\",\n  \"businessRegistrationNumber\": \"{{registrationNumber}}\",\n  \"profile\": {\n    \"legalName\": \"{{legalNameV1}}\",\n    \"registeredAddress\": \"1 Synthetic Demo Road, Bangkok\",\n    \"telephone\": \"+66000000000\",\n    \"contactEmail\": \"{{contactEmail}}\",\n    \"documentUrl\": \"https://example.test/demo-document.pdf\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "13 Extra Credits - Provider Registration and Review. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
                   "if (pm.response.code === 201) {",
-                  "  const body = pm.response.json().data;",
-                  "  pm.test('signup creates a provider account', function () { pm.expect(body.user.role).to.eql('provider'); });",
-                  "  pm.environment.set('providerToken', body.token);",
-                  "  pm.environment.set('providerId', body.user.providerId);",
-                  "}"
+                  "  const data = pm.response.json().data;",
+                  "pm.variables.set('providerToken', data.token);",
+                  "pm.variables.set('providerId', data.user.providerId);",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Provider reads application v1",
+          "name": "Read pending application",
           "request": {
             "method": "GET",
             "header": [
@@ -150,7 +705,8 @@
                 "value": "Bearer {{providerToken}}"
               }
             ],
-            "url": "{{baseUrl}}/provider/applications"
+            "url": "{{baseUrl}}/provider/applications",
+            "description": "13 Extra Credits - Provider Registration and Review. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -158,25 +714,19 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('provider can read own application history', function () { pm.response.to.have.status(200); });",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
                   "if (pm.response.code === 200) {",
-                  "  const applications = pm.response.json().data;",
-                  "  const versionOne = applications.find((application) => application.version === 1);",
-                  "  pm.test('version one is pending', function () { pm.expect(versionOne.status).to.eql('pending'); });",
-                  "  pm.environment.set('applicationV1Id', versionOne.id);",
-                  "}"
+                  "  const data = pm.response.json().data;",
+                  "pm.variables.set('applicationId', data[0].id);",
+                  "pm.test(\"Application starts pending\", function () { pm.expect(data[0].status).to.eql('pending'); });",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
           ]
-        }
-      ]
-    },
-    {
-      "name": "02 Provider review and versions",
-      "item": [
+        },
         {
-          "name": "Admin approves application v1",
+          "name": "Admin rejects application with reason",
           "request": {
             "method": "POST",
             "header": [
@@ -189,6 +739,91 @@
                 "value": "application/json"
               }
             ],
+            "url": "{{baseUrl}}/admin/applications/{{applicationId}}/review",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"reject\",\n  \"reason\": \"Synthetic demo: clarify the registered address.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "13 Extra Credits - Provider Registration and Review. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.test(\"Rejection reason returned\", function () { pm.expect(data.status).to.eql('rejected');pm.expect(data.rejectionReason).not.to.be.empty; });",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Provider resubmits corrected application",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/provider/applications",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legalName\": \"{{legalNameV1}}\",\n  \"registeredAddress\": \"2 Corrected Synthetic Road\",\n  \"telephone\": \"+66000000000\",\n  \"contactEmail\": \"{{contactEmail}}\",\n  \"documentUrl\": \"https://example.test/demo-document.pdf\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "13 Extra Credits - Provider Registration and Review. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.variables.set('applicationId', data.id);",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin approves application",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/applications/{{applicationId}}/review",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"decision\": \"approve\"\n}",
@@ -198,7 +833,7 @@
                 }
               }
             },
-            "url": "{{baseUrl}}/admin/applications/{{applicationV1Id}}/review"
+            "description": "13 Extra Credits - Provider Registration and Review. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -206,225 +841,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('admin approves version one', function () { pm.response.to.have.status(200); });",
-                  "if (pm.response.code === 200) { pm.test('review status is approved', function () { pm.expect(pm.response.json().data.status).to.eql('approved'); }); }"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Provider submits profile revision v2",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{providerToken}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"legalName\": \"{{legalNameV2}}\",\n  \"registeredAddress\": \"2 Synthetic Demo Road, Bangkok\",\n  \"telephone\": \"+66000000000\",\n  \"contactEmail\": \"{{contactEmail}}\",\n  \"documentUrl\": \"https://example.test/demo-revision-v2.pdf\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": "{{baseUrl}}/provider/applications"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('provider submits version two', function () { pm.response.to.have.status(201); });",
-                  "if (pm.response.code === 201) { pm.environment.set('applicationV2Id', pm.response.json().data.id); }"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Approved profile remains active while revision is pending",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{providerToken}}"
-              }
-            ],
-            "url": "{{baseUrl}}/provider/profile"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('provider profile remains readable', function () { pm.response.to.have.status(200); });",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
                   "if (pm.response.code === 200) {",
-                  "  const provider = pm.response.json().data;",
-                  "  pm.test('approved profile is unchanged during review', function () { pm.expect(provider.approvedProfile.legalName).to.eql(pm.environment.get('legalNameV1')); });",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Admin rejects revision v2 with a reason",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"decision\": \"reject\",\n  \"reason\": \"Synthetic demo review: please clarify the registered address.\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": "{{baseUrl}}/admin/applications/{{applicationV2Id}}/review"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('admin rejects the revision', function () { pm.response.to.have.status(200); });",
-                  "if (pm.response.code === 200) {",
-                  "  const application = pm.response.json().data;",
-                  "  pm.test('rejection reason is returned', function () { pm.expect(application.rejectionReason).to.include('Synthetic demo review'); });",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Provider reads both immutable application versions",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{providerToken}}"
-              }
-            ],
-            "url": "{{baseUrl}}/provider/applications"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('provider can read version history', function () { pm.response.to.have.status(200); });",
-                  "if (pm.response.code === 200) {",
-                  "  const applications = pm.response.json().data;",
-                  "  const versionOne = applications.find((application) => application.version === 1);",
-                  "  const versionTwo = applications.find((application) => application.version === 2);",
-                  "  pm.test('history preserves reviewed versions and reason', function () {",
-                  "    pm.expect(versionOne.status).to.eql('approved');",
-                  "    pm.expect(versionTwo.status).to.eql('rejected');",
-                  "    pm.expect(versionTwo.rejectionReason).to.include('Synthetic demo review');",
-                  "  });",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Provider resubmits corrected profile v3",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{providerToken}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"legalName\": \"{{legalNameV3}}\",\n  \"registeredAddress\": \"3 Synthetic Demo Road, Bangkok\",\n  \"telephone\": \"+66000000000\",\n  \"contactEmail\": \"{{contactEmail}}\",\n  \"documentUrl\": \"https://example.test/demo-revision-v3.pdf\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": "{{baseUrl}}/provider/applications"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('provider resubmits as version three', function () { pm.response.to.have.status(201); });",
-                  "if (pm.response.code === 201) { pm.environment.set('applicationV3Id', pm.response.json().data.id); }"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Admin approves revision v3",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"decision\": \"approve\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": "{{baseUrl}}/admin/applications/{{applicationV3Id}}/review"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('admin approves version three', function () { pm.response.to.have.status(200); });",
-                  "if (pm.response.code === 200) { pm.test('review status is approved', function () { pm.expect(pm.response.json().data.status).to.eql('approved'); }); }"
+                  "  const data = pm.response.json().data;",
+                  "pm.test(\"Application approved\", function () { pm.expect(data.status).to.eql('approved'); });",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
@@ -433,38 +854,33 @@
       ]
     },
     {
-      "name": "03 Vehicles and bookings",
+      "name": "14 Extra Credits - Own Vehicle Management",
       "item": [
         {
-          "name": "Create provider vehicle",
+          "name": "Provider creates own vehicle",
           "request": {
             "method": "POST",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
               }
             ],
             "url": "{{baseUrl}}/provider/vehicles",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{providerToken}}",
-                  "type": "string"
-                }
-              ]
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\"vin\": \"V-{{runId}}\", \"model\": \"Demo City\", \"transmissionType\": \"automatic\", \"fuelType\": \"hybrid\", \"seatingCapacity\": 5, \"pickupBranch\": {\"name\": \"Branch A\", \"address\": \"Synthetic Road\"}, \"ratePerDaySatang\": 100000, \"availableFrom\": \"{{today}}\"}",
+              "raw": "{\n  \"vin\": \"V-{{runId}}\",\n  \"model\": \"Demo City\",\n  \"transmissionType\": \"automatic\",\n  \"fuelType\": \"hybrid\",\n  \"seatingCapacity\": 5,\n  \"pickupBranch\": {\n    \"name\": \"Branch A\",\n    \"address\": \"Synthetic Road\"\n  },\n  \"ratePerDaySatang\": 100000,\n  \"availableFrom\": \"{{today}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "14 Extra Credits - Own Vehicle Management. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -472,69 +888,41 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Create provider vehicle: HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
                   "if (pm.response.code === 201) {",
                   "  const data = pm.response.json().data;",
-                  "  pm.environment.set('vehicleId', data.id);",
-                  "}"
+                  "pm.variables.set('vehicleId', data.id);",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Discover vehicle for requested dates",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{baseUrl}}/vehicles?providerId={{providerId}}&startDate={{startDate}}&dueDate={{dueDate}}"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Discover vehicle for requested dates: HTTP 200', function () { pm.response.to.have.status(200); });",
-                  "if (pm.response.code === 200) {",
-                  "  const data = pm.response.json().data;",
-                  "pm.test('filtered discovery contains the vehicle', function () { pm.expect(data.map(v => v.id)).to.include(pm.environment.get('vehicleId')); });",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Book vehicle at server rate",
+          "name": "Reject duplicate VIN",
           "request": {
             "method": "POST",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/bookings",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
-            },
+            "url": "{{baseUrl}}/provider/vehicles",
             "body": {
               "mode": "raw",
-              "raw": "{\"vehicleId\": \"{{vehicleId}}\", \"startDate\": \"{{startDate}}\", \"dueDate\": \"{{dueDate}}\"}",
+              "raw": "{\n  \"vin\": \"V-{{runId}}\",\n  \"model\": \"Demo City\",\n  \"transmissionType\": \"automatic\",\n  \"fuelType\": \"hybrid\",\n  \"seatingCapacity\": 5,\n  \"pickupBranch\": {\n    \"name\": \"Branch A\",\n    \"address\": \"Synthetic Road\"\n  },\n  \"ratePerDaySatang\": 100000,\n  \"availableFrom\": \"{{today}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "14 Extra Credits - Own Vehicle Management. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -542,33 +930,28 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Book vehicle at server rate: HTTP 201', function () { pm.response.to.have.status(201); });",
-                  "if (pm.response.code === 201) {",
+                  "pm.test('HTTP 409', function () { pm.response.to.have.status(409); });",
+                  "if (pm.response.code === 409) {",
                   "  const data = pm.response.json().data;",
-                  "  pm.environment.set('bookingId', data.id);",
-                  "pm.test('three inclusive days at booked rate', function () { pm.expect(data.rentalDays).to.eql(3); pm.expect(data.totalPriceSatang).to.eql(300000); });",
-                  "}"
+                  "",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Provider reads current customer and booked details",
+          "name": "Provider views own vehicle",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": "{{baseUrl}}/provider/bookings/{{bookingId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{providerToken}}",
-                  "type": "string"
-                }
-              ]
-            }
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/provider/vehicles/{{vehicleId}}",
+            "description": "14 Extra Credits - Own Vehicle Management. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -576,46 +959,70 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Provider reads current customer and booked details: HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
                   "if (pm.response.code === 200) {",
                   "  const data = pm.response.json().data;",
-                  "pm.test('contact is current and safe', function () { pm.expect(data.customer.email).to.eql(pm.environment.get('customerEmail')); pm.expect(data.customer).not.to.have.property('passwordHash'); });",
-                  "}"
+                  "pm.test(\"Vehicle belongs to provider\", function () { pm.expect(data.providerId).to.eql(pm.variables.get('providerId')); });",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Change listing branch and rate",
+          "name": "Provider cannot access another provider vehicle",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/provider/vehicles/{{coreVehicleId}}",
+            "description": "14 Extra Credits - Own Vehicle Management. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () { pm.response.to.have.status(404); });",
+                  "if (pm.response.code === 404) {",
+                  "  const data = pm.response.json().data;",
+                  "",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Provider updates vehicle",
           "request": {
             "method": "PATCH",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
               }
             ],
             "url": "{{baseUrl}}/provider/vehicles/{{vehicleId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{providerToken}}",
-                  "type": "string"
-                }
-              ]
-            },
             "body": {
               "mode": "raw",
-              "raw": "{\"pickupBranch\": {\"name\": \"Branch B\", \"address\": \"Changed Road\"}, \"ratePerDaySatang\": 120000}",
+              "raw": "{\n  \"ratePerDaySatang\": 120000\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "14 Extra Credits - Own Vehicle Management. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -623,155 +1030,41 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Change listing branch and rate: HTTP 200', function () { pm.response.to.have.status(200); });"
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.test(\"Rate updated\", function () { pm.expect(data.ratePerDaySatang).to.eql(120000); });",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Edit dates while retaining agreed price",
+          "name": "Provider deactivates vehicle",
           "request": {
             "method": "PATCH",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": "{{baseUrl}}/bookings/{{bookingId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\"startDate\": \"{{editStart}}\", \"dueDate\": \"{{editDue}}\"}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Edit dates while retaining agreed price: HTTP 200', function () { pm.response.to.have.status(200); });",
-                  "if (pm.response.code === 200) {",
-                  "  const data = pm.response.json().data;",
-                  "pm.test('snapshot and original rate remain fixed', function () { pm.expect(data.ratePerDaySatang).to.eql(100000); pm.expect(data.totalPriceSatang).to.eql(200000); pm.expect(data.vehicleSnapshot.pickupBranch.name).to.eql('Branch A'); });",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Customer cancels before start",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": "{{baseUrl}}/bookings/{{bookingId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Customer cancels before start: HTTP 200', function () { pm.response.to.have.status(200); });",
-                  "if (pm.response.code === 200) {",
-                  "  const data = pm.response.json().data;",
-                  "pm.environment.set('cancelledAt', data.cancelledAt);",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Repeated cancellation has no new effect",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": "{{baseUrl}}/bookings/{{bookingId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Repeated cancellation has no new effect: HTTP 200', function () { pm.response.to.have.status(200); });",
-                  "if (pm.response.code === 200) {",
-                  "  const data = pm.response.json().data;",
-                  "pm.test('cancellation timestamp is unchanged', function () { pm.expect(data.cancelledAt).to.eql(pm.environment.get('cancelledAt')); });",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Create same-day rental",
-          "request": {
-            "method": "POST",
-            "header": [
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/bookings",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
-            },
+            "url": "{{baseUrl}}/provider/vehicles/{{vehicleId}}/activation",
             "body": {
               "mode": "raw",
-              "raw": "{\"vehicleId\": \"{{vehicleId}}\", \"startDate\": \"{{today}}\", \"dueDate\": \"{{today}}\"}",
+              "raw": "{\n  \"isActive\": false\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "14 Extra Credits - Own Vehicle Management. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -779,80 +1072,41 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Create same-day rental: HTTP 201', function () { pm.response.to.have.status(201); });",
-                  "if (pm.response.code === 201) {",
-                  "  const data = pm.response.json().data;",
-                  "  pm.environment.set('ongoingId', data.id);",
-                  "pm.test('same-day rental is ongoing', function () { pm.expect(data.status).to.eql('ongoing'); });",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Admin emergency-cancels ongoing rental",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": "{{baseUrl}}/bookings/{{ongoingId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Admin emergency-cancels ongoing rental: HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
                   "if (pm.response.code === 200) {",
                   "  const data = pm.response.json().data;",
-                  "pm.test('admin cancellation reason is recorded', function () { pm.expect(data.cancellationReason).to.eql('admin_cancelled'); });",
-                  "}"
+                  "pm.test(\"Vehicle deactivated\", function () { pm.expect(data.isActive).to.eql(false); });",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Create rental for suspension check",
+          "name": "Provider reactivates vehicle for booking demo",
           "request": {
-            "method": "POST",
+            "method": "PATCH",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/bookings",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
-            },
+            "url": "{{baseUrl}}/provider/vehicles/{{vehicleId}}/activation",
             "body": {
               "mode": "raw",
-              "raw": "{\"vehicleId\": \"{{vehicleId}}\", \"startDate\": \"{{suspensionStart}}\", \"dueDate\": \"{{suspensionStart}}\"}",
+              "raw": "{\n  \"isActive\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "14 Extra Credits - Own Vehicle Management. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -860,11 +1114,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Create rental for suspension check: HTTP 201', function () { pm.response.to.have.status(201); });",
-                  "if (pm.response.code === 201) {",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
                   "  const data = pm.response.json().data;",
-                  "  pm.environment.set('suspensionBookingId', data.id);",
-                  "}"
+                  "",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
@@ -873,10 +1127,124 @@
       ]
     },
     {
-      "name": "04 Suspension and reactivation",
+      "name": "15 Extra Credits - Provider Booking View",
       "item": [
         {
-          "name": "Admin suspends the approved provider",
+          "name": "User logs in again for extra credits",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{customerEmail}}\",\n  \"password\": \"{{customerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "15 Extra Credits - Provider Booking View. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.variables.set('customerToken', data.token);",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User books the extra-credit vehicle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/bookings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"startDate\": \"{{startDate}}\",\n  \"dueDate\": \"{{dueDate}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "15 Extra Credits - Provider Booking View. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.variables.set('suspensionBookingId', data.id);",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Provider views own vehicle booking",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/provider/bookings/{{suspensionBookingId}}",
+            "description": "15 Extra Credits - Provider Booking View. Run all sections in saved order. Tokens and generated values remain local to this run."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.test(\"Booking includes customer and booked details\", function () { pm.expect(data.customer.email).to.eql(pm.variables.get('customerEmail'));pm.expect(data.vehicleId).to.eql(pm.variables.get('vehicleId'));pm.expect(data.totalPriceSatang).to.eql(360000);pm.expect(data.vehicleSnapshot.pickupBranch.name).to.eql('Branch A'); });",
+                  "} else { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "16 Extra Credits - Suspension and Reactivation",
+      "item": [
+        {
+          "name": "Admin suspends provider",
           "request": {
             "method": "POST",
             "header": [
@@ -889,16 +1257,17 @@
                 "value": "application/json"
               }
             ],
+            "url": "{{baseUrl}}/admin/providers/{{providerId}}/suspend",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"reason\": \"Synthetic A demo suspension.\"\n}",
+              "raw": "{\n  \"reason\": \"Synthetic platform-rule violation.\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": "{{baseUrl}}/admin/providers/{{providerId}}/suspend"
+            "description": "16 Extra Credits - Suspension and Reactivation. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -906,77 +1275,28 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('admin suspends approved provider', function () { pm.response.to.have.status(200); });",
-                  "if (pm.response.code === 200) { pm.test('provider status is suspended', function () { pm.expect(pm.response.json().data.provider.status).to.eql('suspended'); }); }",
-                  "pm.test('suspension cancels the remaining active rental', function () { pm.expect(pm.response.json().data.cancelledBookingCount).to.eql(1); });"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Customer sees suspension cancellation",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{baseUrl}}/bookings/{{suspensionBookingId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Customer sees suspension cancellation: HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
                   "if (pm.response.code === 200) {",
                   "  const data = pm.response.json().data;",
-                  "pm.test('suspension reason is recorded', function () { pm.expect(data.status).to.eql('cancelled'); pm.expect(data.cancellationReason).to.eql('provider_suspended'); });",
-                  "}"
+                  "pm.test(\"Suspension cancels future booking\", function () { pm.expect(data.provider.status).to.eql('suspended');pm.expect(data.cancelledBookingCount).to.eql(1); });",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Suspended vehicle is hidden publicly",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{baseUrl}}/vehicles/{{vehicleId}}"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Suspended vehicle is hidden publicly: HTTP 404', function () { pm.response.to.have.status(404); });"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Suspended provider cannot read current account",
+          "name": "User sees automatic cancellation",
           "request": {
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{providerToken}}"
+                "value": "Bearer {{customerToken}}"
               }
             ],
-            "url": "{{baseUrl}}/auth/me"
+            "url": "{{baseUrl}}/bookings/{{suspensionBookingId}}",
+            "description": "16 Extra Credits - Suspension and Reactivation. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -984,32 +1304,41 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('suspension blocks existing protected sessions', function () { pm.response.to.have.status(403); });"
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "pm.test(\"Suspension cancellation recorded\", function () { pm.expect(data.status).to.eql('cancelled');pm.expect(data.cancellationReason).to.eql('provider_suspended'); });",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Suspended provider login is denied",
+          "name": "Suspension blocks vehicle updates",
           "request": {
-            "method": "POST",
+            "method": "PATCH",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{providerToken}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
               }
             ],
+            "url": "{{baseUrl}}/provider/vehicles/{{vehicleId}}",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{providerEmail}}\",\n  \"password\": \"{{providerPassword}}\"\n}",
+              "raw": "{\n  \"ratePerDaySatang\": 100000\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": "{{baseUrl}}/auth/login"
+            "description": "16 Extra Credits - Suspension and Reactivation. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -1017,47 +1346,41 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('suspended provider cannot create a fresh session', function () { pm.response.to.have.status(403); });"
+                  "pm.test('HTTP 403', function () { pm.response.to.have.status(403); });",
+                  "if (pm.response.code === 403) {",
+                  "  const data = pm.response.json().data;",
+                  "",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Suspended provider can log out",
+          "name": "Suspension blocks new bookings",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{providerToken}}"
-              }
-            ],
-            "url": "{{baseUrl}}/auth/logout"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('logout remains allowed during suspension', function () { pm.response.to.have.status(200); });"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Logged out provider token is revoked",
-          "request": {
-            "method": "GET",
-            "header": [
+                "value": "Bearer {{customerToken}}"
+              },
               {
-                "key": "Authorization",
-                "value": "Bearer {{providerToken}}"
+                "key": "Content-Type",
+                "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/auth/me"
+            "url": "{{baseUrl}}/bookings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"startDate\": \"{{editStart}}\",\n  \"dueDate\": \"{{editDue}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "16 Extra Credits - Suspension and Reactivation. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -1065,7 +1388,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('logged out token is rejected', function () { pm.response.to.have.status(401); });"
+                  "pm.test('HTTP 409', function () { pm.response.to.have.status(409); });",
+                  "if (pm.response.code === 409) {",
+                  "  const data = pm.response.json().data;",
+                  "",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
@@ -1085,16 +1412,17 @@
                 "value": "application/json"
               }
             ],
+            "url": "{{baseUrl}}/admin/providers/{{providerId}}/reactivate",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"resolutionNote\": \"Synthetic demo issue resolved.\"\n}",
+              "raw": "{\n  \"resolutionNote\": \"Synthetic issue resolved.\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": "{{baseUrl}}/admin/providers/{{providerId}}/reactivate"
+            "description": "16 Extra Credits - Suspension and Reactivation. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -1102,85 +1430,18 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('admin reactivates provider', function () { pm.response.to.have.status(200); });",
-                  "if (pm.response.code === 200) {",
-                  "  pm.test('provider returns to approved state', function () { pm.expect(pm.response.json().data.status).to.eql('approved'); });",
-                  "  pm.environment.unset('adminToken');",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Provider logs in after reactivation",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{providerEmail}}\",\n  \"password\": \"{{providerPassword}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": "{{baseUrl}}/auth/login"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('reactivated provider can log in', function () { pm.response.to.have.status(200); });",
-                  "if (pm.response.code === 200) { pm.environment.set('providerToken', pm.response.json().data.token); }"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Provider sees cancelled booking after reactivation",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{baseUrl}}/provider/bookings/{{suspensionBookingId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{providerToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Provider sees cancelled booking after reactivation: HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
                   "if (pm.response.code === 200) {",
                   "  const data = pm.response.json().data;",
-                  "pm.test('reactivation does not restore a booking', function () { pm.expect(data.status).to.eql('cancelled'); });",
-                  "}"
+                  "pm.test(\"Provider approved again\", function () { pm.expect(data.status).to.eql('approved'); });",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Provider confirms approved revision v3",
+          "name": "Provider confirms booking stays cancelled",
           "request": {
             "method": "GET",
             "header": [
@@ -1189,7 +1450,8 @@
                 "value": "Bearer {{providerToken}}"
               }
             ],
-            "url": "{{baseUrl}}/provider/profile"
+            "url": "{{baseUrl}}/provider/bookings/{{suspensionBookingId}}",
+            "description": "16 Extra Credits - Suspension and Reactivation. Run all sections in saved order. Tokens and generated values remain local to this run."
           },
           "event": [
             {
@@ -1197,53 +1459,42 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('provider can read profile after reactivation', function () { pm.response.to.have.status(200); });",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
                   "if (pm.response.code === 200) {",
-                  "  const provider = pm.response.json().data;",
-                  "  pm.test('approved revision v3 is current', function () {",
-                  "    pm.expect(provider.status).to.eql('approved');",
-                  "    pm.expect(provider.approvedProfile.legalName).to.eql(pm.environment.get('legalNameV3'));",
-                  "  });",
-                  "}",
-                  "pm.environment.unset('providerToken');",
-                  "pm.environment.unset('adminToken');",
-                  "pm.environment.unset('providerPassword');"
+                  "  const data = pm.response.json().data;",
+                  "pm.test(\"Reactivation preserves cancellation\", function () { pm.expect(data.status).to.eql('cancelled'); });",
+                  "} else { pm.execution.setNextRequest(null); }"
                 ]
               }
             }
           ]
         }
       ]
-    },
+    }
+  ],
+  "variable": [
     {
-      "name": "05 Logout",
-      "item": [
-        {
-          "name": "Customer logout",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{customerToken}}"
-              }
-            ],
-            "url": "{{baseUrl}}/auth/logout"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('customer logs out', function () { pm.response.to.have.status(200); });",
-                  "pm.environment.unset('customerToken'); pm.environment.unset('customerPassword');"
-                ]
-              }
-            }
-          ]
-        }
-      ]
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:5003/api/v1",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const baseUrl = String(pm.variables.get('baseUrl') || '');",
+          "const local = /^https?:\\/\\/(?:localhost|127\\.0\\.0\\.1|\\[::1\\])(?::([0-9]{1,5}))?\\/api\\/v1\\/?$/.exec(baseUrl);",
+          "if (!local || (local[1] && (Number(local[1]) < 1 || Number(local[1]) > 65535))) {",
+          "  pm.execution.setNextRequest(null);",
+          "  pm.execution.skipRequest();",
+          "  throw new Error('Set baseUrl to a loopback API URL ending in /api/v1.');",
+          "}",
+          "pm.variables.set('baseUrl', baseUrl.replace(/\\/$/, ''));"
+        ]
+      }
     }
   ]
 }

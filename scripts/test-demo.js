@@ -1,6 +1,5 @@
-const { randomBytes, randomUUID } = require('node:crypto');
+const { randomUUID } = require('node:crypto');
 const newman = require('newman');
-const { todayBangkok } = require('../utils/dates');
 
 function localBaseUrl() {
   const value = process.env.DEMO_BASE_URL || 'http://127.0.0.1:5003/api/v1';
@@ -31,32 +30,12 @@ async function runDemo(options = {}) {
   }
 
   const suffix = options.runId || randomUUID();
-  const today = todayBangkok(new Date());
-  function dateAfter(days) {
-    const date = new Date(`${today}T00:00:00Z`);
-    date.setUTCDate(date.getUTCDate() + days);
-    return date.toISOString().slice(0, 10);
-  }
   const values = [
     ['runId', suffix, 'default'],
-    ['today', today, 'default'],
-    ['startDate', dateAfter(5), 'default'],
-    ['dueDate', dateAfter(7), 'default'],
-    ['editStart', dateAfter(8), 'default'],
-    ['editDue', dateAfter(9), 'default'],
-    ['suspensionStart', dateAfter(14), 'default'],
     ['baseUrl', localBaseUrl(), 'default'],
     ['adminEmail', process.env.SEED_ADMIN_EMAIL, 'secret'],
     ['adminPassword', process.env.SEED_ADMIN_PASSWORD, 'secret'],
-    ['customerEmail', `demo-customer-${suffix}@example.test`, 'default'],
-    ['customerPassword', randomBytes(24).toString('base64url'), 'secret'],
-    ['providerEmail', `demo-${suffix}@example.test`, 'default'],
-    ['providerPassword', randomBytes(24).toString('base64url'), 'secret'],
-    ['registrationNumber', `DEMO-${suffix}`, 'default'],
-    ['contactEmail', `contact-${suffix}@example.test`, 'default'],
-    ['legalNameV1', `Demo Rental ${suffix.slice(0, 8)}`, 'default'],
-    ['legalNameV2', `Demo Rental Revision ${suffix.slice(0, 8)}`, 'default'],
-    ['legalNameV3', `Demo Rental Approved ${suffix.slice(0, 8)}`, 'default'],
+    ['coreVehicleId', options.vehicleId || '', 'default'],
   ].map(([key, value, type]) => ({ key, value, type, enabled: true }));
 
   return new Promise((resolve, reject) =>

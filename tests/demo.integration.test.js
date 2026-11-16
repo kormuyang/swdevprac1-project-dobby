@@ -20,37 +20,41 @@ test('combined Newman demo persists the complete A+B journey', { timeout: 30000 
   process.env.DEMO_BASE_URL = f.base;
   process.env.SEED_ADMIN_EMAIL = f.admin.user.email;
   process.env.SEED_ADMIN_PASSWORD = 'synthetic-password';
+  const vehicle = await f.createVehicle();
   const runId = randomUUID();
   const emails = [`demo-customer-${runId}@example.test`, `demo-${runId}@example.test`];
   try {
-    const summary = await runDemo({ runId });
-    assert.ok(summary.count >= 30);
+    const summary = await runDemo({ runId, vehicleId: vehicle.id });
+    assert.equal(summary.count, 36);
     const providerAccount = await User.findOne({ email: emails[1] });
     const provider = await Provider.findById(providerAccount.providerId);
     assert.equal(provider.status, 'approved');
-    assert.equal(await ProviderApplication.countDocuments({ providerId: provider._id }), 3);
+    assert.equal(await ProviderApplication.countDocuments({ providerId: provider._id }), 2);
     const vehicles = await Vehicle.find({ providerId: provider._id });
     assert.equal(vehicles.length, 1);
     assert.equal(vehicles[0].ratePerDaySatang, 120_000);
     const bookings = await Booking.find({ providerId: provider._id });
-    assert.equal(bookings.length, 3);
-    assert.ok(bookings.every((booking) => booking.state === 'cancelled'));
-    assert.deepEqual(bookings.map((booking) => booking.cancellationReason).sort(), [
+    assert.equal(bookings.length, 1);
+    assert.equal(bookings[0].state, 'cancelled');
+    assert.equal(bookings[0].cancellationReason, 'provider_suspended');
+    assert.equal(bookings[0].ratePerDaySatang, 120_000);
+    const customerAccount = await User.findOne({ email: emails[0] });
+    const requiredBookings = await Booking.find({
+      userId: customerAccount._id,
+      vehicleId: vehicle.id,
+    });
+    assert.equal(requiredBookings.length, 2);
+    assert.deepEqual(requiredBookings.map((b) => b.cancellationReason).sort(), [
       'admin_cancelled',
       'customer_cancelled',
-      'provider_suspended',
     ]);
-    const original = bookings.find(
-      (booking) => booking.cancellationReason === 'customer_cancelled',
-    );
-    assert.equal(original.ratePerDaySatang, 100_000);
-    assert.equal(original.totalPriceSatang, 200_000);
-    assert.equal(original.vehicleSnapshot.pickupBranch.name, 'Branch A');
   } finally {
     const accounts = await User.find({ email: { $in: emails } }).select('_id providerId');
     const providerIds = accounts.map((user) => user.providerId).filter(Boolean);
     const ids = accounts.map((user) => user._id);
-    await Booking.deleteMany({ providerId: { $in: providerIds } });
+    await Booking.deleteMany({
+      $or: [{ providerId: { $in: providerIds } }, { userId: { $in: ids } }],
+    });
     await Vehicle.deleteMany({ providerId: { $in: providerIds } });
     await ProviderApplication.deleteMany({ providerId: { $in: providerIds } });
     await Provider.deleteMany({ _id: { $in: providerIds } });
