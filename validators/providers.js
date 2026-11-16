@@ -13,7 +13,10 @@ function validateReview(body) {
   if (body.decision === 'approve' && Object.keys(body).length === 1) {
     return { decision: 'approve' };
   }
-  if (body.decision === 'reject' && Object.keys(body).every((key) => ['decision', 'reason'].includes(key))) {
+  if (
+    body.decision === 'reject' &&
+    Object.keys(body).every((key) => ['decision', 'reason'].includes(key))
+  ) {
     if (typeof body.reason !== 'string') {
       throw badRequest('reason is required when rejecting an application.');
     }
@@ -49,7 +52,11 @@ function validatePage(query, { statuses, allowProviderId = false } = {}) {
     if (query[name] === undefined) {
       return fallback;
     }
-    if (typeof query[name] !== 'string' || !/^[1-9]\d*$/.test(query[name]) || Number(query[name]) > max) {
+    if (
+      typeof query[name] !== 'string' ||
+      !/^[1-9]\d*$/.test(query[name]) ||
+      Number(query[name]) > max
+    ) {
       throw badRequest(`${name} must be a positive integer no greater than ${max}.`);
     }
     return Number(query[name]);

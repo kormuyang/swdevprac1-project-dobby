@@ -16,8 +16,11 @@ test('combined Newman demo persists the complete A+B journey', { timeout: 30000 
     ['/api/v1/company/bookings', require('../routes/companyBookings')],
     ['/api/v1/admin', require('../routes/adminProviders')],
   ]);
-  const previous = { DEMO_BASE_URL: process.env.DEMO_BASE_URL,
-    SEED_ADMIN_EMAIL: process.env.SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD: process.env.SEED_ADMIN_PASSWORD };
+  const previous = {
+    DEMO_BASE_URL: process.env.DEMO_BASE_URL,
+    SEED_ADMIN_EMAIL: process.env.SEED_ADMIN_EMAIL,
+    SEED_ADMIN_PASSWORD: process.env.SEED_ADMIN_PASSWORD,
+  };
   process.env.DEMO_BASE_URL = f.base;
   process.env.SEED_ADMIN_EMAIL = f.admin.user.email;
   process.env.SEED_ADMIN_PASSWORD = 'synthetic-password';
@@ -36,9 +39,14 @@ test('combined Newman demo persists the complete A+B journey', { timeout: 30000 
     const bookings = await Booking.find({ providerId: provider._id });
     assert.equal(bookings.length, 3);
     assert.ok(bookings.every((booking) => booking.state === 'cancelled'));
-    assert.deepEqual(bookings.map((booking) => booking.cancellationReason).sort(),
-      ['admin_cancelled', 'customer_cancelled', 'provider_suspended']);
-    const original = bookings.find((booking) => booking.cancellationReason === 'customer_cancelled');
+    assert.deepEqual(bookings.map((booking) => booking.cancellationReason).sort(), [
+      'admin_cancelled',
+      'customer_cancelled',
+      'provider_suspended',
+    ]);
+    const original = bookings.find(
+      (booking) => booking.cancellationReason === 'customer_cancelled',
+    );
     assert.equal(original.ratePerDaySatang, 100_000);
     assert.equal(original.totalPriceSatang, 200_000);
     assert.equal(original.vehicleSnapshot.pickupBranch.name, 'Branch A');

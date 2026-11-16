@@ -15,7 +15,11 @@ const adminRoutes = require('../routes/adminProviders');
 const mongoUri = process.env.TEST_MONGO_URI;
 test('provider review and profile versioning persist atomically', async (t) => {
   assert.ok(mongoUri, 'Set TEST_MONGO_URI to a dedicated dobby_test_a replica-set database.');
-  assert.equal(new URL(mongoUri).pathname.replace(/^\//, ''), 'dobby_test_a', 'TEST_MONGO_URI must name dobby_test_a.');
+  assert.equal(
+    new URL(mongoUri).pathname.replace(/^\//, ''),
+    'dobby_test_a',
+    'TEST_MONGO_URI must name dobby_test_a.',
+  );
   const suffix = randomUUID();
   const companyEmail = `provider-${suffix}@example.test`;
   const otherCompanyEmail = `other-provider-${suffix}@example.test`;
@@ -43,8 +47,11 @@ test('provider review and profile versioning persist atomically', async (t) => {
           await ProviderApplication.deleteMany({ providerId: otherProviderId });
           await Provider.deleteOne({ _id: otherProviderId });
         }
-        if (companySid || adminSid) await AuthSession.deleteMany({ sid: { $in: [companySid, adminSid].filter(Boolean) } });
-        await User.deleteMany({ _id: { $in: [companyId, otherCompanyId, adminId].filter(Boolean) } });
+        if (companySid || adminSid)
+          await AuthSession.deleteMany({ sid: { $in: [companySid, adminSid].filter(Boolean) } });
+        await User.deleteMany({
+          _id: { $in: [companyId, otherCompanyId, adminId].filter(Boolean) },
+        });
       }
     } finally {
       if (server) await new Promise((resolve) => server.close(resolve));
@@ -56,11 +63,25 @@ test('provider review and profile versioning persist atomically', async (t) => {
 
   process.env.JWT_SECRET = secret;
   await mongoose.connect(mongoUri);
-  await Promise.all([User, Provider, ProviderApplication, AuthSession].map((Model) => Model.createIndexes()));
+  await Promise.all(
+    [User, Provider, ProviderApplication, AuthSession].map((Model) => Model.createIndexes()),
+  );
 
-  const company = await User.create({ name: 'Synthetic Company', telephone: '12345678', email: companyEmail, passwordHash: 'integration-password', role: 'company' });
+  const company = await User.create({
+    name: 'Synthetic Company',
+    telephone: '12345678',
+    email: companyEmail,
+    passwordHash: 'integration-password',
+    role: 'company',
+  });
   companyId = company._id;
-  const admin = await User.create({ name: 'Synthetic Admin', telephone: '12345678', email: adminEmail, passwordHash: 'integration-password', role: 'admin' });
+  const admin = await User.create({
+    name: 'Synthetic Admin',
+    telephone: '12345678',
+    email: adminEmail,
+    passwordHash: 'integration-password',
+    role: 'admin',
+  });
   adminId = admin._id;
   const otherCompany = await User.create({
     name: 'Other Synthetic Company',
@@ -75,10 +96,21 @@ test('provider review and profile versioning persist atomically', async (t) => {
   await company.save();
   const appId = new mongoose.Types.ObjectId();
   const provider = await Provider.create({
-    _id: providerId, representativeId: companyId, businessRegistrationNumber: `REG-${suffix}`,
-    status: 'pending', latestApplicationId: appId, applicationSequence: 1,
+    _id: providerId,
+    representativeId: companyId,
+    businessRegistrationNumber: `REG-${suffix}`,
+    status: 'pending',
+    latestApplicationId: appId,
+    applicationSequence: 1,
   });
-  await ProviderApplication.create({ _id: appId, providerId, version: 1, businessRegistrationNumber: provider.businessRegistrationNumber, profile: makeProfile(suffix, 'v1'), status: 'pending' });
+  await ProviderApplication.create({
+    _id: appId,
+    providerId,
+    version: 1,
+    businessRegistrationNumber: provider.businessRegistrationNumber,
+    profile: makeProfile(suffix, 'v1'),
+    status: 'pending',
+  });
   otherProviderId = new mongoose.Types.ObjectId();
   otherApplicationId = new mongoose.Types.ObjectId();
   otherCompany.providerId = otherProviderId;
@@ -111,22 +143,38 @@ test('provider review and profile versioning persist atomically', async (t) => {
   server = http.createServer(app);
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${server.address().port}/api/v1`;
-  const token = (userId, sid) => jwt.sign({ sid }, secret, { algorithm: 'HS256', subject: String(userId), expiresIn: '1m' });
-  const companyHeaders = { authorization: `Bearer ${token(companyId, companySid)}`, 'content-type': 'application/json' };
-  const adminHeaders = { authorization: `Bearer ${token(adminId, adminSid)}`, 'content-type': 'application/json' };
+  const token = (userId, sid) =>
+    jwt.sign({ sid }, secret, { algorithm: 'HS256', subject: String(userId), expiresIn: '1m' });
+  const companyHeaders = {
+    authorization: `Bearer ${token(companyId, companySid)}`,
+    'content-type': 'application/json',
+  };
+  const adminHeaders = {
+    authorization: `Bearer ${token(adminId, adminSid)}`,
+    'content-type': 'application/json',
+  };
 
   for (const ending of ['', '/']) {
-    const filteredList = await fetch(`${base}/admin/applications${ending}?providerId=${providerId}`, {
-      headers: adminHeaders,
-    });
+    const filteredList = await fetch(
+      `${base}/admin/applications${ending}?providerId=${providerId}`,
+      {
+        headers: adminHeaders,
+      },
+    );
     assert.equal(filteredList.status, 200);
     const filtered = await filteredList.json();
     assert.equal(filtered.pagination.total, 1);
-    assert.deepEqual(filtered.data.map((application) => application.id), [String(appId)]);
+    assert.deepEqual(
+      filtered.data.map((application) => application.id),
+      [String(appId)],
+    );
 
-    const invalidApplicationStatus = await fetch(`${base}/admin/applications${ending}?status=suspended`, {
-      headers: adminHeaders,
-    });
+    const invalidApplicationStatus = await fetch(
+      `${base}/admin/applications${ending}?status=suspended`,
+      {
+        headers: adminHeaders,
+      },
+    );
     assert.equal(invalidApplicationStatus.status, 400);
 
     const providerList = await fetch(`${base}/admin/providers${ending}?status=pending`, {
@@ -137,77 +185,133 @@ test('provider review and profile versioning persist atomically', async (t) => {
     assert.ok(providers.data.some((provider) => provider.id === String(providerId)));
     assert.ok(providers.data.every((provider) => provider.status === 'pending'));
 
-    const invalidProviderFilter = await fetch(`${base}/admin/providers${ending}?providerId=${providerId}`, {
-      headers: adminHeaders,
-    });
+    const invalidProviderFilter = await fetch(
+      `${base}/admin/providers${ending}?providerId=${providerId}`,
+      {
+        headers: adminHeaders,
+      },
+    );
     assert.equal(invalidProviderFilter.status, 400);
   }
 
-  const forbidden = await fetch(`${base}/admin/applications/${appId}/review`, { method: 'POST', headers: companyHeaders, body: JSON.stringify({ decision: 'approve' }) });
+  const forbidden = await fetch(`${base}/admin/applications/${appId}/review`, {
+    method: 'POST',
+    headers: companyHeaders,
+    body: JSON.stringify({ decision: 'approve' }),
+  });
   assert.equal(forbidden.status, 403);
-  const unknownProfileQuery = await fetch(`${base}/company/profile?unexpected=1`, { headers: companyHeaders });
+  const unknownProfileQuery = await fetch(`${base}/company/profile?unexpected=1`, {
+    headers: companyHeaders,
+  });
   assert.equal(unknownProfileQuery.status, 400);
-  const repeatedPageQuery = await fetch(`${base}/company/applications?page=1&page=2`, { headers: companyHeaders });
+  const repeatedPageQuery = await fetch(`${base}/company/applications?page=1&page=2`, {
+    headers: companyHeaders,
+  });
   assert.equal(repeatedPageQuery.status, 400);
   const unknownSubmitQuery = await fetch(`${base}/company/applications?unexpected=1`, {
-    method: 'POST', headers: companyHeaders, body: JSON.stringify(makeProfile(suffix, 'query')),
+    method: 'POST',
+    headers: companyHeaders,
+    body: JSON.stringify(makeProfile(suffix, 'query')),
   });
   assert.equal(unknownSubmitQuery.status, 400);
   const history = await fetch(`${base}/company/applications`, { headers: companyHeaders });
   assert.equal(history.status, 200);
   assert.equal((await history.json()).data[0].version, 1);
-  const ownerCrossCompanyRead = await fetch(`${base}/company/applications/${otherApplicationId}`, { headers: companyHeaders });
+  const ownerCrossCompanyRead = await fetch(`${base}/company/applications/${otherApplicationId}`, {
+    headers: companyHeaders,
+  });
   assert.equal(ownerCrossCompanyRead.status, 404);
-  const detailWithQuery = await fetch(`${base}/company/applications/${appId}?unexpected=1`, { headers: companyHeaders });
+  const detailWithQuery = await fetch(`${base}/company/applications/${appId}?unexpected=1`, {
+    headers: companyHeaders,
+  });
   assert.equal(detailWithQuery.status, 400);
-  const adminProviderWithQuery = await fetch(`${base}/admin/providers/${providerId}?unexpected=1`, { headers: adminHeaders });
+  const adminProviderWithQuery = await fetch(`${base}/admin/providers/${providerId}?unexpected=1`, {
+    headers: adminHeaders,
+  });
   assert.equal(adminProviderWithQuery.status, 400);
-  const adminApplicationWithQuery = await fetch(`${base}/admin/applications/${appId}?unexpected=1`, { headers: adminHeaders });
+  const adminApplicationWithQuery = await fetch(
+    `${base}/admin/applications/${appId}?unexpected=1`,
+    { headers: adminHeaders },
+  );
   assert.equal(adminApplicationWithQuery.status, 400);
   const reviewWithQuery = await fetch(`${base}/admin/applications/${appId}/review?unexpected=1`, {
-    method: 'POST', headers: adminHeaders, body: JSON.stringify({ decision: 'approve' }),
+    method: 'POST',
+    headers: adminHeaders,
+    body: JSON.stringify({ decision: 'approve' }),
   });
   assert.equal(reviewWithQuery.status, 400);
 
-  const rejected = await fetch(`${base}/admin/applications/${appId}/review`, { method: 'POST', headers: adminHeaders, body: JSON.stringify({ decision: 'reject', reason: 'Update document' }) });
+  const rejected = await fetch(`${base}/admin/applications/${appId}/review`, {
+    method: 'POST',
+    headers: adminHeaders,
+    body: JSON.stringify({ decision: 'reject', reason: 'Update document' }),
+  });
   assert.equal(rejected.status, 200);
   const revisionBody = JSON.stringify(makeProfile(suffix, 'v2'));
-  const submissions = await Promise.all([0, 1].map(() => fetch(`${base}/company/applications`, { method: 'POST', headers: companyHeaders, body: revisionBody })));
+  const submissions = await Promise.all(
+    [0, 1].map(() =>
+      fetch(`${base}/company/applications`, {
+        method: 'POST',
+        headers: companyHeaders,
+        body: revisionBody,
+      }),
+    ),
+  );
   assert.deepEqual(submissions.map((response) => response.status).sort(), [201, 409]);
   const successful = await submissions.find((response) => response.status === 201).json();
   const secondId = successful.data.id;
   assert.equal(successful.data.version, 2);
-  const approved = await fetch(`${base}/admin/applications/${secondId}/review`, { method: 'POST', headers: adminHeaders, body: JSON.stringify({ decision: 'approve' }) });
+  const approved = await fetch(`${base}/admin/applications/${secondId}/review`, {
+    method: 'POST',
+    headers: adminHeaders,
+    body: JSON.stringify({ decision: 'approve' }),
+  });
   assert.equal(approved.status, 200);
   let persisted = await Provider.findById(providerId);
   assert.equal(String(persisted.approvedApplicationId), secondId);
   assert.equal(persisted.status, 'approved');
-  const companyProfileResponse = await fetch(`${base}/company/profile`, { headers: companyHeaders });
+  const companyProfileResponse = await fetch(`${base}/company/profile`, {
+    headers: companyHeaders,
+  });
   assert.equal(companyProfileResponse.status, 200);
   const companyProfile = (await companyProfileResponse.json()).data;
   assert.equal(companyProfile.approvedProfile.documentUrl, makeProfile(suffix, 'v2').documentUrl);
   assert.equal(Object.hasOwn(companyProfile, 'revision'), false);
-  const companyApplicationResponse = await fetch(`${base}/company/applications/${secondId}`, { headers: companyHeaders });
+  const companyApplicationResponse = await fetch(`${base}/company/applications/${secondId}`, {
+    headers: companyHeaders,
+  });
   assert.equal(companyApplicationResponse.status, 200);
   const companyApplication = (await companyApplicationResponse.json()).data;
   assert.equal(companyApplication.profile.documentUrl, makeProfile(suffix, 'v2').documentUrl);
   assert.equal(Object.hasOwn(companyApplication, 'internal'), false);
-  const adminProviderResponse = await fetch(`${base}/admin/providers/${providerId}`, { headers: adminHeaders });
+  const adminProviderResponse = await fetch(`${base}/admin/providers/${providerId}`, {
+    headers: adminHeaders,
+  });
   assert.equal(adminProviderResponse.status, 200);
   const adminProvider = (await adminProviderResponse.json()).data;
   assert.equal(adminProvider.approvedProfile.documentUrl, makeProfile(suffix, 'v2').documentUrl);
   assert.equal(Object.hasOwn(adminProvider, 'revision'), false);
-  const adminApplicationResponse = await fetch(`${base}/admin/applications/${secondId}`, { headers: adminHeaders });
+  const adminApplicationResponse = await fetch(`${base}/admin/applications/${secondId}`, {
+    headers: adminHeaders,
+  });
   assert.equal(adminApplicationResponse.status, 200);
   const adminApplication = (await adminApplicationResponse.json()).data;
   assert.equal(adminApplication.profile.documentUrl, makeProfile(suffix, 'v2').documentUrl);
   assert.equal(Object.hasOwn(adminApplication, 'internal'), false);
 
-  const thirdSubmit = await fetch(`${base}/company/applications`, { method: 'POST', headers: companyHeaders, body: JSON.stringify(makeProfile(suffix, 'v3')) });
+  const thirdSubmit = await fetch(`${base}/company/applications`, {
+    method: 'POST',
+    headers: companyHeaders,
+    body: JSON.stringify(makeProfile(suffix, 'v3')),
+  });
   assert.equal(thirdSubmit.status, 201);
   const third = await thirdSubmit.json();
   await Provider.updateOne({ _id: providerId }, { $set: { status: 'suspended' } });
-  const approvedWhileSuspended = await fetch(`${base}/admin/applications/${third.data.id}/review`, { method: 'POST', headers: adminHeaders, body: JSON.stringify({ decision: 'approve' }) });
+  const approvedWhileSuspended = await fetch(`${base}/admin/applications/${third.data.id}/review`, {
+    method: 'POST',
+    headers: adminHeaders,
+    body: JSON.stringify({ decision: 'approve' }),
+  });
   assert.equal(approvedWhileSuspended.status, 200);
   persisted = await Provider.findById(providerId);
   assert.equal(persisted.status, 'suspended');

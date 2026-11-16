@@ -26,18 +26,20 @@ app.use(cors());
 app.use(helmet());
 app.use(cookieParser());
 app.set('query parser', 'extended');
-app.use(rateLimit({
-  windowMs: 10 * 60 * 1000,
-  limit: 1000,
-  standardHeaders: 'draft-8',
-  legacyHeaders: false,
-  handler(req, res) {
-    res.status(429).json({
-      success: false,
-      message: 'Too many requests. Try again later.',
-    });
-  },
-}));
+app.use(
+  rateLimit({
+    windowMs: 10 * 60 * 1000,
+    limit: 1000,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    handler(req, res) {
+      res.status(429).json({
+        success: false,
+        message: 'Too many requests. Try again later.',
+      });
+    },
+  }),
+);
 
 app.get('/api/v1/health', (req, res) => {
   res.status(200).json({ success: true, data: { status: 'ok' } });

@@ -20,7 +20,12 @@ function runScript(script, values = {}, args = []) {
     SEED_FIXTURE_PASSWORD: '',
     ...values,
   };
-  return spawnSync(process.execPath, [script, ...args], { cwd: root, env, encoding: 'utf8', timeout: 5000 });
+  return spawnSync(process.execPath, [script, ...args], {
+    cwd: root,
+    env,
+    encoding: 'utf8',
+    timeout: 5000,
+  });
 }
 
 test('seed refuses missing or non-allowlisted database before connecting', () => {
@@ -56,11 +61,12 @@ test('reset requires the dedicated test database and explicit reset flag before 
   assert.equal(wrongDatabase.status, 1);
   assert.match(wrongDatabase.stderr, /TEST_MONGO_URI must explicitly name/);
 
-  const noFlag = runScript(resetScript, { TEST_MONGO_URI: 'mongodb://127.0.0.1:27017/dobby_test_a' });
+  const noFlag = runScript(resetScript, {
+    TEST_MONGO_URI: 'mongodb://127.0.0.1:27017/dobby_test_a',
+  });
   assert.equal(noFlag.status, 1);
   assert.match(noFlag.stderr, /ALLOW_TEST_DB_RESET=true/);
 });
-
 
 test('seed rejects an unusable admin email before connecting', () => {
   const result = runScript(seedScript, {
@@ -77,9 +83,13 @@ test('B reset requires its own connection and explicit reset flag', () => {
   const missing = runScript(resetScript, { ALLOW_TEST_DB_RESET: 'true' }, ['--owner=b']);
   assert.equal(missing.status, 1);
   assert.match(missing.stderr, /TEST_MONGO_URI_B must explicitly name dobby_test_b/);
-  const noFlag = runScript(resetScript, {
-    TEST_MONGO_URI_B: ['mongodb:', '//127.0.0.1:1/dobby_test_b'].join(''),
-  }, ['--owner=b']);
+  const noFlag = runScript(
+    resetScript,
+    {
+      TEST_MONGO_URI_B: ['mongodb:', '//127.0.0.1:1/dobby_test_b'].join(''),
+    },
+    ['--owner=b'],
+  );
   assert.equal(noFlag.status, 1);
   assert.match(noFlag.stderr, /ALLOW_TEST_DB_RESET=true/);
 });

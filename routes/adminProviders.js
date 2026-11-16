@@ -7,7 +7,6 @@ const { validateObjectId, validatePage, validateReview } = require('../validator
 const router = express.Router();
 const parseJson = express.json({ limit: '16kb' });
 
-
 function pageOptions(options) {
   return function validateListQuery(req, res, next) {
     try {
@@ -39,20 +38,45 @@ function reviewInput(req, res, next) {
 }
 
 router.use(protect(), authorize('admin'), parseJson);
-router.get('/providers', pageOptions({
-  statuses: ['pending', 'rejected', 'approved', 'suspended'],
-}), rejectBody, controller.listAdminProviders);
+router.get(
+  '/providers',
+  pageOptions({
+    statuses: ['pending', 'rejected', 'approved', 'suspended'],
+  }),
+  rejectBody,
+  controller.listAdminProviders,
+);
 router.get('/providers/:providerId', rejectQuery, pathId, rejectBody, controller.getAdminProvider);
-router.get('/applications', pageOptions({
-  statuses: ['pending', 'approved', 'rejected'],
-  allowProviderId: true,
-}), rejectBody, controller.listAdminApplications);
-router.get('/applications/:applicationId', rejectQuery, pathId, rejectBody, controller.getAdminApplication);
-router.post('/applications/:applicationId/review', rejectQuery, pathId, reviewInput, controller.reviewApplication);
+router.get(
+  '/applications',
+  pageOptions({
+    statuses: ['pending', 'approved', 'rejected'],
+    allowProviderId: true,
+  }),
+  rejectBody,
+  controller.listAdminApplications,
+);
+router.get(
+  '/applications/:applicationId',
+  rejectQuery,
+  pathId,
+  rejectBody,
+  controller.getAdminApplication,
+);
+router.post(
+  '/applications/:applicationId/review',
+  rejectQuery,
+  pathId,
+  reviewInput,
+  controller.reviewApplication,
+);
 
 router.use((error, req, res, next) => {
   if (error?.status >= 400 && error.status < 500) {
-    const message = error.type === 'entity.too.large' ? 'Request body is too large.' : 'Request body must contain valid JSON.';
+    const message =
+      error.type === 'entity.too.large'
+        ? 'Request body is too large.'
+        : 'Request body must contain valid JSON.';
     return res.status(400).json({ success: false, message });
   }
   return res.status(500).json({ success: false, message: 'The request could not be completed.' });

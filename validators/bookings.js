@@ -19,7 +19,6 @@ function validateBookingCreate(body) {
   };
 }
 
-
 function validateBookingFilters(query, today, actor) {
   const fields = ['status'];
   if (actor?.role === 'admin') {
@@ -27,7 +26,12 @@ function validateBookingFilters(query, today, actor) {
   }
   const result = listPage(query, fields);
   if (query.status !== undefined) {
-    result.status = enumField(query.status, 'status', ['upcoming', 'ongoing', 'completed', 'cancelled']);
+    result.status = enumField(query.status, 'status', [
+      'upcoming',
+      'ongoing',
+      'completed',
+      'cancelled',
+    ]);
   }
   for (const field of ['providerId', 'userId']) {
     if (query[field] !== undefined) {
@@ -37,15 +41,24 @@ function validateBookingFilters(query, today, actor) {
   return result;
 }
 
-
 function validateCompanyBookingFilters(query) {
   const result = listPage(query, ['status', 'vehicleId']);
   if (query.status !== undefined) {
-    result.status = enumField(query.status, 'status', ['upcoming', 'ongoing', 'completed', 'cancelled']);
+    result.status = enumField(query.status, 'status', [
+      'upcoming',
+      'ongoing',
+      'completed',
+      'cancelled',
+    ]);
   }
   if (query.vehicleId !== undefined) {
     result.vehicleId = objectIdField(query.vehicleId, 'vehicleId');
   }
   return result;
 }
-module.exports = { validateBookingCreate, validateBookingDatesUpdate, validateBookingFilters, validateCompanyBookingFilters };
+module.exports = {
+  validateBookingCreate,
+  validateBookingDatesUpdate,
+  validateBookingFilters,
+  validateCompanyBookingFilters,
+};

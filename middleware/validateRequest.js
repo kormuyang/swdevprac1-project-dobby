@@ -6,8 +6,14 @@ function rejectQuery(req, res, next) {
 }
 
 function rejectBody(req, res, next) {
-  if (req.body !== undefined || Number(req.get('content-length') || 0) > 0 || req.get('transfer-encoding')) {
-    return res.status(400).json({ success: false, message: 'This request does not accept a body.' });
+  if (
+    req.body !== undefined ||
+    Number(req.get('content-length') || 0) > 0 ||
+    req.get('transfer-encoding')
+  ) {
+    return res
+      .status(400)
+      .json({ success: false, message: 'This request does not accept a body.' });
   }
   return next();
 }

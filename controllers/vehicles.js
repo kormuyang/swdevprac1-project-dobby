@@ -3,14 +3,20 @@ const { serializeVehicle } = require('../serializers/vehicles');
 
 function sendError(res, error) {
   const status = Number.isInteger(error.status) ? error.status : 500;
-  return res.status(status).json({ success: false,
-    message: status < 500 ? error.message : 'The request could not be completed.' });
+  return res.status(status).json({
+    success: false,
+    message: status < 500 ? error.message : 'The request could not be completed.',
+  });
 }
 
 function serializePublicProvider(provider) {
   const profile = provider.approvedApplication.profile;
-  return { id: String(provider._id), name: profile.legalName,
-    address: profile.registeredAddress, telephone: profile.telephone };
+  return {
+    id: String(provider._id),
+    name: profile.legalName,
+    address: profile.registeredAddress,
+    telephone: profile.telephone,
+  };
 }
 
 async function listPublicProviders(req, res) {
@@ -23,7 +29,10 @@ async function listPublicProviders(req, res) {
 }
 async function getPublicProvider(req, res) {
   try {
-    return res.json({ success: true, data: serializePublicProvider(await service.getPublicProvider(req.resourceId)) });
+    return res.json({
+      success: true,
+      data: serializePublicProvider(await service.getPublicProvider(req.resourceId)),
+    });
   } catch (error) {
     return sendError(res, error);
   }
@@ -38,7 +47,10 @@ async function listPublicVehicles(req, res) {
 }
 async function getPublicVehicle(req, res) {
   try {
-    return res.json({ success: true, data: serializeVehicle(await service.getPublicVehicle(req.resourceId)) });
+    return res.json({
+      success: true,
+      data: serializeVehicle(await service.getPublicVehicle(req.resourceId)),
+    });
   } catch (error) {
     return sendError(res, error);
   }
@@ -77,7 +89,9 @@ async function updateVehicle(req, res) {
 }
 async function updateAvailability(req, res) {
   try {
-    const vehicle = await service.updateAvailability(req.resourceId, req.input, { actor: req.actor });
+    const vehicle = await service.updateAvailability(req.resourceId, req.input, {
+      actor: req.actor,
+    });
     return res.json({ success: true, data: serializeVehicle(vehicle) });
   } catch (error) {
     return sendError(res, error);
@@ -85,12 +99,24 @@ async function updateAvailability(req, res) {
 }
 async function setVehicleActivation(req, res) {
   try {
-    const vehicle = await service.setVehicleActivation(req.resourceId, req.input, { actor: req.actor });
+    const vehicle = await service.setVehicleActivation(req.resourceId, req.input, {
+      actor: req.actor,
+    });
     return res.json({ success: true, data: serializeVehicle(vehicle) });
   } catch (error) {
     return sendError(res, error);
   }
 }
 
-module.exports = { listPublicProviders, getPublicProvider, listPublicVehicles, getPublicVehicle,
-  listOwnVehicles, getOwnVehicle, createVehicle, updateVehicle, updateAvailability, setVehicleActivation };
+module.exports = {
+  listPublicProviders,
+  getPublicProvider,
+  listPublicVehicles,
+  getPublicVehicle,
+  listOwnVehicles,
+  getOwnVehicle,
+  createVehicle,
+  updateVehicle,
+  updateAvailability,
+  setVehicleActivation,
+};

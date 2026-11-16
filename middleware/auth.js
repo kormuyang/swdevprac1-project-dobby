@@ -14,7 +14,9 @@ function protect(options = {}) {
       return unauthorized(res);
     }
     if (!process.env.JWT_SECRET) {
-      return res.status(500).json({ success: false, message: 'The request could not be completed.' });
+      return res
+        .status(500)
+        .json({ success: false, message: 'The request could not be completed.' });
     }
     let claims;
     try {
@@ -22,9 +24,14 @@ function protect(options = {}) {
     } catch {
       return unauthorized(res);
     }
-    if (!claims || typeof claims.sub !== 'string' || !/^[0-9a-f]{24}$/i.test(claims.sub)
-      || typeof claims.sid !== 'string' || claims.sid.length === 0
-      || !Number.isInteger(claims.exp)) {
+    if (
+      !claims ||
+      typeof claims.sub !== 'string' ||
+      !/^[0-9a-f]{24}$/i.test(claims.sub) ||
+      typeof claims.sid !== 'string' ||
+      claims.sid.length === 0 ||
+      !Number.isInteger(claims.exp)
+    ) {
       return unauthorized(res);
     }
 
@@ -52,12 +59,16 @@ function protect(options = {}) {
       if (user.role === 'company' && !options.allowSuspended) {
         const provider = await Provider.findById(user.providerId).select('status');
         if (!provider || provider.status === 'suspended') {
-          return res.status(403).json({ success: false, message: 'This company account is suspended.' });
+          return res
+            .status(403)
+            .json({ success: false, message: 'This company account is suspended.' });
         }
       }
       return next();
     } catch (error) {
-      return res.status(500).json({ success: false, message: 'The request could not be completed.' });
+      return res
+        .status(500)
+        .json({ success: false, message: 'The request could not be completed.' });
     }
   };
 }
@@ -68,7 +79,9 @@ function authorize(...roles) {
       return unauthorized(res);
     }
     if (!roles.includes(req.actor.role)) {
-      return res.status(403).json({ success: false, message: 'This account is not allowed to perform this action.' });
+      return res
+        .status(403)
+        .json({ success: false, message: 'This account is not allowed to perform this action.' });
     }
     return next();
   };

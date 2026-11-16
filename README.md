@@ -42,6 +42,8 @@ Company representatives can read their profile and application history and submi
 
 ## Tests
 
+Check JavaScript with `npm run lint` and formatting with `npm run format:check`. Apply safe lint fixes with `npm run lint:fix` and format supported JavaScript, JSON and Markdown files with `npm run format`. Dependencies, generated output, environment files and the npm-generated lockfile are excluded from formatting.
+
 Run all local tests without a database:
 
 ```text

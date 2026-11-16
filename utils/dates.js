@@ -77,10 +77,7 @@ function overlaps(aStart, aDue, bStart, bDue) {
 }
 
 function bookingStatus(booking, today) {
-  if (
-    !booking ||
-    (booking.state !== 'confirmed' && booking.state !== 'cancelled')
-  ) {
+  if (!booking || (booking.state !== 'confirmed' && booking.state !== 'cancelled')) {
     rejectDate('A booking must have a confirmed or cancelled state.');
   }
   validateDateOnly(today);

@@ -16,9 +16,16 @@ function validateRequest(req, field) {
     throw error;
   }
   const body = req.body;
-  if (Object.keys(req.query).length > 0 || !body || typeof body !== 'object' || Array.isArray(body)
-    || Object.keys(body).some((key) => key !== field)
-    || typeof body[field] !== 'string' || body[field].trim().length < 1 || body[field].trim().length > 1000) {
+  if (
+    Object.keys(req.query).length > 0 ||
+    !body ||
+    typeof body !== 'object' ||
+    Array.isArray(body) ||
+    Object.keys(body).some((key) => key !== field) ||
+    typeof body[field] !== 'string' ||
+    body[field].trim().length < 1 ||
+    body[field].trim().length > 1000
+  ) {
     const error = new Error(`Provide only ${field}, between 1 and 1000 characters.`);
     error.status = 400;
     throw error;
@@ -42,7 +49,9 @@ async function suspendProvider(req, res) {
     let result;
     await session.withTransaction(async () => {
       const provider = await Provider.findByIdAndUpdate(
-        req.params.providerId, { $inc: { revision: 1 } }, { returnDocument: 'after', session },
+        req.params.providerId,
+        { $inc: { revision: 1 } },
+        { returnDocument: 'after', session },
       );
       if (!provider) {
         const error = new Error('Company was not found.');
@@ -54,21 +63,32 @@ async function suspendProvider(req, res) {
         error.status = 409;
         throw error;
       }
-      const application = await ProviderApplication.findById(provider.approvedApplicationId).session(session);
+      const application = await ProviderApplication.findById(
+        provider.approvedApplicationId,
+      ).session(session);
       if (!application || application.status !== 'approved') {
         const error = new Error('An approved company profile is required.');
         error.status = 409;
         throw error;
       }
       const now = new Date();
-      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+      const today = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Bangkok',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(now);
       provider.status = 'suspended';
       provider.suspensionReason = reason;
       provider.suspendedAt = now;
       provider.suspendedBy = req.actor.userId;
       await provider.save({ session });
       const cancellation = await bookingCancellation.cancelNonCompletedForProvider({
-        providerId: provider.id, actorId: req.actor.userId, today, now, session,
+        providerId: provider.id,
+        actorId: req.actor.userId,
+        today,
+        now,
+        session,
       });
       result = { provider: serializeProvider(provider, application), ...cancellation };
     });
@@ -90,7 +110,9 @@ async function reactivateProvider(req, res) {
     let result;
     await session.withTransaction(async () => {
       const provider = await Provider.findByIdAndUpdate(
-        req.params.providerId, { $inc: { revision: 1 } }, { returnDocument: 'after', session },
+        req.params.providerId,
+        { $inc: { revision: 1 } },
+        { returnDocument: 'after', session },
       );
       if (!provider) {
         const error = new Error('Company was not found.');
@@ -98,9 +120,12 @@ async function reactivateProvider(req, res) {
         throw error;
       }
       const application = provider.approvedApplicationId
-        ? await ProviderApplication.findById(provider.approvedApplicationId).session(session) : null;
+        ? await ProviderApplication.findById(provider.approvedApplicationId).session(session)
+        : null;
       if (provider.status !== 'suspended' || !application || application.status !== 'approved') {
-        const error = new Error('Reactivation requires a suspended company with an approved profile.');
+        const error = new Error(
+          'Reactivation requires a suspended company with an approved profile.',
+        );
         error.status = 409;
         throw error;
       }

@@ -20,7 +20,10 @@ const registration = {
   password: 'correct horse',
 };
 
-async function runProtect(token, { user, session, provider, failUserLookup = false, allowSuspended = false } = {}) {
+async function runProtect(
+  token,
+  { user, session, provider, failUserLookup = false, allowSuspended = false } = {},
+) {
   const originals = [User.findById, AuthSession.findOne, Provider.findById];
   User.findById = () => {
     if (failUserLookup) {
@@ -33,13 +36,21 @@ async function runProtect(token, { user, session, provider, failUserLookup = fal
   const res = {
     statusCode: 200,
     body: null,
-    status(code) { this.statusCode = code; return this; },
-    json(body) { this.body = body; return this; },
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(body) {
+      this.body = body;
+      return this;
+    },
   };
   const req = { get: () => `Bearer ${token}` };
   let nextCalled = false;
   try {
-    await protect({ allowSuspended })(req, res, () => { nextCalled = true; });
+    await protect({ allowSuspended })(req, res, () => {
+      nextCalled = true;
+    });
     return { ...res, nextCalled, actor: req.actor };
   } finally {
     [User.findById, AuthSession.findOne, Provider.findById] = originals;
@@ -47,19 +58,36 @@ async function runProtect(token, { user, session, provider, failUserLookup = fal
 }
 
 function tokenWith(claims, algorithm = 'HS256') {
-  return jwt.sign(claims, process.env.JWT_SECRET, { algorithm, subject: '507f1f77bcf86cd799439011' });
+  return jwt.sign(claims, process.env.JWT_SECRET, {
+    algorithm,
+    subject: '507f1f77bcf86cd799439011',
+  });
 }
 
 test('customer signup accepts only contract fields and normalizes email', () => {
-  assert.deepEqual(validateRegistration(registration), { ...registration, email: 'ada@example.com' });
+  assert.deepEqual(validateRegistration(registration), {
+    ...registration,
+    email: 'ada@example.com',
+  });
   assert.throws(() => validateRegistration({ ...registration, role: 'admin' }), { status: 400 });
-  assert.throws(() => validateRegistration({ ...registration, providerId: '507f1f77bcf86cd799439011' }), { status: 400 });
+  assert.throws(
+    () => validateRegistration({ ...registration, providerId: '507f1f77bcf86cd799439011' }),
+    { status: 400 },
+  );
 });
 
 test('password validation measures UTF-8 bytes and login allowlists fields', () => {
-  assert.throws(() => validateRegistration({ ...registration, password: 'é'.repeat(37) }), { status: 400 });
-  assert.equal(validateLogin({ email: ' A@EXAMPLE.COM ', password: 'correct horse' }).email, 'a@example.com');
-  assert.throws(() => validateLogin({ email: 'a@example.com', password: 'correct horse', role: 'admin' }), { status: 400 });
+  assert.throws(() => validateRegistration({ ...registration, password: 'é'.repeat(37) }), {
+    status: 400,
+  });
+  assert.equal(
+    validateLogin({ email: ' A@EXAMPLE.COM ', password: 'correct horse' }).email,
+    'a@example.com',
+  );
+  assert.throws(
+    () => validateLogin({ email: 'a@example.com', password: 'correct horse', role: 'admin' }),
+    { status: 400 },
+  );
 });
 
 test('company registration validates a nested allowlist and HTTPS document link', () => {
@@ -75,14 +103,22 @@ test('company registration validates a nested allowlist and HTTPS document link'
     },
   };
   assert.equal(validateCompanyRegistration(input).businessRegistrationNumber, 'REG-123');
-  assert.throws(() => validateCompanyRegistration({
-    ...input,
-    profile: { ...input.profile, documentUrl: 'http://example.com/registration.pdf' },
-  }), { status: 400 });
-  assert.throws(() => validateCompanyRegistration({
-    ...input,
-    profile: { ...input.profile, documentId: 'unexpected' },
-  }), { status: 400 });
+  assert.throws(
+    () =>
+      validateCompanyRegistration({
+        ...input,
+        profile: { ...input.profile, documentUrl: 'http://example.com/registration.pdf' },
+      }),
+    { status: 400 },
+  );
+  assert.throws(
+    () =>
+      validateCompanyRegistration({
+        ...input,
+        profile: { ...input.profile, documentId: 'unexpected' },
+      }),
+    { status: 400 },
+  );
 });
 
 test('safe user output excludes credential and internal fields', () => {
@@ -97,7 +133,15 @@ test('safe user output excludes credential and internal fields', () => {
     bookingRevision: 8,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
   });
-  assert.deepEqual(Object.keys(dto), ['id', 'name', 'telephone', 'email', 'role', 'providerId', 'createdAt']);
+  assert.deepEqual(Object.keys(dto), [
+    'id',
+    'name',
+    'telephone',
+    'email',
+    'role',
+    'providerId',
+    'createdAt',
+  ]);
   assert.equal(dto.providerId, null);
   assert.equal('passwordHash' in dto, false);
 });
@@ -138,7 +182,12 @@ test('protect rejects wrong algorithm, expired/missing expiry and malformed subj
     const wrongAlgorithm = await runProtect(tokenWith(validClaims, 'HS512'));
     const expired = await runProtect(tokenWith({ sid, exp: 1 }));
     const missingExpiry = await runProtect(tokenWith({ sid }));
-    const malformedSubject = await runProtect(jwt.sign({ ...validClaims }, process.env.JWT_SECRET, { algorithm: 'HS256', subject: 'invalid' }));
+    const malformedSubject = await runProtect(
+      jwt.sign({ ...validClaims }, process.env.JWT_SECRET, {
+        algorithm: 'HS256',
+        subject: 'invalid',
+      }),
+    );
     for (const result of [wrongAlgorithm, expired, missingExpiry, malformedSubject]) {
       assert.equal(result.statusCode, 401);
       assert.equal(result.body.success, false);
@@ -157,7 +206,11 @@ test('protect loads current actor and rejects missing sessions, suspension and d
   process.env.JWT_SECRET = 'unit-test-secret';
   const sid = 'c79e51a0-5297-4e7d-8079-cd0d6f124809';
   const token = tokenWith({ sid, exp: Math.floor(Date.now() / 1000) + 60 });
-  const user = { _id: '507f1f77bcf86cd799439011', role: 'company', providerId: '607f1f77bcf86cd799439012' };
+  const user = {
+    _id: '507f1f77bcf86cd799439011',
+    role: 'company',
+    providerId: '607f1f77bcf86cd799439012',
+  };
   const session = { sid };
   try {
     const active = await runProtect(token, { user, session, provider: { status: 'pending' } });
@@ -179,7 +232,10 @@ test('protect loads current actor and rejects missing sessions, suspension and d
 
     const databaseFailure = await runProtect(token, { failUserLookup: true });
     assert.equal(databaseFailure.statusCode, 500);
-    assert.deepEqual(databaseFailure.body, { success: false, message: 'The request could not be completed.' });
+    assert.deepEqual(databaseFailure.body, {
+      success: false,
+      message: 'The request could not be completed.',
+    });
   } finally {
     if (previousSecret === undefined) {
       delete process.env.JWT_SECRET;
@@ -188,7 +244,6 @@ test('protect loads current actor and rejects missing sessions, suspension and d
     }
   }
 });
-
 
 test('OpenAPI password character limits do not exclude valid UTF-8 byte-length passwords', () => {
   const schemas = require('../docs/contracts/openapi.json').components.schemas;

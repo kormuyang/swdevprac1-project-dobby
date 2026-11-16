@@ -22,14 +22,19 @@ function validatePerformanceConfiguration() {
   } catch {
     throw new Error('Set TEST_PERF_MONGO_URI to dedicated dobby_test_performance.');
   }
-  if (!['mongodb:', 'mongodb+srv:'].includes(parsed.protocol) || parsed.pathname !== '/dobby_test_performance') {
+  if (
+    !['mongodb:', 'mongodb+srv:'].includes(parsed.protocol) ||
+    parsed.pathname !== '/dobby_test_performance'
+  ) {
     throw new Error('TEST_PERF_MONGO_URI must name dedicated dobby_test_performance.');
   }
   if (parsed.hostname.endsWith('.mongodb.net') && !process.env.PERF_DB_REGION?.trim()) {
     throw new Error('Set PERF_DB_REGION before an Atlas performance run.');
   }
-  return { uri: process.env.TEST_PERF_MONGO_URI,
-    databaseKind: parsed.hostname.endsWith('.mongodb.net') ? 'Atlas' : 'local-or-other' };
+  return {
+    uri: process.env.TEST_PERF_MONGO_URI,
+    databaseKind: parsed.hostname.endsWith('.mongodb.net') ? 'Atlas' : 'local-or-other',
+  };
 }
 
 async function freePort() {
@@ -57,8 +62,10 @@ async function measureResponseTimes(outputPath = 'reports/response-times.json') 
   try {
     await mongoose.connect(config.uri);
     for (const Model of [User, Provider, ProviderApplication, AuthSession, Vehicle, Booking]) {
-      if (await Model.countDocuments({}) !== 0) {
-        throw new Error('Performance database must be empty; choose a fresh dedicated test database.');
+      if ((await Model.countDocuments({})) !== 0) {
+        throw new Error(
+          'Performance database must be empty; choose a fresh dedicated test database.',
+        );
       }
       await Model.createIndexes();
     }
@@ -66,11 +73,27 @@ async function measureResponseTimes(outputPath = 'reports/response-times.json') 
       const id = newId('users');
       const email = `${randomUUID()}@example.test`;
       const password = randomUUID();
-      await User.create({ _id: id, name: 'Synthetic Performance Account', telephone: '123456789',
-        email, passwordHash: password, role, providerId });
+      await User.create({
+        _id: id,
+        name: 'Synthetic Performance Account',
+        telephone: '123456789',
+        email,
+        passwordHash: password,
+        role,
+        providerId,
+      });
       const sid = randomUUID();
       await AuthSession.create({ sid, userId: id, expiresAt: new Date(Date.now() + 300_000) });
-      return { id, email, password, token: jwt.sign({ sid }, secret, { subject: String(id), expiresIn: '5m', algorithm: 'HS256' }) };
+      return {
+        id,
+        email,
+        password,
+        token: jwt.sign({ sid }, secret, {
+          subject: String(id),
+          expiresIn: '5m',
+          algorithm: 'HS256',
+        }),
+      };
     }
     const customer = await account('user');
     const outsider = await account('user');
@@ -81,35 +104,76 @@ async function measureResponseTimes(outputPath = 'reports/response-times.json') 
       const applicationId = newId('applications');
       const company = await account('company', providerId);
       const registration = randomUUID();
-      await ProviderApplication.create({ _id: applicationId, providerId, version: 1,
-        businessRegistrationNumber: registration, status: 'approved', profile: {
-          legalName: 'Synthetic Performance Rental', registeredAddress: 'Test Road', telephone: '123456789',
-          contactEmail: 'performance@example.test', documentUrl: 'https://example.test/synthetic-document',
-        } });
-      await Provider.create({ _id: providerId, representativeId: company.id,
-        businessRegistrationNumber: registration, status: 'approved',
-        latestApplicationId: applicationId, approvedApplicationId: applicationId });
+      await ProviderApplication.create({
+        _id: applicationId,
+        providerId,
+        version: 1,
+        businessRegistrationNumber: registration,
+        status: 'approved',
+        profile: {
+          legalName: 'Synthetic Performance Rental',
+          registeredAddress: 'Test Road',
+          telephone: '123456789',
+          contactEmail: 'performance@example.test',
+          documentUrl: 'https://example.test/synthetic-document',
+        },
+      });
+      await Provider.create({
+        _id: providerId,
+        representativeId: company.id,
+        businessRegistrationNumber: registration,
+        status: 'approved',
+        latestApplicationId: applicationId,
+        approvedApplicationId: applicationId,
+      });
       companies.push(company);
     }
     const vehicles = [];
     for (let index = 0; index < 10; index++) {
-      vehicles.push(await Vehicle.create({ _id: newId('vehicles'), providerId: ids.providers[index % 2],
-        vin: `P-${randomUUID()}`, model: 'Performance City', transmissionType: 'automatic', fuelType: 'hybrid',
-        seatingCapacity: 5, pickupBranch: { name: 'Test Branch', address: 'Test Road' },
-        ratePerDaySatang: 100_000, availableFrom: '2000-01-01' }));
+      vehicles.push(
+        await Vehicle.create({
+          _id: newId('vehicles'),
+          providerId: ids.providers[index % 2],
+          vin: `P-${randomUUID()}`,
+          model: 'Performance City',
+          transmissionType: 'automatic',
+          fuelType: 'hybrid',
+          seatingCapacity: 5,
+          pickupBranch: { name: 'Test Branch', address: 'Test Road' },
+          ratePerDaySatang: 100_000,
+          availableFrom: '2000-01-01',
+        }),
+      );
     }
     for (let index = 0; index < 30; index++) {
       const vehicle = vehicles[index % 10];
       const date = `2000-01-${String(1 + Math.floor(index / 10) * 2).padStart(2, '0')}`;
-      await Booking.create({ _id: newId('bookings'), userId: customer.id, providerId: vehicle.providerId,
-        vehicleId: vehicle._id, startDate: date, dueDate: date, rentalDays: 1,
-        ratePerDaySatang: 100_000, totalPriceSatang: 100_000, vehicleSnapshot: serializeVehicleSnapshot(vehicle) });
+      await Booking.create({
+        _id: newId('bookings'),
+        userId: customer.id,
+        providerId: vehicle.providerId,
+        vehicleId: vehicle._id,
+        startDate: date,
+        dueDate: date,
+        rentalDays: 1,
+        ratePerDaySatang: 100_000,
+        totalPriceSatang: 100_000,
+        vehicleSnapshot: serializeVehicleSnapshot(vehicle),
+      });
     }
     const port = await freePort();
     const started = performance.now();
-    server = spawn(process.execPath, ['server.js'], { cwd: path.resolve(__dirname, '..'), stdio: 'ignore', env: {
-      ...process.env, DOTENV_CONFIG_PATH: '/dev/null', MONGO_URI: config.uri, JWT_SECRET: secret, PORT: String(port),
-    } });
+    server = spawn(process.execPath, ['server.js'], {
+      cwd: path.resolve(__dirname, '..'),
+      stdio: 'ignore',
+      env: {
+        ...process.env,
+        DOTENV_CONFIG_PATH: '/dev/null',
+        MONGO_URI: config.uri,
+        JWT_SECRET: secret,
+        PORT: String(port),
+      },
+    });
     server.once('error', () => {});
     const base = `http://127.0.0.1:${port}/api/v1`;
     let ready = false;
@@ -139,13 +203,23 @@ async function measureResponseTimes(outputPath = 'reports/response-times.json') 
         headers['content-type'] = 'application/json';
       }
       const start = performance.now();
-      const response = await fetch(base + route, { method, headers,
-        body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(10_000) });
+      const response = await fetch(base + route, {
+        method,
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal: AbortSignal.timeout(10_000),
+      });
       const payload = await response.json();
       const elapsedMs = Math.round((performance.now() - start) * 100) / 100;
       if (record) {
-        results.push({ endpoint: label, method, status: response.status, expectedStatus, elapsedMs,
-          passed: response.status === expectedStatus && elapsedMs <= 3000 });
+        results.push({
+          endpoint: label,
+          method,
+          status: response.status,
+          expectedStatus,
+          elapsedMs,
+          passed: response.status === expectedStatus && elapsedMs <= 3000,
+        });
       }
       if (response.status !== expectedStatus) {
         throw new Error(`Unexpected status for ${label}; no response content printed.`);
@@ -172,8 +246,14 @@ async function measureResponseTimes(outputPath = 'reports/response-times.json') 
     }
     // Keep auth writes within the existing 20-request rate limit.
     for (let index = 0; index < 10; index++) {
-      await measure('login', 'POST', '/auth/login', 200, null, { email: customer.email, password: customer.password });
-      await measure('wrong password', 'POST', '/auth/login', 401, null, { email: customer.email, password: 'synthetic-wrong-password' });
+      await measure('login', 'POST', '/auth/login', 200, null, {
+        email: customer.email,
+        password: customer.password,
+      });
+      await measure('wrong password', 'POST', '/auth/login', 401, null, {
+        email: customer.email,
+        password: 'synthetic-wrong-password',
+      });
     }
     const today = todayBangkok(new Date());
     function dateAfter(days) {
@@ -183,27 +263,42 @@ async function measureResponseTimes(outputPath = 'reports/response-times.json') 
     }
     for (let index = 0; index < 10; index++) {
       const created = await measure('create booking', 'POST', '/bookings', 201, customer, {
-        vehicleId: vehicles[0].id, startDate: dateAfter(10), dueDate: dateAfter(10),
+        vehicleId: vehicles[0].id,
+        startDate: dateAfter(10),
+        dueDate: dateAfter(10),
       });
       ids.bookings.push(created.data.id);
       await measure('edit booking dates', 'PATCH', `/bookings/${created.data.id}`, 200, customer, {
-        startDate: dateAfter(11), dueDate: dateAfter(11),
+        startDate: dateAfter(11),
+        dueDate: dateAfter(11),
       });
       await measure('cancel booking', 'DELETE', `/bookings/${created.data.id}`, 200, customer);
       await Booking.deleteOne({ _id: created.data.id });
     }
     const build = await mongoose.connection.db.admin().command({ buildInfo: 1 });
-    const report = { measuredAt: new Date().toISOString(), runtime: process.version,
+    const report = {
+      measuredAt: new Date().toISOString(),
+      runtime: process.version,
       machine: { platform: os.platform(), architecture: os.arch(), cpu: os.cpus()[0]?.model },
-      database: { kind: config.databaseKind, version: build.version, region: process.env.PERF_DB_REGION || 'not supplied',
-        label: 'dedicated performance test database' },
-      dataset: { providers: 2, vehicles: 10, historicalBookings: 30 }, repetitions: 10,
+      database: {
+        kind: config.databaseKind,
+        version: build.version,
+        region: process.env.PERF_DB_REGION || 'not supplied',
+        label: 'dedicated performance test database',
+      },
+      dataset: { providers: 2, vehicles: 10, historicalBookings: 30 },
+      repetitions: 10,
       coldStartupMs: Math.round(coldStartupMs * 100) / 100,
-      notes: 'Read routes warmed once. Auth writes stay within throttling limits. Booking writes are sequential and their synthetic records are removed between repetitions.',
-      results, passed: results.every((result) => result.passed) };
+      notes:
+        'Read routes warmed once. Auth writes stay within throttling limits. Booking writes are sequential and their synthetic records are removed between repetitions.',
+      results,
+      passed: results.every((result) => result.passed),
+    };
     fs.mkdirSync(path.dirname(path.resolve(outputPath)), { recursive: true });
     fs.writeFileSync(outputPath, JSON.stringify(report, null, 2) + '\n');
-    console.log(`Response-time check: ${results.length} requests, max ${Math.max(...results.map((result) => result.elapsedMs))} ms; ${report.passed ? 'passed' : 'failed'}.`);
+    console.log(
+      `Response-time check: ${results.length} requests, max ${Math.max(...results.map((result) => result.elapsedMs))} ms; ${report.passed ? 'passed' : 'failed'}.`,
+    );
     if (config.databaseKind !== 'Atlas') {
       console.log('Local verification only; Atlas T41 remains pending.');
     }
@@ -211,15 +306,30 @@ async function measureResponseTimes(outputPath = 'reports/response-times.json') 
   } catch (error) {
     if (results.length > 0) {
       fs.mkdirSync(path.dirname(path.resolve(outputPath)), { recursive: true });
-      fs.writeFileSync(outputPath, JSON.stringify({ incomplete: true, passed: false, runtime: process.version,
-        dataset: { providers: 2, vehicles: 10, historicalBookings: 30 }, results }, null, 2) + '\n');
+      fs.writeFileSync(
+        outputPath,
+        JSON.stringify(
+          {
+            incomplete: true,
+            passed: false,
+            runtime: process.version,
+            dataset: { providers: 2, vehicles: 10, historicalBookings: 30 },
+            results,
+          },
+          null,
+          2,
+        ) + '\n',
+      );
     }
     throw error;
   } finally {
     if (server && server.exitCode === null) {
       await new Promise((resolve) => {
         const timer = setTimeout(() => server.kill('SIGKILL'), 3000);
-        server.once('exit', () => { clearTimeout(timer); resolve(); });
+        server.once('exit', () => {
+          clearTimeout(timer);
+          resolve();
+        });
         server.kill('SIGTERM');
       });
     }
@@ -236,13 +346,17 @@ async function measureResponseTimes(outputPath = 'reports/response-times.json') 
 }
 
 if (require.main === module) {
-  measureResponseTimes(process.argv[2]).then((report) => {
-    if (!report.passed) {
+  measureResponseTimes(process.argv[2])
+    .then((report) => {
+      if (!report.passed) {
+        process.exitCode = 1;
+      }
+    })
+    .catch(() => {
+      console.error(
+        'Response-time check failed. Verify the dedicated database and local API setup; no connection details printed.',
+      );
       process.exitCode = 1;
-    }
-  }).catch(() => {
-    console.error('Response-time check failed. Verify the dedicated database and local API setup; no connection details printed.');
-    process.exitCode = 1;
-  });
+    });
 }
 module.exports = { validatePerformanceConfiguration, measureResponseTimes };

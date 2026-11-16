@@ -16,7 +16,11 @@
     "seed": "node scripts/seed.js",
     "reset:test": "node scripts/reset-test-db.js",
     "test:demo": "node scripts/test-demo.js",
-    "test:performance": "node scripts/measure-response-times.js"
+    "test:performance": "node scripts/measure-response-times.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write --ignore-unknown",
+    "format:check": "prettier . --check --ignore-unknown"
   },
   "dependencies": {
     "bcryptjs": "3.0.3",
@@ -31,7 +35,11 @@
     "swagger-ui-express": "5.0.1"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.15.0",
+    "globals": "17.14.0",
     "newman": "6.2.3",
-    "nodemon": "3.1.11"
+    "nodemon": "3.1.11",
+    "prettier": "3.10.1"
   }
 }

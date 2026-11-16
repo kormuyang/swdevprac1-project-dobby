@@ -49,13 +49,21 @@ if (require.main === module) {
   if (process.argv[2] === '--owner=b') {
     owner = 'b';
   }
-  resetTestDatabase(owner).then(() => {
-    console.log(`Reset dobby_test_${owner}.`);
-  }).catch((error) => {
-    const safeConfigurationError = /^(TEST_MONGO_URI|Set ALLOW_TEST_DB_RESET)/.test(error.message);
-    console.error(safeConfigurationError ? error.message : 'Reset failed. Check the local test database connection.');
-    process.exitCode = 1;
-  });
+  resetTestDatabase(owner)
+    .then(() => {
+      console.log(`Reset dobby_test_${owner}.`);
+    })
+    .catch((error) => {
+      const safeConfigurationError = /^(TEST_MONGO_URI|Set ALLOW_TEST_DB_RESET)/.test(
+        error.message,
+      );
+      console.error(
+        safeConfigurationError
+          ? error.message
+          : 'Reset failed. Check the local test database connection.',
+      );
+      process.exitCode = 1;
+    });
 }
 
 module.exports = { getDatabaseName, validateConfiguration, resetTestDatabase };

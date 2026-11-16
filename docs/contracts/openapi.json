@@ -51,13 +51,9 @@
         "operationId": "health",
         "summary": "Check process health",
         "description": "Return the process health status; this does not check database readiness.",
-        "tags": [
-          "System"
-        ],
+        "tags": ["System"],
         "security": [],
-        "x-roles": [
-          "public"
-        ],
+        "x-roles": ["public"],
         "x-requirements": [],
         "responses": {
           "200": {
@@ -90,17 +86,10 @@
         "operationId": "registerCustomer",
         "summary": "Register a customer",
         "description": "Server assigns user role. Telephone required. Reject role/provider/status fields. Creates account and initial session.",
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "security": [],
-        "x-roles": [
-          "public"
-        ],
-        "x-requirements": [
-          "FR-01",
-          "FR-02"
-        ],
+        "x-roles": ["public"],
+        "x-requirements": ["FR-01", "FR-02"],
         "responses": {
           "201": {
             "description": "Success.",
@@ -145,16 +134,10 @@
         "operationId": "registerCompany",
         "summary": "Register a representative and initial company application",
         "description": "Atomically create company-role account, stable provider and version 1 pending application. Login email and profile.contactEmail are distinct fields. No booking capability.",
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "security": [],
-        "x-roles": [
-          "public"
-        ],
-        "x-requirements": [
-          "FR-10"
-        ],
+        "x-roles": ["public"],
+        "x-requirements": ["FR-10"],
         "responses": {
           "201": {
             "description": "Success.",
@@ -199,16 +182,10 @@
         "operationId": "login",
         "summary": "Log in using email/password",
         "description": "Issue 24-hour JWT and persisted session. Suspended representative gets 403 because the representative is suspended; pending/rejected representatives may log in.",
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "security": [],
-        "x-roles": [
-          "public"
-        ],
-        "x-requirements": [
-          "FR-02"
-        ],
+        "x-roles": ["public"],
+        "x-requirements": ["FR-02"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -259,22 +236,14 @@
         "operationId": "logout",
         "summary": "Revoke current session",
         "description": "Verify presented JWT/session, then revoke it. Allow suspended representatives to logout; no protected company data is returned. Reuse of this token then returns 401.",
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "user",
-          "company",
-          "admin"
-        ],
-        "x-requirements": [
-          "FR-02"
-        ],
+        "x-roles": ["user", "company", "admin"],
+        "x-requirements": ["FR-02"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -315,19 +284,13 @@
         "operationId": "getMe",
         "summary": "Read current account",
         "description": "No password/hash/session internals. Suspended representatives denied with 403; pending/rejected can inspect their account.",
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "user",
-          "company",
-          "admin"
-        ],
+        "x-roles": ["user", "company", "admin"],
         "x-requirements": [],
         "responses": {
           "200": {
@@ -369,16 +332,10 @@
         "operationId": "listProviders",
         "summary": "List approved rental companies",
         "description": "Only approved companies with a last-approved profile. Never expose pending profile/document URLs, account data or booking history. Ordered createdAt descending then id descending.",
-        "tags": [
-          "Discovery"
-        ],
+        "tags": ["Discovery"],
         "security": [],
-        "x-roles": [
-          "public"
-        ],
-        "x-requirements": [
-          "FR-03"
-        ],
+        "x-roles": ["public"],
+        "x-requirements": ["FR-03"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -434,16 +391,10 @@
         "operationId": "getProvider",
         "summary": "Read approved company public details",
         "description": "Read approved company public details",
-        "tags": [
-          "Discovery"
-        ],
+        "tags": ["Discovery"],
         "security": [],
-        "x-roles": [
-          "public"
-        ],
-        "x-requirements": [
-          "FR-03"
-        ],
+        "x-roles": ["public"],
+        "x-requirements": ["FR-03"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -488,17 +439,10 @@
         "operationId": "listVehicles",
         "summary": "Find active vehicles of approved companies",
         "description": "Filter window/overlap when both dates supplied. Without dates, show active listings with non-expired windows. Never populate private bookings. Count and page use same predicate. Availability is advisory until atomic booking creation.",
-        "tags": [
-          "Discovery"
-        ],
+        "tags": ["Discovery"],
         "security": [],
-        "x-roles": [
-          "public"
-        ],
-        "x-requirements": [
-          "FR-03",
-          "FR-12"
-        ],
+        "x-roles": ["public"],
+        "x-requirements": ["FR-03", "FR-12"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -586,10 +530,7 @@
             "description": "transmissionType",
             "schema": {
               "type": "string",
-              "enum": [
-                "automatic",
-                "manual"
-              ]
+              "enum": ["automatic", "manual"]
             }
           },
           {
@@ -599,13 +540,7 @@
             "description": "fuelType",
             "schema": {
               "type": "string",
-              "enum": [
-                "petrol",
-                "diesel",
-                "hybrid",
-                "electric",
-                "other"
-              ]
+              "enum": ["petrol", "diesel", "hybrid", "electric", "other"]
             }
           },
           {
@@ -674,12 +609,7 @@
             "description": "Default -createdAt with id tie-break.",
             "schema": {
               "type": "string",
-              "enum": [
-                "createdAt",
-                "-createdAt",
-                "ratePerDaySatang",
-                "-ratePerDaySatang"
-              ]
+              "enum": ["createdAt", "-createdAt", "ratePerDaySatang", "-ratePerDaySatang"]
             }
           }
         ]
@@ -690,13 +620,9 @@
         "operationId": "getVehicle",
         "summary": "Read a publicly listed vehicle",
         "description": "Only active vehicle of approved company with non-expired window; otherwise 404. Availability is not a reservation.",
-        "tags": [
-          "Discovery"
-        ],
+        "tags": ["Discovery"],
         "security": [],
-        "x-roles": [
-          "public"
-        ],
+        "x-roles": ["public"],
         "x-requirements": [],
         "responses": {
           "200": {
@@ -742,17 +668,13 @@
         "operationId": "getOwnProvider",
         "summary": "Read own company operational profile",
         "description": "Pending/rejected/approved representatives only; suspended denied. Latest approved data remains in effect while revision is pending/rejected.",
-        "tags": [
-          "Company"
-        ],
+        "tags": ["Company"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "company"
-        ],
+        "x-roles": ["company"],
         "x-requirements": [],
         "responses": {
           "200": {
@@ -794,21 +716,14 @@
         "operationId": "listOwnApplications",
         "summary": "Read own application history",
         "description": "Pending/rejected/approved only, never suspended. Ordered version descending.",
-        "tags": [
-          "Company"
-        ],
+        "tags": ["Company"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "company"
-        ],
-        "x-requirements": [
-          "FR-10",
-          "FR-11"
-        ],
+        "x-roles": ["company"],
+        "x-requirements": ["FR-10", "FR-11"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -871,21 +786,14 @@
         "operationId": "submitApplication",
         "summary": "Submit a new immutable profile version",
         "description": "At most one pending application. Stable registration number copied by server. Retain current approved profile and provider eligibility during review; resubmission after rejection creates next version. Suspended denied.",
-        "tags": [
-          "Company"
-        ],
+        "tags": ["Company"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "company"
-        ],
-        "x-requirements": [
-          "FR-10",
-          "FR-11"
-        ],
+        "x-roles": ["company"],
+        "x-requirements": ["FR-10", "FR-11"],
         "responses": {
           "201": {
             "description": "Success.",
@@ -936,21 +844,14 @@
         "operationId": "getOwnApplication",
         "summary": "Read one own application version",
         "description": "Read one own application version",
-        "tags": [
-          "Company"
-        ],
+        "tags": ["Company"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "company"
-        ],
-        "x-requirements": [
-          "FR-10",
-          "FR-11"
-        ],
+        "x-roles": ["company"],
+        "x-requirements": ["FR-10", "FR-11"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -1004,20 +905,14 @@
         "operationId": "listOwnVehicles",
         "summary": "List own active and inactive vehicles",
         "description": "Approved representative only. Scope by trusted provider ID; never accept arbitrary owner scope.",
-        "tags": [
-          "Company vehicles"
-        ],
+        "tags": ["Company vehicles"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "company"
-        ],
-        "x-requirements": [
-          "FR-12"
-        ],
+        "x-roles": ["company"],
+        "x-requirements": ["FR-12"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -1089,20 +984,14 @@
         "operationId": "createVehicle",
         "summary": "Register own vehicle",
         "description": "Approved only. Provider assigned server-side, isActive defaults true, availableUntil defaults null. Reject duplicate normalized VIN even if existing vehicle inactive.",
-        "tags": [
-          "Company vehicles"
-        ],
+        "tags": ["Company vehicles"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "company"
-        ],
-        "x-requirements": [
-          "FR-12"
-        ],
+        "x-roles": ["company"],
+        "x-requirements": ["FR-12"],
         "responses": {
           "201": {
             "description": "Success.",
@@ -1153,20 +1042,14 @@
         "operationId": "getOwnVehicle",
         "summary": "Read own vehicle",
         "description": "Approved only; inactive vehicles visible to owner. Cross-company IDs return 404.",
-        "tags": [
-          "Company vehicles"
-        ],
+        "tags": ["Company vehicles"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "company"
-        ],
-        "x-requirements": [
-          "FR-12"
-        ],
+        "x-roles": ["company"],
+        "x-requirements": ["FR-12"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -1218,20 +1101,14 @@
         "operationId": "updateVehicle",
         "summary": "Change pickup branch and/or daily rate",
         "description": "Approved owner only. All other descriptive fields fixed, even before first booking. Old bookings keep original pickup branch and rate snapshots.",
-        "tags": [
-          "Company vehicles"
-        ],
+        "tags": ["Company vehicles"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "company"
-        ],
-        "x-requirements": [
-          "FR-12"
-        ],
+        "x-roles": ["company"],
+        "x-requirements": ["FR-12"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -1295,20 +1172,14 @@
         "operationId": "updateAvailability",
         "summary": "Change own vehicle rental window",
         "description": "Approved owner only. Inclusive from/until; null end = open ended. Reject changes excluding any existing upcoming/ongoing confirmed booking. Never implicitly cancel bookings.",
-        "tags": [
-          "Company vehicles"
-        ],
+        "tags": ["Company vehicles"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "company"
-        ],
-        "x-requirements": [
-          "FR-12"
-        ],
+        "x-roles": ["company"],
+        "x-requirements": ["FR-12"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -1372,20 +1243,14 @@
         "operationId": "setVehicleActivation",
         "summary": "Deactivate or reactivate own vehicle",
         "description": "Approved owner only. Idempotent state assignment. Inactive blocks new bookings, preserves existing ones. Reactivation does not create/restore bookings.",
-        "tags": [
-          "Company vehicles"
-        ],
+        "tags": ["Company vehicles"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "company"
-        ],
-        "x-requirements": [
-          "FR-12"
-        ],
+        "x-roles": ["company"],
+        "x-requirements": ["FR-12"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -1449,22 +1314,14 @@
         "operationId": "listBookings",
         "summary": "List own bookings or all bookings as admin",
         "description": "Customers scoped to self; userId/providerId filters rejected for customers. Admin may filter globally. All effective statuses available. No arbitrary projection/populate.",
-        "tags": [
-          "Bookings"
-        ],
+        "tags": ["Bookings"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "user",
-          "admin"
-        ],
-        "x-requirements": [
-          "FR-04",
-          "FR-07"
-        ],
+        "x-roles": ["user", "admin"],
+        "x-requirements": ["FR-04", "FR-07"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -1528,12 +1385,7 @@
             "description": "Effective booking status, computed from Asia/Bangkok today.",
             "schema": {
               "type": "string",
-              "enum": [
-                "upcoming",
-                "ongoing",
-                "completed",
-                "cancelled"
-              ]
+              "enum": ["upcoming", "ongoing", "completed", "cancelled"]
             }
           },
           {
@@ -1564,20 +1416,14 @@
         "operationId": "createBooking",
         "summary": "Book one specific vehicle",
         "description": "Customer only; admin/company cannot book. Server derives owner/provider/rate/snapshot/total. startDate >= Thailand today, 1–30 inclusive days, entire interval inside window, approved provider and active vehicle. At most 3 confirmed bookings with dueDate >= today. Reject same-vehicle inclusive overlap atomically.",
-        "tags": [
-          "Bookings"
-        ],
+        "tags": ["Bookings"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "user"
-        ],
-        "x-requirements": [
-          "FR-03"
-        ],
+        "x-roles": ["user"],
+        "x-requirements": ["FR-03"],
         "responses": {
           "201": {
             "description": "Success.",
@@ -1628,22 +1474,14 @@
         "operationId": "getBooking",
         "summary": "Read own booking or any as admin",
         "description": "Customer must own record; otherwise 404. Approved-company reads use dedicated company routes.",
-        "tags": [
-          "Bookings"
-        ],
+        "tags": ["Bookings"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "user",
-          "admin"
-        ],
-        "x-requirements": [
-          "FR-04",
-          "FR-07"
-        ],
+        "x-roles": ["user", "admin"],
+        "x-requirements": ["FR-04", "FR-07"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -1695,22 +1533,14 @@
         "operationId": "updateBookingDates",
         "summary": "Change rental dates only",
         "description": "Only confirmed booking before original startDate for both roles. Same vehicle/provider/owner. Validate new dates/window/active eligibility/cap and overlap excluding self. Keep original daily rate and branch snapshot; recalculate days/total.",
-        "tags": [
-          "Bookings"
-        ],
+        "tags": ["Bookings"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "user",
-          "admin"
-        ],
-        "x-requirements": [
-          "FR-05",
-          "FR-08"
-        ],
+        "x-roles": ["user", "admin"],
+        "x-requirements": ["FR-05", "FR-08"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -1772,22 +1602,14 @@
         "operationId": "cancelBooking",
         "summary": "Cancel booking and retain history",
         "description": "Customer before original startDate only. Admin can also emergency-cancel ongoing bookings; completed history is not cancellable. Already-cancelled owned/authorized booking returns current record without another effect. Never hard-delete.",
-        "tags": [
-          "Bookings"
-        ],
+        "tags": ["Bookings"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "user",
-          "admin"
-        ],
-        "x-requirements": [
-          "FR-06",
-          "FR-09"
-        ],
+        "x-roles": ["user", "admin"],
+        "x-requirements": ["FR-06", "FR-09"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -1841,20 +1663,14 @@
         "operationId": "listCompanyBookings",
         "summary": "List bookings for own vehicles",
         "description": "Approved only. Scope by provider from trusted actor; include current customer name/email/telephone and booked vehicle/branch/dates/rate/total. All statuses visible.",
-        "tags": [
-          "Company bookings"
-        ],
+        "tags": ["Company bookings"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "company"
-        ],
-        "x-requirements": [
-          "FR-13"
-        ],
+        "x-roles": ["company"],
+        "x-requirements": ["FR-13"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -1918,12 +1734,7 @@
             "description": "Effective booking status, computed from Asia/Bangkok today.",
             "schema": {
               "type": "string",
-              "enum": [
-                "upcoming",
-                "ongoing",
-                "completed",
-                "cancelled"
-              ]
+              "enum": ["upcoming", "ongoing", "completed", "cancelled"]
             }
           },
           {
@@ -1945,20 +1756,14 @@
         "operationId": "getCompanyBooking",
         "summary": "Read one own-vehicle booking",
         "description": "Approved only; other-company record returns 404. No company booking mutation endpoints.",
-        "tags": [
-          "Company bookings"
-        ],
+        "tags": ["Company bookings"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "company"
-        ],
-        "x-requirements": [
-          "FR-13"
-        ],
+        "x-roles": ["company"],
+        "x-requirements": ["FR-13"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -2012,21 +1817,14 @@
         "operationId": "listAdminProviders",
         "summary": "List companies in all operational states",
         "description": "List companies in all operational states",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "admin"
-        ],
-        "x-requirements": [
-          "FR-11",
-          "FR-14"
-        ],
+        "x-roles": ["admin"],
+        "x-requirements": ["FR-11", "FR-14"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -2090,12 +1888,7 @@
             "description": "status",
             "schema": {
               "type": "string",
-              "enum": [
-                "pending",
-                "rejected",
-                "approved",
-                "suspended"
-              ]
+              "enum": ["pending", "rejected", "approved", "suspended"]
             }
           }
         ]
@@ -2106,21 +1899,14 @@
         "operationId": "getAdminProvider",
         "summary": "Read any company operational state",
         "description": "Read any company operational state",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "admin"
-        ],
-        "x-requirements": [
-          "FR-11",
-          "FR-14"
-        ],
+        "x-roles": ["admin"],
+        "x-requirements": ["FR-11", "FR-14"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -2174,20 +1960,14 @@
         "operationId": "listAdminApplications",
         "summary": "List submitted company versions",
         "description": "List submitted company versions",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "admin"
-        ],
-        "x-requirements": [
-          "FR-11"
-        ],
+        "x-roles": ["admin"],
+        "x-requirements": ["FR-11"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -2251,11 +2031,7 @@
             "description": "status",
             "schema": {
               "type": "string",
-              "enum": [
-                "pending",
-                "approved",
-                "rejected"
-              ]
+              "enum": ["pending", "approved", "rejected"]
             }
           },
           {
@@ -2277,20 +2053,14 @@
         "operationId": "getAdminApplication",
         "summary": "Read any company application",
         "description": "Read any company application",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "admin"
-        ],
-        "x-requirements": [
-          "FR-11"
-        ],
+        "x-roles": ["admin"],
+        "x-requirements": ["FR-11"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -2344,20 +2114,14 @@
         "operationId": "reviewApplication",
         "summary": "Approve or reject one pending version",
         "description": "Pending only; repeated decision returns 409 when the resource is not in the required state. Rejection reason required. Approval atomically switches latest-approved pointer; cannot clear suspension. A rejected revision leaves last approved profile and eligibility intact.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "admin"
-        ],
-        "x-requirements": [
-          "FR-11"
-        ],
+        "x-roles": ["admin"],
+        "x-requirements": ["FR-11"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -2421,20 +2185,14 @@
         "operationId": "suspendProvider",
         "summary": "Suspend and cancel all non-completed rentals",
         "description": "Approved only. Atomically set suspended and cancel all confirmed bookings with dueDate >= Thailand today, including ongoing rentals. Keep completed/cancelled history. Serialize against booking mutations; report success only after commit. Repeated suspend returns 409 when the resource is not in the required state.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "admin"
-        ],
-        "x-requirements": [
-          "FR-14"
-        ],
+        "x-roles": ["admin"],
+        "x-requirements": ["FR-14"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -2498,20 +2256,14 @@
         "operationId": "reactivateProvider",
         "summary": "Reactivate suspended company",
         "description": "Suspended only with approved profile; record resolution note. Return approved but never restore cancelled bookings. Repeated reactivate returns 409 when the resource is not in the required state.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-roles": [
-          "admin"
-        ],
-        "x-requirements": [
-          "FR-14"
-        ],
+        "x-roles": ["admin"],
+        "x-requirements": ["FR-14"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -2608,10 +2360,7 @@
             "maxLength": 500
           }
         },
-        "required": [
-          "name",
-          "address"
-        ]
+        "required": ["name", "address"]
       },
       "ProfileInput": {
         "type": "object",
@@ -2647,13 +2396,7 @@
             "description": "One HTTPS document URL. Store only; never fetch or host the contents."
           }
         },
-        "required": [
-          "legalName",
-          "registeredAddress",
-          "telephone",
-          "contactEmail",
-          "documentUrl"
-        ]
+        "required": ["legalName", "registeredAddress", "telephone", "contactEmail", "documentUrl"]
       },
       "RegistrationInput": {
         "type": "object",
@@ -2684,12 +2427,7 @@
             "description": "8–72 UTF-8 bytes, enforced by the server. JSON Schema minLength counts characters; the schema permits non-empty strings without excluding valid multi-byte passwords."
           }
         },
-        "required": [
-          "name",
-          "telephone",
-          "email",
-          "password"
-        ]
+        "required": ["name", "telephone", "email", "password"]
       },
       "CompanyRegistrationInput": {
         "type": "object",
@@ -2756,10 +2494,7 @@
             "description": "8–72 UTF-8 bytes, enforced by the server. JSON Schema minLength counts characters; the schema permits non-empty strings without excluding valid multi-byte passwords."
           }
         },
-        "required": [
-          "email",
-          "password"
-        ]
+        "required": ["email", "password"]
       },
       "User": {
         "type": "object",
@@ -2788,11 +2523,7 @@
           },
           "role": {
             "type": "string",
-            "enum": [
-              "user",
-              "company",
-              "admin"
-            ]
+            "enum": ["user", "company", "admin"]
           },
           "providerId": {
             "type": "string",
@@ -2804,15 +2535,7 @@
             "format": "date-time"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "telephone",
-          "email",
-          "role",
-          "providerId",
-          "createdAt"
-        ]
+        "required": ["id", "name", "telephone", "email", "role", "providerId", "createdAt"]
       },
       "AuthResult": {
         "type": "object",
@@ -2830,11 +2553,7 @@
             "format": "date-time"
           }
         },
-        "required": [
-          "user",
-          "token",
-          "expiresAt"
-        ]
+        "required": ["user", "token", "expiresAt"]
       },
       "ProviderPublic": {
         "type": "object",
@@ -2861,12 +2580,7 @@
             "maxLength": 30
           }
         },
-        "required": [
-          "id",
-          "name",
-          "address",
-          "telephone"
-        ]
+        "required": ["id", "name", "address", "telephone"]
       },
       "Application": {
         "type": "object",
@@ -2897,11 +2611,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "pending",
-              "approved",
-              "rejected"
-            ]
+            "enum": ["pending", "approved", "rejected"]
           },
           "rejectionReason": {
             "type": "string",
@@ -2957,12 +2667,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "pending",
-              "rejected",
-              "approved",
-              "suspended"
-            ]
+            "enum": ["pending", "rejected", "approved", "suspended"]
           },
           "approvedApplicationId": {
             "type": "string",
@@ -3077,20 +2782,11 @@
           },
           "transmissionType": {
             "type": "string",
-            "enum": [
-              "automatic",
-              "manual"
-            ]
+            "enum": ["automatic", "manual"]
           },
           "fuelType": {
             "type": "string",
-            "enum": [
-              "petrol",
-              "diesel",
-              "hybrid",
-              "electric",
-              "other"
-            ]
+            "enum": ["petrol", "diesel", "hybrid", "electric", "other"]
           },
           "seatingCapacity": {
             "type": "integer",
@@ -3165,10 +2861,7 @@
             "description": "Inclusive final available day; null means no planned end."
           }
         },
-        "required": [
-          "availableFrom",
-          "availableUntil"
-        ]
+        "required": ["availableFrom", "availableUntil"]
       },
       "ActivationUpdate": {
         "type": "object",
@@ -3178,9 +2871,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "isActive"
-        ]
+        "required": ["isActive"]
       },
       "Vehicle": {
         "type": "object",
@@ -3219,20 +2910,11 @@
           },
           "transmissionType": {
             "type": "string",
-            "enum": [
-              "automatic",
-              "manual"
-            ]
+            "enum": ["automatic", "manual"]
           },
           "fuelType": {
             "type": "string",
-            "enum": [
-              "petrol",
-              "diesel",
-              "hybrid",
-              "electric",
-              "other"
-            ]
+            "enum": ["petrol", "diesel", "hybrid", "electric", "other"]
           },
           "seatingCapacity": {
             "type": "integer",
@@ -3317,20 +2999,11 @@
           },
           "transmissionType": {
             "type": "string",
-            "enum": [
-              "automatic",
-              "manual"
-            ]
+            "enum": ["automatic", "manual"]
           },
           "fuelType": {
             "type": "string",
-            "enum": [
-              "petrol",
-              "diesel",
-              "hybrid",
-              "electric",
-              "other"
-            ]
+            "enum": ["petrol", "diesel", "hybrid", "electric", "other"]
           },
           "seatingCapacity": {
             "type": "integer",
@@ -3374,11 +3047,7 @@
             "description": "Validated inclusive calendar date, Asia/Bangkok; no time component."
           }
         },
-        "required": [
-          "vehicleId",
-          "startDate",
-          "dueDate"
-        ]
+        "required": ["vehicleId", "startDate", "dueDate"]
       },
       "BookingDatesUpdate": {
         "type": "object",
@@ -3399,10 +3068,7 @@
             "description": "Validated inclusive calendar date, Asia/Bangkok; no time component."
           }
         },
-        "required": [
-          "startDate",
-          "dueDate"
-        ]
+        "required": ["startDate", "dueDate"]
       },
       "CustomerContact": {
         "type": "object",
@@ -3430,12 +3096,7 @@
             "maxLength": 30
           }
         },
-        "required": [
-          "id",
-          "name",
-          "email",
-          "telephone"
-        ]
+        "required": ["id", "name", "email", "telephone"]
       },
       "Booking": {
         "type": "object",
@@ -3498,18 +3159,11 @@
           },
           "currency": {
             "type": "string",
-            "enum": [
-              "THB"
-            ]
+            "enum": ["THB"]
           },
           "status": {
             "type": "string",
-            "enum": [
-              "upcoming",
-              "ongoing",
-              "completed",
-              "cancelled"
-            ]
+            "enum": ["upcoming", "ongoing", "completed", "cancelled"]
           },
           "cancelledAt": {
             "type": "string",
@@ -3518,12 +3172,7 @@
           },
           "cancellationReason": {
             "type": "string",
-            "enum": [
-              "customer_cancelled",
-              "admin_cancelled",
-              "provider_suspended",
-              null
-            ],
+            "enum": ["customer_cancelled", "admin_cancelled", "provider_suspended", null],
             "nullable": true
           },
           "cancelledBy": {
@@ -3569,14 +3218,10 @@
             "properties": {
               "decision": {
                 "type": "string",
-                "enum": [
-                  "approve"
-                ]
+                "enum": ["approve"]
               }
             },
-            "required": [
-              "decision"
-            ]
+            "required": ["decision"]
           },
           {
             "type": "object",
@@ -3584,9 +3229,7 @@
             "properties": {
               "decision": {
                 "type": "string",
-                "enum": [
-                  "reject"
-                ]
+                "enum": ["reject"]
               },
               "reason": {
                 "type": "string",
@@ -3594,10 +3237,7 @@
                 "maxLength": 1000
               }
             },
-            "required": [
-              "decision",
-              "reason"
-            ]
+            "required": ["decision", "reason"]
           }
         ]
       },
@@ -3611,9 +3251,7 @@
             "maxLength": 1000
           }
         },
-        "required": [
-          "reason"
-        ]
+        "required": ["reason"]
       },
       "ReactivateInput": {
         "type": "object",
@@ -3625,9 +3263,7 @@
             "maxLength": 1000
           }
         },
-        "required": [
-          "resolutionNote"
-        ]
+        "required": ["resolutionNote"]
       },
       "SuspensionResult": {
         "type": "object",
@@ -3642,10 +3278,7 @@
             "maximum": 9007199254740991
           }
         },
-        "required": [
-          "provider",
-          "cancelledBookingCount"
-        ]
+        "required": ["provider", "cancelledBookingCount"]
       },
       "Ok": {
         "type": "object",
@@ -3657,9 +3290,7 @@
             "maxLength": 200
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "Health": {
         "type": "object",
@@ -3667,14 +3298,10 @@
         "properties": {
           "status": {
             "type": "string",
-            "enum": [
-              "ok"
-            ]
+            "enum": ["ok"]
           }
         },
-        "required": [
-          "status"
-        ]
+        "required": ["status"]
       },
       "Error": {
         "type": "object",
@@ -3682,9 +3309,7 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              false
-            ]
+            "enum": [false]
           },
           "message": {
             "type": "string",
@@ -3692,10 +3317,7 @@
             "maxLength": 1000
           }
         },
-        "required": [
-          "success",
-          "message"
-        ]
+        "required": ["success", "message"]
       },
       "Pagination": {
         "type": "object",
@@ -3722,12 +3344,7 @@
             "maximum": 9007199254740991
           }
         },
-        "required": [
-          "page",
-          "limit",
-          "total",
-          "pages"
-        ]
+        "required": ["page", "limit", "total", "pages"]
       },
       "AuthResultResponse": {
         "type": "object",
@@ -3735,18 +3352,13 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "data": {
             "$ref": "#/components/schemas/AuthResult"
           }
         },
-        "required": [
-          "success",
-          "data"
-        ]
+        "required": ["success", "data"]
       },
       "UserResponse": {
         "type": "object",
@@ -3754,18 +3366,13 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "data": {
             "$ref": "#/components/schemas/User"
           }
         },
-        "required": [
-          "success",
-          "data"
-        ]
+        "required": ["success", "data"]
       },
       "ProviderPublicResponse": {
         "type": "object",
@@ -3773,18 +3380,13 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "data": {
             "$ref": "#/components/schemas/ProviderPublic"
           }
         },
-        "required": [
-          "success",
-          "data"
-        ]
+        "required": ["success", "data"]
       },
       "ProviderPrivateResponse": {
         "type": "object",
@@ -3792,18 +3394,13 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "data": {
             "$ref": "#/components/schemas/ProviderPrivate"
           }
         },
-        "required": [
-          "success",
-          "data"
-        ]
+        "required": ["success", "data"]
       },
       "ApplicationResponse": {
         "type": "object",
@@ -3811,18 +3408,13 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "data": {
             "$ref": "#/components/schemas/Application"
           }
         },
-        "required": [
-          "success",
-          "data"
-        ]
+        "required": ["success", "data"]
       },
       "VehicleResponse": {
         "type": "object",
@@ -3830,18 +3422,13 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "data": {
             "$ref": "#/components/schemas/Vehicle"
           }
         },
-        "required": [
-          "success",
-          "data"
-        ]
+        "required": ["success", "data"]
       },
       "BookingResponse": {
         "type": "object",
@@ -3849,18 +3436,13 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "data": {
             "$ref": "#/components/schemas/Booking"
           }
         },
-        "required": [
-          "success",
-          "data"
-        ]
+        "required": ["success", "data"]
       },
       "SuspensionResultResponse": {
         "type": "object",
@@ -3868,18 +3450,13 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "data": {
             "$ref": "#/components/schemas/SuspensionResult"
           }
         },
-        "required": [
-          "success",
-          "data"
-        ]
+        "required": ["success", "data"]
       },
       "OkResponse": {
         "type": "object",
@@ -3887,18 +3464,13 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "data": {
             "$ref": "#/components/schemas/Ok"
           }
         },
-        "required": [
-          "success",
-          "data"
-        ]
+        "required": ["success", "data"]
       },
       "HealthResponse": {
         "type": "object",
@@ -3906,18 +3478,13 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "data": {
             "$ref": "#/components/schemas/Health"
           }
         },
-        "required": [
-          "success",
-          "data"
-        ]
+        "required": ["success", "data"]
       },
       "ProviderPublicListResponse": {
         "type": "object",
@@ -3925,9 +3492,7 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "count": {
             "type": "integer",
@@ -3944,12 +3509,7 @@
             }
           }
         },
-        "required": [
-          "success",
-          "count",
-          "pagination",
-          "data"
-        ]
+        "required": ["success", "count", "pagination", "data"]
       },
       "ProviderPrivateListResponse": {
         "type": "object",
@@ -3957,9 +3517,7 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "count": {
             "type": "integer",
@@ -3976,12 +3534,7 @@
             }
           }
         },
-        "required": [
-          "success",
-          "count",
-          "pagination",
-          "data"
-        ]
+        "required": ["success", "count", "pagination", "data"]
       },
       "ApplicationListResponse": {
         "type": "object",
@@ -3989,9 +3542,7 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "count": {
             "type": "integer",
@@ -4008,12 +3559,7 @@
             }
           }
         },
-        "required": [
-          "success",
-          "count",
-          "pagination",
-          "data"
-        ]
+        "required": ["success", "count", "pagination", "data"]
       },
       "VehicleListResponse": {
         "type": "object",
@@ -4021,9 +3567,7 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "count": {
             "type": "integer",
@@ -4040,12 +3584,7 @@
             }
           }
         },
-        "required": [
-          "success",
-          "count",
-          "pagination",
-          "data"
-        ]
+        "required": ["success", "count", "pagination", "data"]
       },
       "BookingListResponse": {
         "type": "object",
@@ -4053,9 +3592,7 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "count": {
             "type": "integer",
@@ -4072,12 +3609,7 @@
             }
           }
         },
-        "required": [
-          "success",
-          "count",
-          "pagination",
-          "data"
-        ]
+        "required": ["success", "count", "pagination", "data"]
       }
     },
     "responses": {

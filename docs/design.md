@@ -47,15 +47,15 @@ authentication → role → provider state → input validation → scoped looku
 
 Repeat transaction-sensitive checks after acquiring guards. A unique-index error at write time still needs a domain error.
 
-| Status | Reason |
-| --- | --- |
-| 400 | Invalid input or request shape |
-| 401 | Missing, invalid, expired, or revoked session; generic invalid credentials |
-| 403 | Authenticated actor lacks permission or provider is not eligible |
-| 404 | Missing or hidden resource, including another owner's private resource |
-| 409 | Duplicate, invalid state, booking limit, unavailable vehicle, overlap, cutoff, window, or write conflict |
-| 429 | Request limit exceeded |
-| 500 | Unexpected server failure |
+| Status | Reason                                                                                                   |
+| ------ | -------------------------------------------------------------------------------------------------------- |
+| 400    | Invalid input or request shape                                                                           |
+| 401    | Missing, invalid, expired, or revoked session; generic invalid credentials                               |
+| 403    | Authenticated actor lacks permission or provider is not eligible                                         |
+| 404    | Missing or hidden resource, including another owner's private resource                                   |
+| 409    | Duplicate, invalid state, booking limit, unavailable vehicle, overlap, cutoff, window, or write conflict |
+| 429    | Request limit exceeded                                                                                   |
+| 500    | Unexpected server failure                                                                                |
 
 Return 404 for another owner's private record, or a public detail request for an inactive vehicle, suspended provider or other hidden record. Unapproved company management returns 403. A customer booking an ineligible listing gets 409 without private application details.
 
@@ -202,7 +202,7 @@ req.actor = {
   userId: '24-hex ID',
   role: 'user', // user/company/admin
   providerId: null, // company: 24-hex ID
-  sessionId: 'UUID'
+  sessionId: 'UUID',
 };
 ```
 
@@ -212,15 +212,15 @@ Services receive `ctx = { actor: req.actor, clock }`, where clock has `now(): Da
 
 B's helpers use CommonJS named exports. They do not load the app or database. Invalid input throws an ordinary `Error` with `status: 400` and a safe message.
 
-| Module | Function | Returns |
-| --- | --- | --- |
-| `utils/dates.js` | `todayBangkok(now)` | Thailand `YYYY-MM-DD` for a supplied valid `Date` |
-| | `validateDateOnly(value)` | Unchanged real date string, years 0001–9999; no whitespace or type coercion |
-| | `inclusiveDays(startDate,dueDate)` | Inclusive day count; rejects reversed dates |
-| | `validateRentalDates(startDate,dueDate,today)` | Day count after checking start >= today and duration 1–30 days |
-| | `overlaps(aStart,aDue,bStart,bDue)` | Whether valid ordered ranges share any day, including endpoints |
-| | `bookingStatus(booking,today)` | Derived cancelled/upcoming/ongoing/completed status from confirmed/cancelled state and valid dates |
-| `utils/money.js` | `calculateTotal(ratePerDaySatang,rentalDays)` | Integer satang total; integer rate 1–1,000,000,000 and days 1–30 |
+| Module           | Function                                       | Returns                                                                                            |
+| ---------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `utils/dates.js` | `todayBangkok(now)`                            | Thailand `YYYY-MM-DD` for a supplied valid `Date`                                                  |
+|                  | `validateDateOnly(value)`                      | Unchanged real date string, years 0001–9999; no whitespace or type coercion                        |
+|                  | `inclusiveDays(startDate,dueDate)`             | Inclusive day count; rejects reversed dates                                                        |
+|                  | `validateRentalDates(startDate,dueDate,today)` | Day count after checking start >= today and duration 1–30 days                                     |
+|                  | `overlaps(aStart,aDue,bStart,bDue)`            | Whether valid ordered ranges share any day, including endpoints                                    |
+|                  | `bookingStatus(booking,today)`                 | Derived cancelled/upcoming/ongoing/completed status from confirmed/cancelled state and valid dates |
+| `utils/money.js` | `calculateTotal(ratePerDaySatang,rentalDays)`  | Integer satang total; integer rate 1–1,000,000,000 and days 1–30                                   |
 
 Keep calendar calculations separate from new-rental validation: historical bookings still need a status, and offering periods may exceed 30 days. Later feature validators apply these helpers in the HTTP validation order; serializers return date strings, integer satang and derived status.
 
@@ -230,17 +230,17 @@ A's provider service can import B's bookingCancellation. Keep feature services i
 
 IDs are normalized strings; list filters are parsed/validated. Services still enforce scope. Results are persistence records unless marked DTO/summary.
 
-| Module / owner | Export | Result |
-| --- | --- | --- |
-| controllers/auth.js / A | registerCustomer(req, res), registerCompany(req, res), login(req, res) | AuthResult HTTP response |
-| controllers/auth.js / A | logout(req, res), getMe(req, res) | Ok / safe User HTTP response |
-| services/providers.js / A | getOwnProvider(ctx), listOwnApplications(filters,ctx), getOwnApplication(id,ctx), submitApplication(profile,ctx) | Provider / Page<Application> / Application / Application |
-| services/providers.js / A | listAdminProviders(filters,ctx), getAdminProvider(id,ctx), listAdminApplications(filters,ctx), getAdminApplication(id,ctx), reviewApplication(id,input,ctx) | Page / Provider / Page / Application / Application |
-| services/providers.js / A | suspendProvider(id,{reason},ctx), reactivateProvider(id,{resolutionNote},ctx) | `{provider,cancelledBookingCount}` / Provider |
-| services/vehicles.js / B | listPublicProviders(filters,ctx), getPublicProvider(id,ctx), listPublicVehicles(filters,ctx), getPublicVehicle(id,ctx) | Page/public record (ctx.actor not needed) |
-| services/vehicles.js / B | listOwnVehicles(filters,ctx), getOwnVehicle(id,ctx), createVehicle(input,ctx), updateVehicle(id,input,ctx), updateAvailability(id,input,ctx), setVehicleActivation(id,input,ctx) | Page/Vehicle |
-| services/bookings.js / B | createBooking(input,ctx), updateBookingDates(id,input,ctx), cancelBooking(id,ctx), getBooking(id,ctx), listBookings(filters,ctx) | Booking/Page; user/admin scope only |
-| services/bookings.js / B | listCompanyBookings(filters,ctx), getCompanyBooking(id,ctx) | Booking/Page; approved own provider only |
+| Module / owner            | Export                                                                                                                                                                           | Result                                                   |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| controllers/auth.js / A   | registerCustomer(req, res), registerCompany(req, res), login(req, res)                                                                                                           | AuthResult HTTP response                                 |
+| controllers/auth.js / A   | logout(req, res), getMe(req, res)                                                                                                                                                | Ok / safe User HTTP response                             |
+| services/providers.js / A | getOwnProvider(ctx), listOwnApplications(filters,ctx), getOwnApplication(id,ctx), submitApplication(profile,ctx)                                                                 | Provider / Page<Application> / Application / Application |
+| services/providers.js / A | listAdminProviders(filters,ctx), getAdminProvider(id,ctx), listAdminApplications(filters,ctx), getAdminApplication(id,ctx), reviewApplication(id,input,ctx)                      | Page / Provider / Page / Application / Application       |
+| services/providers.js / A | suspendProvider(id,{reason},ctx), reactivateProvider(id,{resolutionNote},ctx)                                                                                                    | `{provider,cancelledBookingCount}` / Provider            |
+| services/vehicles.js / B  | listPublicProviders(filters,ctx), getPublicProvider(id,ctx), listPublicVehicles(filters,ctx), getPublicVehicle(id,ctx)                                                           | Page/public record (ctx.actor not needed)                |
+| services/vehicles.js / B  | listOwnVehicles(filters,ctx), getOwnVehicle(id,ctx), createVehicle(input,ctx), updateVehicle(id,input,ctx), updateAvailability(id,input,ctx), setVehicleActivation(id,input,ctx) | Page/Vehicle                                             |
+| services/bookings.js / B  | createBooking(input,ctx), updateBookingDates(id,input,ctx), cancelBooking(id,ctx), getBooking(id,ctx), listBookings(filters,ctx)                                                 | Booking/Page; user/admin scope only                      |
+| services/bookings.js / B  | listCompanyBookings(filters,ctx), getCompanyBooking(id,ctx)                                                                                                                      | Booking/Page; approved own provider only                 |
 
 `Page<T> = {data:T[],count:number,pagination:{page,limit,total,pages}}`. Controllers add success:true without nesting Page inside data. Reads use one today value per response; each transaction attempt uses one captured time value.
 
@@ -270,7 +270,7 @@ DELETE means cancellation. Repeating an authorized cancellation returns 200 with
 B exports from services/bookingCancellation.js:
 
 ```js
-cancelNonCompletedForProvider({ providerId, actorId, today, now, session })
+cancelNonCompletedForProvider({ providerId, actorId, today, now, session });
 // -> { cancelledBookingCount: number }
 ```
 

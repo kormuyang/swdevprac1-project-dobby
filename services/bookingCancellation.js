@@ -9,13 +9,23 @@ async function cancelNonCompletedForProvider({ providerId, actorId, today, now, 
   const vehicles = mongoose.connection.collection('vehicles');
   const providerObjectId = new mongoose.Types.ObjectId(providerId);
   const filter = { providerId: providerObjectId, state: 'confirmed', dueDate: { $gte: today } };
-  const affected = await bookings.find(filter, { session, projection: { userId: 1, vehicleId: 1 } }).toArray();
-  const userIds = [...new Set(affected.map((booking) => String(booking.userId)))].sort((left, right) => left.localeCompare(right, 'en'));
-  const vehicleIds = [...new Set(affected.map((booking) => String(booking.vehicleId)))].sort((left, right) => left.localeCompare(right, 'en'));
+  const affected = await bookings
+    .find(filter, { session, projection: { userId: 1, vehicleId: 1 } })
+    .toArray();
+  const userIds = [...new Set(affected.map((booking) => String(booking.userId)))].sort(
+    (left, right) => left.localeCompare(right, 'en'),
+  );
+  const vehicleIds = [...new Set(affected.map((booking) => String(booking.vehicleId)))].sort(
+    (left, right) => left.localeCompare(right, 'en'),
+  );
 
   // The caller holds the provider guard. All booking writers must take these same guards.
   for (const userId of userIds) {
-    const result = await User.updateOne({ _id: userId }, { $inc: { bookingRevision: 1 } }, { session });
+    const result = await User.updateOne(
+      { _id: userId },
+      { $inc: { bookingRevision: 1 } },
+      { session },
+    );
     if (result.matchedCount !== 1) {
       const error = new Error('A booking customer was not found.');
       error.status = 404;
@@ -34,14 +44,18 @@ async function cancelNonCompletedForProvider({ providerId, actorId, today, now, 
       throw error;
     }
   }
-  const result = await bookings.updateMany(filter, {
-    $set: {
-      state: 'cancelled',
-      cancellationReason: 'provider_suspended',
-      cancelledBy: new mongoose.Types.ObjectId(actorId),
-      cancelledAt: now,
+  const result = await bookings.updateMany(
+    filter,
+    {
+      $set: {
+        state: 'cancelled',
+        cancellationReason: 'provider_suspended',
+        cancelledBy: new mongoose.Types.ObjectId(actorId),
+        cancelledAt: now,
+      },
     },
-  }, { session });
+    { session },
+  );
   return { cancelledBookingCount: result.modifiedCount };
 }
 

@@ -5,7 +5,11 @@ const { localBaseUrl, runDemo } = require('../scripts/test-demo');
 test('demo refuses remote targets, URL credentials and query parameters', () => {
   const previous = process.env.DEMO_BASE_URL;
   try {
-    for (const value of ['https://example.test/api/v1', 'http://user:password@localhost/api/v1', 'http://localhost/api/v1?redirect=1']) {
+    for (const value of [
+      'https://example.test/api/v1',
+      'http://user:password@localhost/api/v1',
+      'http://localhost/api/v1?redirect=1',
+    ]) {
       process.env.DEMO_BASE_URL = value;
       assert.throws(localBaseUrl, /DEMO_BASE_URL/);
     }

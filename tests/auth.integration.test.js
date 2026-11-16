@@ -21,7 +21,11 @@ let createdRegistration;
 test('auth API persists signup/session, supports login and revokes only the logged out session', async (t) => {
   assert.ok(mongoUri, 'Set TEST_MONGO_URI to a dedicated dobby_test_a replica-set database.');
   const database = new URL(mongoUri).pathname.replace(/^\//, '');
-  assert.equal(database, 'dobby_test_a', 'TEST_MONGO_URI must name the dedicated dobby_test_a database');
+  assert.equal(
+    database,
+    'dobby_test_a',
+    'TEST_MONGO_URI must name the dedicated dobby_test_a database',
+  );
   const suffix = randomUUID();
   createdEmail = `auth-${suffix}@example.test`;
   createdRegistration = `REG-${suffix}`;
@@ -52,7 +56,9 @@ test('auth API persists signup/session, supports login and revokes only the logg
   });
 
   await mongoose.connect(mongoUri);
-  await Promise.all([User, Provider, ProviderApplication, AuthSession].map((Model) => Model.createIndexes()));
+  await Promise.all(
+    [User, Provider, ProviderApplication, AuthSession].map((Model) => Model.createIndexes()),
+  );
   const app = express();
   app.use('/api/v1/auth', authRouter);
   server = http.createServer(app);
@@ -110,7 +116,10 @@ test('auth API persists signup/session, supports login and revokes only the logg
   });
   assert.equal(duplicateResponse.status, 409);
   assert.equal(await User.countDocuments({ email: duplicateEmail }), 0);
-  assert.equal(await ProviderApplication.countDocuments({ businessRegistrationNumber: createdRegistration }), 1);
+  assert.equal(
+    await ProviderApplication.countDocuments({ businessRegistrationNumber: createdRegistration }),
+    1,
+  );
 
   const loginResponse = await fetch(`${baseUrl}/login`, {
     method: 'POST',
@@ -119,7 +128,9 @@ test('auth API persists signup/session, supports login and revokes only the logg
   });
   assert.equal(loginResponse.status, 200);
   const login = await loginResponse.json();
-  const beforeLogout = await fetch(`${baseUrl}/me`, { headers: { authorization: `Bearer ${login.data.token}` } });
+  const beforeLogout = await fetch(`${baseUrl}/me`, {
+    headers: { authorization: `Bearer ${login.data.token}` },
+  });
   assert.equal(beforeLogout.status, 200);
   const firstSessionBefore = await fetch(`${baseUrl}/me`, {
     headers: { authorization: `Bearer ${company.data.token}` },
@@ -130,7 +141,9 @@ test('auth API persists signup/session, supports login and revokes only the logg
     headers: { authorization: `Bearer ${login.data.token}` },
   });
   assert.equal(logoutResponse.status, 200);
-  const afterLogout = await fetch(`${baseUrl}/me`, { headers: { authorization: `Bearer ${login.data.token}` } });
+  const afterLogout = await fetch(`${baseUrl}/me`, {
+    headers: { authorization: `Bearer ${login.data.token}` },
+  });
   assert.equal(afterLogout.status, 401);
   const firstSessionAfter = await fetch(`${baseUrl}/me`, {
     headers: { authorization: `Bearer ${company.data.token}` },

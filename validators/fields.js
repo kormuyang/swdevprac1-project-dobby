@@ -57,4 +57,11 @@ function objectIdField(value, field) {
   return value.toLowerCase();
 }
 
-module.exports = { requireObject, rejectUnknownFields, stringField, integerField, enumField, objectIdField };
+module.exports = {
+  requireObject,
+  rejectUnknownFields,
+  stringField,
+  integerField,
+  enumField,
+  objectIdField,
+};

@@ -25,7 +25,10 @@ async function apiFixture(t, extraRoutes = []) {
   } catch {
     throw new Error('Set TEST_MONGO_URI_B to dedicated dobby_test_b.');
   }
-  if (!['mongodb:', 'mongodb+srv:'].includes(parsed.protocol) || parsed.pathname !== '/dobby_test_b') {
+  if (
+    !['mongodb:', 'mongodb+srv:'].includes(parsed.protocol) ||
+    parsed.pathname !== '/dobby_test_b'
+  ) {
     throw new Error('TEST_MONGO_URI_B must name dedicated dobby_test_b.');
   }
   const previousSecret = process.env.JWT_SECRET;
@@ -63,8 +66,14 @@ async function apiFixture(t, extraRoutes = []) {
   async function account(role, status = null) {
     const userId = new mongoose.Types.ObjectId();
     users.push(userId);
-    const input = { _id: userId, name: 'Synthetic Account', email: `${randomUUID()}@example.test`,
-      telephone: '123456789', passwordHash: 'synthetic-password', role };
+    const input = {
+      _id: userId,
+      name: 'Synthetic Account',
+      email: `${randomUUID()}@example.test`,
+      telephone: '123456789',
+      passwordHash: 'synthetic-password',
+      role,
+    };
     let providerId = null;
     if (role === 'company') {
       providerId = new mongoose.Types.ObjectId();
@@ -75,17 +84,47 @@ async function apiFixture(t, extraRoutes = []) {
     if (providerId) {
       const applicationId = new mongoose.Types.ObjectId();
       const registration = randomUUID();
-      await ProviderApplication.create({ _id: applicationId, providerId, version: 1,
-        businessRegistrationNumber: registration, status: status === 'approved' ? 'approved' : 'pending',
-        profile: { legalName: `Synthetic ${providerId}`, registeredAddress: 'Test Road', telephone: '123456789',
-          contactEmail: 'contact@example.test', documentUrl: 'https://example.test/private-document' } });
-      await Provider.create({ _id: providerId, representativeId: userId, businessRegistrationNumber: registration,
-        status, latestApplicationId: applicationId, approvedApplicationId: status === 'approved' ? applicationId : null });
+      await ProviderApplication.create({
+        _id: applicationId,
+        providerId,
+        version: 1,
+        businessRegistrationNumber: registration,
+        status: status === 'approved' ? 'approved' : 'pending',
+        profile: {
+          legalName: `Synthetic ${providerId}`,
+          registeredAddress: 'Test Road',
+          telephone: '123456789',
+          contactEmail: 'contact@example.test',
+          documentUrl: 'https://example.test/private-document',
+        },
+      });
+      await Provider.create({
+        _id: providerId,
+        representativeId: userId,
+        businessRegistrationNumber: registration,
+        status,
+        latestApplicationId: applicationId,
+        approvedApplicationId: status === 'approved' ? applicationId : null,
+      });
     }
     const sid = randomUUID();
     await AuthSession.create({ sid, userId, expiresAt: new Date(Date.now() + 300_000) });
-    const token = jwt.sign({ sid }, secret, { subject: String(userId), algorithm: 'HS256', expiresIn: '5m' });
-    return { user, providerId, token, actor: { userId: String(userId), providerId: providerId ? String(providerId) : null, role, sessionId: sid } };
+    const token = jwt.sign({ sid }, secret, {
+      subject: String(userId),
+      algorithm: 'HS256',
+      expiresIn: '5m',
+    });
+    return {
+      user,
+      providerId,
+      token,
+      actor: {
+        userId: String(userId),
+        providerId: providerId ? String(providerId) : null,
+        role,
+        sessionId: sid,
+      },
+    };
   }
   const admin = await account('admin');
   const customer = await account('user');
@@ -105,7 +144,10 @@ async function apiFixture(t, extraRoutes = []) {
   app.use('/api/v1/company', require('../../routes/company'));
   app.use((req, res) => res.status(404).json({ success: false, message: 'Not found.' }));
   server = app.listen(0, '127.0.0.1');
-  await new Promise((resolve, reject) => { server.once('listening', resolve); server.once('error', reject); });
+  await new Promise((resolve, reject) => {
+    server.once('listening', resolve);
+    server.once('error', reject);
+  });
   const base = `http://127.0.0.1:${server.address().port}/api/v1`;
   async function request(path, options = {}) {
     const { actor, body, ...rest } = options;
@@ -116,17 +158,37 @@ async function apiFixture(t, extraRoutes = []) {
     if (body !== undefined) {
       headers['content-type'] = 'application/json';
     }
-    const response = await fetch(base + path, { ...rest, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+    const response = await fetch(base + path, {
+      ...rest,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
     return { status: response.status, body: await response.json() };
   }
   async function createVehicle(owner = company, changes = {}) {
-    const { providerId, ...body } = vehicleInput({ vin: `V-${randomUUID()}`, availableFrom: todayBangkok(new Date()), ...changes });
+    const { providerId, ...body } = vehicleInput({
+      vin: `V-${randomUUID()}`,
+      availableFrom: todayBangkok(new Date()),
+      ...changes,
+    });
     const response = await request('/company/vehicles', { method: 'POST', actor: owner, body });
     assert.equal(response.status, 201, 'Synthetic vehicle creation must succeed.');
     return response.body.data;
   }
-  return { app, base, request, createVehicle, account, admin, customer, otherCustomer, company, otherCompany, pending,
-    today: todayBangkok(new Date()) };
+  return {
+    app,
+    base,
+    request,
+    createVehicle,
+    account,
+    admin,
+    customer,
+    otherCustomer,
+    company,
+    otherCompany,
+    pending,
+    today: todayBangkok(new Date()),
+  };
 }
 
 module.exports = { apiFixture, addDays };

@@ -1,7 +1,11 @@
 const mongoose = require('mongoose');
 const Provider = require('../models/Provider');
 const ProviderApplication = require('../models/ProviderApplication');
-const { serializeApplication, serializePage, serializeProvider } = require('../serializers/providers');
+const {
+  serializeApplication,
+  serializePage,
+  serializeProvider,
+} = require('../serializers/providers');
 const { validateApplication } = require('../validators/providers');
 
 function sendError(res, error) {
@@ -23,7 +27,11 @@ function conflict(message = 'The resource is not in the required state.') {
 }
 
 function mapDuplicate(error) {
-  if (error?.code === 11000 && Object.keys(error.keyPattern || {}).length === 1 && error.keyPattern.providerId) {
+  if (
+    error?.code === 11000 &&
+    Object.keys(error.keyPattern || {}).length === 1 &&
+    error.keyPattern.providerId
+  ) {
     return conflict('This company already has a pending application.');
   }
   return error;
@@ -31,14 +39,20 @@ function mapDuplicate(error) {
 
 async function providerForResponse(provider) {
   const approved = provider.approvedApplicationId
-    ? await ProviderApplication.findOne({ _id: provider.approvedApplicationId, providerId: provider._id })
+    ? await ProviderApplication.findOne({
+        _id: provider.approvedApplicationId,
+        providerId: provider._id,
+      })
     : null;
   return serializeProvider(provider, approved);
 }
 
 async function getOwnProvider(req, res) {
   try {
-    const provider = await Provider.findOne({ _id: req.actor.providerId, representativeId: req.actor.userId });
+    const provider = await Provider.findOne({
+      _id: req.actor.providerId,
+      representativeId: req.actor.userId,
+    });
     if (!provider) {
       throw notFound();
     }
@@ -53,10 +67,15 @@ async function listOwnApplications(req, res) {
     const page = req.page;
     const filter = { providerId: req.actor.providerId };
     const [applications, total] = await Promise.all([
-      ProviderApplication.find(filter).sort({ version: -1 }).skip((page.page - 1) * page.limit).limit(page.limit),
+      ProviderApplication.find(filter)
+        .sort({ version: -1 })
+        .skip((page.page - 1) * page.limit)
+        .limit(page.limit),
       ProviderApplication.countDocuments(filter),
     ]);
-    return res.status(200).json(serializePage(applications.map(serializeApplication), total, page.page, page.limit));
+    return res
+      .status(200)
+      .json(serializePage(applications.map(serializeApplication), total, page.page, page.limit));
   } catch (error) {
     return sendError(res, error);
   }
@@ -64,7 +83,10 @@ async function listOwnApplications(req, res) {
 
 async function getOwnApplication(req, res) {
   try {
-    const application = await ProviderApplication.findOne({ _id: req.params.applicationId, providerId: req.actor.providerId });
+    const application = await ProviderApplication.findOne({
+      _id: req.params.applicationId,
+      providerId: req.actor.providerId,
+    });
     if (!application) {
       throw notFound();
     }
@@ -82,12 +104,19 @@ async function submitApplication(req, res) {
     let submitted;
     await session.withTransaction(async () => {
       const provider = await Provider.findOneAndUpdate(
-        { _id: req.actor.providerId, representativeId: req.actor.userId, status: { $ne: 'suspended' } },
+        {
+          _id: req.actor.providerId,
+          representativeId: req.actor.userId,
+          status: { $ne: 'suspended' },
+        },
         { $inc: { revision: 1 } },
         { returnDocument: 'after', session },
       );
       if (!provider) {
-        const exists = await Provider.exists({ _id: req.actor.providerId, representativeId: req.actor.userId }).session(session);
+        const exists = await Provider.exists({
+          _id: req.actor.providerId,
+          representativeId: req.actor.userId,
+        }).session(session);
         if (!exists) {
           throw notFound();
         }
@@ -95,7 +124,10 @@ async function submitApplication(req, res) {
         suspended.status = 403;
         throw suspended;
       }
-      const pending = await ProviderApplication.exists({ providerId: provider._id, status: 'pending' }).session(session);
+      const pending = await ProviderApplication.exists({
+        providerId: provider._id,
+        status: 'pending',
+      }).session(session);
       if (pending) {
         throw conflict('This company already has a pending application.');
       }
@@ -117,7 +149,9 @@ async function submitApplication(req, res) {
       if (!provider.approvedApplicationId && provider.status !== 'suspended') {
         changes.$set.status = 'pending';
       }
-      await Provider.updateOne({ _id: provider._id, revision: provider.revision }, changes, { session });
+      await Provider.updateOne({ _id: provider._id, revision: provider.revision }, changes, {
+        session,
+      });
       submitted = application;
     });
     return res.status(201).json({ success: true, data: serializeApplication(submitted) });
@@ -135,7 +169,10 @@ async function listAdminProviders(req, res) {
     const page = req.page;
     const filter = page.status ? { status: { $eq: String(page.status) } } : {};
     const [providers, total] = await Promise.all([
-      Provider.find(filter).sort({ createdAt: -1, _id: -1 }).skip((page.page - 1) * page.limit).limit(page.limit),
+      Provider.find(filter)
+        .sort({ createdAt: -1, _id: -1 })
+        .skip((page.page - 1) * page.limit)
+        .limit(page.limit),
       Provider.countDocuments(filter),
     ]);
     const data = [];
@@ -171,10 +208,15 @@ async function listAdminApplications(req, res) {
       filter.providerId = new mongoose.Types.ObjectId(page.providerId);
     }
     const [applications, total] = await Promise.all([
-      ProviderApplication.find(filter).sort({ submittedAt: 1, _id: 1 }).skip((page.page - 1) * page.limit).limit(page.limit),
+      ProviderApplication.find(filter)
+        .sort({ submittedAt: 1, _id: 1 })
+        .skip((page.page - 1) * page.limit)
+        .limit(page.limit),
       ProviderApplication.countDocuments(filter),
     ]);
-    return res.status(200).json(serializePage(applications.map(serializeApplication), total, page.page, page.limit));
+    return res
+      .status(200)
+      .json(serializePage(applications.map(serializeApplication), total, page.page, page.limit));
   } catch (error) {
     return sendError(res, error);
   }
@@ -215,12 +257,14 @@ async function reviewApplication(req, res) {
       const now = new Date();
       const updated = await ProviderApplication.findOneAndUpdate(
         { _id: applicationId, providerId: provider._id, status: 'pending' },
-        { $set: {
-          status: input.decision === 'approve' ? 'approved' : 'rejected',
-          rejectionReason: input.decision === 'reject' ? input.reason : null,
-          reviewedBy: req.actor.userId,
-          reviewedAt: now,
-        } },
+        {
+          $set: {
+            status: input.decision === 'approve' ? 'approved' : 'rejected',
+            rejectionReason: input.decision === 'reject' ? input.reason : null,
+            reviewedBy: req.actor.userId,
+            reviewedAt: now,
+          },
+        },
         { returnDocument: 'after', runValidators: true, session },
       );
       if (!updated) {
@@ -231,9 +275,17 @@ async function reviewApplication(req, res) {
         if (provider.status !== 'suspended') {
           changes.status = 'approved';
         }
-        await Provider.updateOne({ _id: provider._id, revision: provider.revision }, { $set: changes }, { session });
+        await Provider.updateOne(
+          { _id: provider._id, revision: provider.revision },
+          { $set: changes },
+          { session },
+        );
       } else if (!provider.approvedApplicationId && provider.status !== 'suspended') {
-        await Provider.updateOne({ _id: provider._id, revision: provider.revision }, { $set: { status: 'rejected' } }, { session });
+        await Provider.updateOne(
+          { _id: provider._id, revision: provider.revision },
+          { $set: { status: 'rejected' } },
+          { session },
+        );
       }
       reviewed = updated;
     });
@@ -248,7 +300,13 @@ async function reviewApplication(req, res) {
 }
 
 module.exports = {
-  getAdminApplication, getAdminProvider, getOwnApplication, getOwnProvider,
-  listAdminApplications, listAdminProviders, listOwnApplications, reviewApplication,
+  getAdminApplication,
+  getAdminProvider,
+  getOwnApplication,
+  getOwnProvider,
+  listAdminApplications,
+  listAdminProviders,
+  listOwnApplications,
+  reviewApplication,
   submitApplication,
 };

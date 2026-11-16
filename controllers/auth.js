@@ -7,7 +7,11 @@ const Provider = require('../models/Provider');
 const ProviderApplication = require('../models/ProviderApplication');
 const User = require('../models/User');
 const { serializeUser } = require('../serializers/auth');
-const { validateCompanyRegistration, validateLogin, validateRegistration } = require('../validators/auth');
+const {
+  validateCompanyRegistration,
+  validateLogin,
+  validateRegistration,
+} = require('../validators/auth');
 
 const SESSION_LENGTH_MS = 24 * 60 * 60 * 1000;
 
@@ -29,17 +33,24 @@ function createToken(user, now) {
   const sid = randomUUID();
   const issuedAt = Math.floor(now.getTime() / 1000);
   const expiresAt = new Date(now.getTime() + SESSION_LENGTH_MS);
-  const token = jwt.sign({ sid, iat: issuedAt, exp: Math.floor(expiresAt.getTime() / 1000) }, process.env.JWT_SECRET, {
-    algorithm: 'HS256',
-    subject: String(user._id),
-  });
+  const token = jwt.sign(
+    { sid, iat: issuedAt, exp: Math.floor(expiresAt.getTime() / 1000) },
+    process.env.JWT_SECRET,
+    {
+      algorithm: 'HS256',
+      subject: String(user._id),
+    },
+  );
   return { sid, token, expiresAt };
 }
 
 async function saveSession(user, now, session) {
   const issued = createToken(user, now);
   const options = session ? { session } : undefined;
-  await AuthSession.create([{ sid: issued.sid, userId: user._id, expiresAt: issued.expiresAt }], options);
+  await AuthSession.create(
+    [{ sid: issued.sid, userId: user._id, expiresAt: issued.expiresAt }],
+    options,
+  );
   return { user: serializeUser(user), token: issued.token, expiresAt: issued.expiresAt };
 }
 
@@ -68,14 +79,19 @@ async function registerCustomer(req, res) {
     try {
       await session.withTransaction(async () => {
         const now = new Date();
-        const [user] = await User.create([{
-          name: input.name,
-          telephone: input.telephone,
-          email: input.email,
-          passwordHash: input.password,
-          role: 'user',
-          providerId: null,
-        }], { session });
+        const [user] = await User.create(
+          [
+            {
+              name: input.name,
+              telephone: input.telephone,
+              email: input.email,
+              passwordHash: input.password,
+              role: 'user',
+              providerId: null,
+            },
+          ],
+          { session },
+        );
         result = await saveSession(user, now, session);
       });
     } catch (error) {
@@ -100,31 +116,46 @@ async function registerCompany(req, res) {
         const now = new Date();
         const providerId = new mongoose.Types.ObjectId();
         const applicationId = new mongoose.Types.ObjectId();
-        const [user] = await User.create([{
-          name: input.name,
-          telephone: input.telephone,
-          email: input.email,
-          passwordHash: input.password,
-          role: 'company',
-          providerId,
-        }], { session });
-        await Provider.create([{
-          _id: providerId,
-          representativeId: user._id,
-          businessRegistrationNumber: input.businessRegistrationNumber,
-          status: 'pending',
-          latestApplicationId: applicationId,
-          applicationSequence: 1,
-        }], { session });
-        await ProviderApplication.create([{
-          _id: applicationId,
-          providerId,
-          version: 1,
-          businessRegistrationNumber: input.businessRegistrationNumber,
-          profile: input.profile,
-          status: 'pending',
-          submittedAt: now,
-        }], { session });
+        const [user] = await User.create(
+          [
+            {
+              name: input.name,
+              telephone: input.telephone,
+              email: input.email,
+              passwordHash: input.password,
+              role: 'company',
+              providerId,
+            },
+          ],
+          { session },
+        );
+        await Provider.create(
+          [
+            {
+              _id: providerId,
+              representativeId: user._id,
+              businessRegistrationNumber: input.businessRegistrationNumber,
+              status: 'pending',
+              latestApplicationId: applicationId,
+              applicationSequence: 1,
+            },
+          ],
+          { session },
+        );
+        await ProviderApplication.create(
+          [
+            {
+              _id: applicationId,
+              providerId,
+              version: 1,
+              businessRegistrationNumber: input.businessRegistrationNumber,
+              profile: input.profile,
+              status: 'pending',
+              submittedAt: now,
+            },
+          ],
+          { session },
+        );
         result = await saveSession(user, now, session);
       });
     } catch (error) {
@@ -167,7 +198,12 @@ async function logout(req, res) {
   try {
     const now = new Date();
     const updated = await AuthSession.findOneAndUpdate(
-      { sid: req.actor.sessionId, userId: req.actor.userId, revokedAt: null, expiresAt: { $gt: now } },
+      {
+        sid: req.actor.sessionId,
+        userId: req.actor.userId,
+        revokedAt: null,
+        expiresAt: { $gt: now },
+      },
       { $set: { revokedAt: now } },
       { returnDocument: 'after' },
     );

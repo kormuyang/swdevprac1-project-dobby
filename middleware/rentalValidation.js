@@ -60,9 +60,18 @@ function jsonErrors(error, req, res, next) {
     return res.status(400).json({ success: false, message: 'Request body is too large.' });
   }
   if (error?.type === 'entity.parse.failed') {
-    return res.status(400).json({ success: false, message: 'Request body must contain valid JSON.' });
+    return res
+      .status(400)
+      .json({ success: false, message: 'Request body must contain valid JSON.' });
   }
   return res.status(500).json({ success: false, message: 'The request could not be completed.' });
 }
 
-module.exports = { parseJson, validateBody, validateQuery, validateId, approvedCompany, jsonErrors };
+module.exports = {
+  parseJson,
+  validateBody,
+  validateQuery,
+  validateId,
+  approvedCompany,
+  jsonErrors,
+};

@@ -22,25 +22,25 @@ After G0, continue A01/A02 and B01. B can build reads and validation while waiti
 
 ## Saint's tasks
 
-| ID | Work | Needs | Check |
-| --- | --- | --- | --- |
-| A00 | package.json/lock, .nvmrc, server.js, config/db.js, health/docs and dev/start scripts | Agreed design | Qualify Node 24 setup, required middleware and startup; Atlas acceptance remains separate |
-| A01 | User/Provider/ProviderApplication/AuthSession models; auth routes/controllers/middleware, validation and serialization; signup/login/logout/me and req.actor | G0: A00+B00 | T01–T06, T11; auth parts of T36/T38 |
-| A02 | Company application/profile and admin review; indexes, versions, history and review queue/detail | A01, B00 dates | T07–T10; concurrent submissions; approval does not clear suspension |
-| A03 | Provider guards and suspend/reactivate in A's feature services; call B's cancelNonCompletedForProvider | A01, B00, B01; B03 cancellation for integration | T33–T37 with B; rollback, old-session denial and no restoration |
-| A04 | scripts/seed.js/reset-test-db.js, .env.example and setup README; mount all routers in server.js | A00–A03 and B models/routes | Clean setup, safe seed/reset and verified commands; T38 with B |
-| A05 | Auth/provider use cases, sequence/API diagrams and Postman folders; review B's changes | Related features | A's part of T40–T42; check persisted results as well as responses |
+| ID  | Work                                                                                                                                                         | Needs                                           | Check                                                                                     |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| A00 | package.json/lock, .nvmrc, server.js, config/db.js, health/docs and dev/start scripts                                                                        | Agreed design                                   | Qualify Node 24 setup, required middleware and startup; Atlas acceptance remains separate |
+| A01 | User/Provider/ProviderApplication/AuthSession models; auth routes/controllers/middleware, validation and serialization; signup/login/logout/me and req.actor | G0: A00+B00                                     | T01–T06, T11; auth parts of T36/T38                                                       |
+| A02 | Company application/profile and admin review; indexes, versions, history and review queue/detail                                                             | A01, B00 dates                                  | T07–T10; concurrent submissions; approval does not clear suspension                       |
+| A03 | Provider guards and suspend/reactivate in A's feature services; call B's cancelNonCompletedForProvider                                                       | A01, B00, B01; B03 cancellation for integration | T33–T37 with B; rollback, old-session denial and no restoration                           |
+| A04 | scripts/seed.js/reset-test-db.js, .env.example and setup README; mount all routers in server.js                                                              | A00–A03 and B models/routes                     | Clean setup, safe seed/reset and verified commands; T38 with B                            |
+| A05 | Auth/provider use cases, sequence/API diagrams and Postman folders; review B's changes                                                                       | Related features                                | A's part of T40–T42; check persisted results as well as responses                         |
 
 ## Poom's tasks
 
-| ID | Work | Needs | Check |
-| --- | --- | --- | --- |
-| B00 | utils/dates.js/money.js and pure tests; plan validation/serialization | Design | T19; same-day, 30/31 days, calendar/timezone, money and derived status boundaries; helpers throw ordinary errors with HTTP status and safe reason for invalid input |
-| B01 | models/Vehicle.js/Booking.js, validators and serializers matching the design | A00 package/config; A01 references for integration | Unique VIN, fixed fields, safe output and indexes |
-| B02 | Public provider/vehicle discovery and own-vehicle management, windows and activation | A01 auth/provider; A03a guards for writes | T12–T18, T39; filtered totals and unchanged booked snapshots |
-| B03 | services/bookings.js, bookingCancellation.js, routes/controllers/serializers; create/read/date-edit/cancel | B00/B01, A01 auth, A03a guards | T19–T30; real DB races for T22/T23; cancellation ready for A03b |
-| B04 | Company/admin booking views and integration/race tests | B03 + A03 integration | T25, T31–T39, especially suspension races and rollback |
-| B05 | Vehicle/booking use cases, sequence/API diagrams and Postman folders; review A's changes | Related features | B's part of T40–T42; review approval/suspension integration |
+| ID  | Work                                                                                                       | Needs                                              | Check                                                                                                                                                               |
+| --- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B00 | utils/dates.js/money.js and pure tests; plan validation/serialization                                      | Design                                             | T19; same-day, 30/31 days, calendar/timezone, money and derived status boundaries; helpers throw ordinary errors with HTTP status and safe reason for invalid input |
+| B01 | models/Vehicle.js/Booking.js, validators and serializers matching the design                               | A00 package/config; A01 references for integration | Unique VIN, fixed fields, safe output and indexes                                                                                                                   |
+| B02 | Public provider/vehicle discovery and own-vehicle management, windows and activation                       | A01 auth/provider; A03a guards for writes          | T12–T18, T39; filtered totals and unchanged booked snapshots                                                                                                        |
+| B03 | services/bookings.js, bookingCancellation.js, routes/controllers/serializers; create/read/date-edit/cancel | B00/B01, A01 auth, A03a guards                     | T19–T30; real DB races for T22/T23; cancellation ready for A03b                                                                                                     |
+| B04 | Company/admin booking views and integration/race tests                                                     | B03 + A03 integration                              | T25, T31–T39, especially suspension races and rollback                                                                                                              |
+| B05 | Vehicle/booking use cases, sequence/API diagrams and Postman folders; review A's changes                   | Related features                                   | B's part of T40–T42; review approval/suspension integration                                                                                                         |
 
 B00 is merged in [PR #9](https://github.com/kormuyang/swdevprac1-project-dobby/pull/9). It is included in the shared local test command; verification evidence is recorded in the task PRs.
 
@@ -59,13 +59,13 @@ B02 writes also need the A03a guard agreement. Test-only fake dependencies can h
 
 ## Integration gates
 
-| Gate | Ready when |
-| --- | --- |
-| G0 | A00/B00 pass with matching fields, HTTP statuses and `{success:false,message}` errors, signatures, runtime and lockfile |
-| G1 | A01/A02 pass: sessions, roles, review versions and privacy |
-| G2 | A03a+B01–B03a pass: vehicles, cap, overlap, price/snapshots and cutoffs |
-| G3 | A03b+B04 pass: atomic suspension/cancellation, emergency cancel, old-session denial, no restoration and races |
-| G4 | Setup, demo, diagrams, contributions and response-time results are ready; T01–T42 have results |
+| Gate | Ready when                                                                                                              |
+| ---- | ----------------------------------------------------------------------------------------------------------------------- |
+| G0   | A00/B00 pass with matching fields, HTTP statuses and `{success:false,message}` errors, signatures, runtime and lockfile |
+| G1   | A01/A02 pass: sessions, roles, review versions and privacy                                                              |
+| G2   | A03a+B01–B03a pass: vehicles, cap, overlap, price/snapshots and cutoffs                                                 |
+| G3   | A03b+B04 pass: atomic suspension/cancellation, emergency cancel, old-session denial, no restoration and races           |
+| G4   | Setup, demo, diagrams, contributions and response-time results are ready; T01–T42 have results                          |
 
 ## Review
 

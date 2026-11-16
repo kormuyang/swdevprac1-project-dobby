@@ -11,13 +11,53 @@ const { vehicleVins, bookingId, createRentalFixtures } = require('./rentalFixtur
 const { validateLogin } = require('../validators/auth');
 
 const fixtures = [
-  { key: 'user-1', role: 'user', name: 'Dobby Customer One', email: 'customer-1@dobby.example.test' },
-  { key: 'user-2', role: 'user', name: 'Dobby Customer Two', email: 'customer-2@dobby.example.test' },
-  { key: 'provider-approved', role: 'company', status: 'approved', registration: 'DOBBY-SEED-APPROVED-001', name: 'Dobby Approved Rental' },
-  { key: 'provider-approved-two', role: 'company', status: 'approved', registration: 'DOBBY-SEED-APPROVED-002', name: 'Dobby Second Approved Rental' },
-  { key: 'provider-pending', role: 'company', status: 'pending', registration: 'DOBBY-SEED-PENDING-001', name: 'Dobby Pending Rental' },
-  { key: 'provider-rejected', role: 'company', status: 'rejected', registration: 'DOBBY-SEED-REJECTED-001', name: 'Dobby Rejected Rental' },
-  { key: 'provider-suspended', role: 'company', status: 'suspended', registration: 'DOBBY-SEED-SUSPENDED-001', name: 'Dobby Suspended Rental' },
+  {
+    key: 'user-1',
+    role: 'user',
+    name: 'Dobby Customer One',
+    email: 'customer-1@dobby.example.test',
+  },
+  {
+    key: 'user-2',
+    role: 'user',
+    name: 'Dobby Customer Two',
+    email: 'customer-2@dobby.example.test',
+  },
+  {
+    key: 'provider-approved',
+    role: 'company',
+    status: 'approved',
+    registration: 'DOBBY-SEED-APPROVED-001',
+    name: 'Dobby Approved Rental',
+  },
+  {
+    key: 'provider-approved-two',
+    role: 'company',
+    status: 'approved',
+    registration: 'DOBBY-SEED-APPROVED-002',
+    name: 'Dobby Second Approved Rental',
+  },
+  {
+    key: 'provider-pending',
+    role: 'company',
+    status: 'pending',
+    registration: 'DOBBY-SEED-PENDING-001',
+    name: 'Dobby Pending Rental',
+  },
+  {
+    key: 'provider-rejected',
+    role: 'company',
+    status: 'rejected',
+    registration: 'DOBBY-SEED-REJECTED-001',
+    name: 'Dobby Rejected Rental',
+  },
+  {
+    key: 'provider-suspended',
+    role: 'company',
+    status: 'suspended',
+    registration: 'DOBBY-SEED-SUSPENDED-001',
+    name: 'Dobby Suspended Rental',
+  },
 ];
 
 function getDatabaseName(uri) {
@@ -37,17 +77,27 @@ function validateConfiguration() {
   const uri = process.env.MONGO_URI;
   const databaseName = uri && getDatabaseName(uri);
   if (!['dobby_dev_a', 'dobby_test_a', 'dobby_dev_b', 'dobby_test_b'].includes(databaseName)) {
-    throw new Error('MONGO_URI must explicitly name dobby_dev_a, dobby_dev_b, dobby_test_a or dobby_test_b.');
+    throw new Error(
+      'MONGO_URI must explicitly name dobby_dev_a, dobby_dev_b, dobby_test_a or dobby_test_b.',
+    );
   }
   const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
   if (fixtures.some((fixture) => (fixture.email || companyEmail(fixture.key)) === adminEmail)) {
     throw new Error('SEED_ADMIN_EMAIL must be different from the reserved fixture emails.');
   }
-  if (!process.env.SEED_ADMIN_EMAIL || !process.env.SEED_ADMIN_PASSWORD || !process.env.SEED_FIXTURE_PASSWORD) {
+  if (
+    !process.env.SEED_ADMIN_EMAIL ||
+    !process.env.SEED_ADMIN_PASSWORD ||
+    !process.env.SEED_FIXTURE_PASSWORD
+  ) {
     throw new Error('Set SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD and SEED_FIXTURE_PASSWORD locally.');
   }
-  if (Buffer.byteLength(process.env.SEED_ADMIN_PASSWORD) < 8 || Buffer.byteLength(process.env.SEED_ADMIN_PASSWORD) > 72
-      || Buffer.byteLength(process.env.SEED_FIXTURE_PASSWORD) < 8 || Buffer.byteLength(process.env.SEED_FIXTURE_PASSWORD) > 72) {
+  if (
+    Buffer.byteLength(process.env.SEED_ADMIN_PASSWORD) < 8 ||
+    Buffer.byteLength(process.env.SEED_ADMIN_PASSWORD) > 72 ||
+    Buffer.byteLength(process.env.SEED_FIXTURE_PASSWORD) < 8 ||
+    Buffer.byteLength(process.env.SEED_FIXTURE_PASSWORD) > 72
+  ) {
     throw new Error('Seed passwords must contain 8 to 72 UTF-8 bytes.');
   }
   try {
@@ -61,13 +111,22 @@ function validateConfiguration() {
 async function removeExistingFixtures(session) {
   const emails = fixtures.map((fixture) => fixture.email || companyEmail(fixture.key));
   const adminEmail = process.env.SEED_ADMIN_EMAIL.trim().toLowerCase();
-  const existingAdmin = await User.findOne({ email: adminEmail }).select('_id role name providerId').session(session);
-  if (existingAdmin && (existingAdmin.role !== 'admin' || existingAdmin.name !== 'Dobby Seed Admin')) {
+  const existingAdmin = await User.findOne({ email: adminEmail })
+    .select('_id role name providerId')
+    .session(session);
+  if (
+    existingAdmin &&
+    (existingAdmin.role !== 'admin' || existingAdmin.name !== 'Dobby Seed Admin')
+  ) {
     throw new Error('SEED_ADMIN_EMAIL already belongs to a non-seed account.');
   }
-  const users = await User.find({ email: { $in: emails } }).select('_id providerId name email role').session(session);
+  const users = await User.find({ email: { $in: emails } })
+    .select('_id providerId name email role')
+    .session(session);
   for (const user of users) {
-    const fixture = fixtures.find((entry) => (entry.email || companyEmail(entry.key)) === user.email);
+    const fixture = fixtures.find(
+      (entry) => (entry.email || companyEmail(entry.key)) === user.email,
+    );
     if (user.name !== fixture.name || user.role !== fixture.role) {
       throw new Error('Reserved fixture email belongs to a non-seed account.');
     }
@@ -78,18 +137,30 @@ async function removeExistingFixtures(session) {
   const providerIds = users.map((user) => user.providerId).filter(Boolean);
   const userIds = users.map((user) => user._id);
 
-  const vehicle = await mongoose.connection.collection('vehicles').findOne(
-    { providerId: { $in: providerIds }, vin: { $nin: vehicleVins } }, { session },
-  );
+  const vehicle = await mongoose.connection
+    .collection('vehicles')
+    .findOne({ providerId: { $in: providerIds }, vin: { $nin: vehicleVins } }, { session });
   const booking = await mongoose.connection.collection('bookings').findOne(
-    { _id: { $ne: bookingId }, $or: [{ userId: { $in: userIds } }, { providerId: { $in: providerIds } }] }, { session },
+    {
+      _id: { $ne: bookingId },
+      $or: [{ userId: { $in: userIds } }, { providerId: { $in: providerIds } }],
+    },
+    { session },
   );
   if (vehicle || booking) {
-    throw new Error('Seed fixtures have vehicle or booking data. Reset the dedicated test database first.');
+    throw new Error(
+      'Seed fixtures have vehicle or booking data. Reset the dedicated test database first.',
+    );
   }
 
-  await Booking.deleteOne({ _id: bookingId, userId: { $in: userIds }, providerId: { $in: providerIds } }, { session });
-  await Vehicle.deleteMany({ providerId: { $in: providerIds }, vin: { $in: vehicleVins } }, { session });
+  await Booking.deleteOne(
+    { _id: bookingId, userId: { $in: userIds }, providerId: { $in: providerIds } },
+    { session },
+  );
+  await Vehicle.deleteMany(
+    { providerId: { $in: providerIds }, vin: { $in: vehicleVins } },
+    { session },
+  );
   await AuthSession.deleteMany({ userId: { $in: userIds } }, { session });
   await ProviderApplication.deleteMany({ providerId: { $in: providerIds } }, { session });
   await Provider.deleteMany({ _id: { $in: providerIds } }, { session });
@@ -148,7 +219,9 @@ async function createFixture(fixture, session) {
     representativeId: user._id,
     businessRegistrationNumber: fixture.registration,
     status: fixture.status,
-    approvedApplicationId: ['approved', 'suspended'].includes(fixture.status) ? applicationId : null,
+    approvedApplicationId: ['approved', 'suspended'].includes(fixture.status)
+      ? applicationId
+      : null,
     latestApplicationId: applicationId,
     applicationSequence: 1,
     suspensionReason: fixture.status === 'suspended' ? 'Synthetic suspension fixture.' : null,
@@ -161,7 +234,11 @@ async function seed() {
   const uri = validateConfiguration();
   await mongoose.connect(uri);
   try {
-    await Promise.all([User, Provider, ProviderApplication, AuthSession, Vehicle, Booking].map((Model) => Model.createIndexes()));
+    await Promise.all(
+      [User, Provider, ProviderApplication, AuthSession, Vehicle, Booking].map((Model) =>
+        Model.createIndexes(),
+      ),
+    );
     const session = await mongoose.startSession();
     try {
       await session.withTransaction(async () => {
@@ -188,13 +265,21 @@ async function seed() {
 }
 
 if (require.main === module) {
-  seed().then(() => {
-    console.log(`Seeded Dobby fixtures in ${getDatabaseName(process.env.MONGO_URI)}.`);
-  }).catch((error) => {
-    const safeConfigurationError = /^(MONGO_URI|Set SEED_|Seed passwords|SEED_ADMIN_EMAIL)/.test(error.message);
-    console.error(safeConfigurationError ? error.message : 'Seed failed. Check the local database and fixture configuration.');
-    process.exitCode = 1;
-  });
+  seed()
+    .then(() => {
+      console.log(`Seeded Dobby fixtures in ${getDatabaseName(process.env.MONGO_URI)}.`);
+    })
+    .catch((error) => {
+      const safeConfigurationError = /^(MONGO_URI|Set SEED_|Seed passwords|SEED_ADMIN_EMAIL)/.test(
+        error.message,
+      );
+      console.error(
+        safeConfigurationError
+          ? error.message
+          : 'Seed failed. Check the local database and fixture configuration.',
+      );
+      process.exitCode = 1;
+    });
 }
 
 module.exports = { getDatabaseName, validateConfiguration, seed };
